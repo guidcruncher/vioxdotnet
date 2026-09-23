@@ -1,0 +1,174 @@
+
+
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Viox.Core.Configuration;
+
+namespace Viox.Core.Services;
+
+public class MemoryCacheService<TValue> : IMemoryCacheService<TValue>, IDisposable
+{
+    private readonly IMemoryCache _memoryCache;
+    private readonly CacheOptions _options;
+    private readonly ILogger<MemoryCacheService<string, TValue>> _logger;
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _keyLocks = new();
+    private bool _disposed;
+
+    public MemoryCacheService(
+        IMemoryCache memoryCache,
+        IOptions<CacheOptions> options,
+        ILogger<MemoryCacheService<TValue>> logger)
+    {
+        _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public ValueTask SetAsync(string key, TValue value, TimeSpan? absoluteExpiration = null, TimeSpan? slidingExpiration = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        var options = CreateCacheEntryOptions(absoluteExpiration, slidingExpiration);
+
+        _memoryCache.Set(key, value, options);
+        _logger.LogDebug("Cache entry set for key '{Key}'.", key);
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask<TValue?> GetAsync(string key, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        if (_memoryCache.TryGetValue(key, out TValue? value))
+        {
+            _logger.LogDebug("Cache hit for key '{Key}'.", key);
+            return ValueTask.FromResult(value);
+        }
+
+        _logger.LogDebug("Cache miss for key '{Key}'.", key);
+        return ValueTask.FromResult<TValue?>(default);
+    }
+
+    public async ValueTask<TValue?> GetOrCreateAsync(
+        string key,
+        Func<CancellationToken, ValueTask<TValue>> factory,
+        TimeSpan? absoluteExpiration = null,
+        TimeSpan? slidingExpiration = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(factory);
+
+        if (_memoryCache.TryGetValue(key, out TValue? existingValue))
+        {
+            _logger.LogDebug("Cache hit for key '{Key}'.", key);
+            return existingValue;
+        }
+
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            if (_memoryCache.TryGetValue(key, out existingValue))
+            {
+                _logger.LogDebug("Cache hit for key '{Key}' after acquiring lock.", key);
+                return existingValue;
+            }
+
+            _logger.LogInformation("Cache miss for key '{Key}'. Executing factory delegate.", key);
+            var value = await factory(cancellationToken).ConfigureAwait(false);
+
+            var options = CreateCacheEntryOptions(absoluteExpiration, slidingExpiration);
+            _memoryCache.Set(key, value, options);
+
+            return value;
+        }
+        finally
+        {
+            semaphore.Release();
+            if (semaphore.CurrentCount == 1)
+            {
+                _keyLocks.TryRemove(key, out _);
+            }
+        }
+    }
+
+    public ValueTask<bool> RemoveAsync(string key, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        if (_memoryCache.TryGetValue(key, out _))
+        {
+            _memoryCache.Remove(key);
+            _logger.LogDebug("Removed cache entry for key '{Key}'.", key);
+            return ValueTask.FromResult(true);
+        }
+
+        return ValueTask.FromResult(false);
+    }
+
+    public ValueTask<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        var exists = _memoryCache.TryGetValue(key, out _);
+        return ValueTask.FromResult(exists);
+    }
+
+    private MemoryCacheEntryOptions CreateCacheEntryOptions(TimeSpan? absoluteExpiration, TimeSpan? slidingExpiration)
+    {
+        var entryOptions = new MemoryCacheEntryOptions();
+
+        if (absoluteExpiration.HasValue)
+        {
+            entryOptions.SetAbsoluteExpiration(absoluteExpiration.Value);
+        }
+        else if (_options.DefaultAbsoluteExpirationHours > 0)
+        {
+            entryOptions.SetAbsoluteExpiration(TimeSpan.FromHours(_options.DefaultAbsoluteExpirationHours));
+        }
+
+        if (slidingExpiration.HasValue)
+        {
+            entryOptions.SetSlidingExpiration(slidingExpiration.Value);
+        }
+        else if (_options.DefaultSlidingExpirationMinutes.HasValue)
+        {
+            entryOptions.SetSlidingExpiration(TimeSpan.FromMinutes(_options.DefaultSlidingExpirationMinutes.Value));
+        }
+
+        if (_options.SizeLimit.HasValue)
+        {
+            entryOptions.SetSize(1);
+        }
+
+        entryOptions.RegisterPostEvictionCallback((key, value, reason, state) =>
+        {
+            _logger.LogInformation("Cache entry '{Key}' was evicted. Reason: {Reason}.", key, reason);
+        });
+
+        return entryOptions;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        foreach (var semaphore in _keyLocks.Values)
+        {
+            semaphore.Dispose();
+        }
+
+        _keyLocks.Clear();
+        _disposed = true;
+
+        GC.SuppressFinalize(this);
+    }
+}

@@ -1,0 +1,38 @@
+services:
+  viox-net:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: viox-net
+    hostname: viox-net
+    platform: linux/arm64
+    network_mode: host
+    ports:
+      - "1704:1704/tcp"  # Snapclient stream
+      - "1705:1705/tcp"  # JSON-RPC API
+      - "2000:2000/tcp"  # Spotify Connect HTTP port
+      - "5353:5353/udp"  # mDNS discovery
+    devices:
+      - /dev/snd:/dev/snd
+    volumes:
+      - alsa-state:/var/lib/alsa
+      - equalizer-data:/root/.alsaequal.bin
+      - ../runtime/appsettings.json:/app/appsettings.json:ro
+      - ../runtime/music:/music
+      - ../runtime/data:/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - AudioSettings__DefaultOutputDevice=equal
+      - AudioSettings__EnableEqualizer=true
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+      - SYS_NICE
+
+
+volumes:
+  alsa-state:
+  equalizer-data:

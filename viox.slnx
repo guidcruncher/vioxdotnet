@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Viox.Client.Librespot/Viox.Client.Librespot.csproj" />
+    <Project Path="src/Viox.Client.Podverse/Viox.Client.Podverse.csproj" />
+    <Project Path="src/Viox.Client.RadioBrowser/Viox.Client.RadioBrowser.csproj" />
+    <Project Path="src/Viox.Client.Spotify/Viox.Client.Spotify.csproj" />
+    <Project Path="src/Viox.Client.TuneIn/Viox.Client.TuneIn.csproj" />
+    <Project Path="src/Viox.Core/Viox.Core.csproj" />
+    <Project Path="src/Viox.Client.Mpd/Viox.Client.Mpd.csproj" />
+    <Project Path="src/Viox.Server/Viox.Server.csproj" />
+    <Project Path="src/Viox.Snapcast/Viox.Snapcast.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Viox.Tests.Librespot/Viox.Tests.Librespot.csproj" />
+    <Project Path="tests/Viox.Tests.Mpd/Viox.Tests.Mpd.csproj" />
+    <Project Path="tests/Viox.Tests.Podverse/Viox.Tests.Podverse.csproj" />
+    <Project Path="tests/Viox.Tests.RadioBrowser/Viox.Tests.RadioBrowser.csproj" />
+    <Project Path="tests/Viox.Tests.Snapcast/Viox.Tests.Snapcast.csproj" />
+    <Project Path="tests/Viox.Tests.Spotify/Viox.Tests.Spotify.csproj" />
+    <Project Path="tests/Viox.Tests.TuneIn/Viox.Tests.TuneIn.csproj" />
+  </Folder>
+</Solution>
