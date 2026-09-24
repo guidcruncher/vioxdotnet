@@ -11,7 +11,7 @@ namespace Viox.Server.Controllers;
 /// Controller for managing ALSA audio equalizer bands and mixer volume settings.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/audiocontrol")]
 [Produces("application/json")]
 public sealed class AudioControlController : ControllerBase
 {

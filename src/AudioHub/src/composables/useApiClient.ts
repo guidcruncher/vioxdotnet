@@ -54,6 +54,12 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
   const core = {
     getCountries: (): Promise<Record<string, string>> =>
       transport.request<Record<string, string>>('/api/v1/core/countrys'),
+  }
+
+  // ==========================================
+  // Equalizer API Module
+  // ==========================================
+  const equalizer = {
     getEqualizerBands: (): Promise<EqualizerBand[]> =>
       transport.request<EqualizerBand[]>('/api/v1/audiocontrol/equalizer/bands'),
     setEqualizerBand: (index: number, value: number) =>
@@ -405,5 +411,6 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
     library,
     favourites,
     config,
+    equalizer,
   }
 }
