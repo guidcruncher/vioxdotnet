@@ -26,9 +26,10 @@ public static class SpotifyConverterHelpers
             _ => ""
         };
 
-	if (string.IsNullOrEmpty(format)) {
-	    return null;
-	}
+        if (string.IsNullOrEmpty(format))
+        {
+            return null;
+        }
 
         if (DateTimeOffset.TryParseExact(
                 releaseDate,

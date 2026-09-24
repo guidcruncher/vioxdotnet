@@ -52,6 +52,8 @@ COPY ./config/snapserver.conf /etc/snapserver.conf
 COPY ./config/config.yml /etc/golibrespot/config.yml
 COPY ./config/config.yml /etc/golibrespot/config-template.yml
 COPY ./config/mpd.conf /etc/mpd.conf
+COPY ./config/asound.conf /etc/asound.conf
+
 RUN chmod -R 755 /music
 
 # Copy published .NET application
