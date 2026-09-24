@@ -1,13 +1,13 @@
 using System.Text.RegularExpressions;
-
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Viox.Server.Configuration;
+using Viox.Server.Models;
 
 namespace Viox.Server.Services;
 
 /// <summary>
-/// Service for managing ALSA equalizer (alsaequal) settings via amixer.
+/// Service for managing ALSA equalizer (alsaequal) controls via amixer.
 /// </summary>
 public partial class AlsaEqualizerService : IAlsaEqualizerService
 {
@@ -29,26 +29,42 @@ public partial class AlsaEqualizerService : IAlsaEqualizerService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyDictionary<int, int>> GetBandLevelsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<EqualizerBand>> GetBandsAsync(CancellationToken cancellationToken = default)
     {
-        // Target the 'equal' control device defined in the alsa configuration
-        string args = $"-D {_options.EqualizerControlName} sget '{_options.EqualizerControlName}'";
+        string args = $"-D {_options.EqualizerControlName} scontents";
         string output = await _executor.ExecuteAsync("amixer", args, cancellationToken);
 
-        var bandLevels = new Dictionary<int, int>();
-        var matches = BandRegex().Matches(output);
+        var bands = new List<EqualizerBand>();
+        string[] blocks = output.Split("Simple mixer control", StringSplitOptions.RemoveEmptyEntries);
 
-        int bandIndex = 0;
-        foreach (Match match in matches)
+        int index = 0;
+        foreach (string block in blocks)
         {
-            if (match.Success && int.TryParse(match.Groups[1].Value, out int percentage))
+            var nameMatch = ControlNameRegex().Match(block);
+            if (!nameMatch.Success)
             {
-                bandLevels[bandIndex++] = percentage;
+                continue;
             }
+
+            string fullControlName = nameMatch.Groups[1].Value;
+            string frequencyLabel = nameMatch.Groups[2].Value.Trim();
+
+            var percentMatches = PercentageRegex().Matches(block);
+            if (percentMatches.Count == 0)
+            {
+                continue;
+            }
+
+            int leftPercent = int.Parse(percentMatches[0].Groups[1].Value);
+            int rightPercent = percentMatches.Count > 1 
+                ? int.Parse(percentMatches[1].Groups[1].Value) 
+                : leftPercent;
+
+            bands.Add(new EqualizerBand(index++, fullControlName, frequencyLabel, leftPercent, rightPercent));
         }
 
-        _logger.LogInformation("Retrieved {Count} equalizer band levels using device '{Device}'.", bandLevels.Count, _options.EqualizerControlName);
-        return bandLevels;
+        _logger.LogInformation("Parsed {Count} equalizer bands from device '{Device}'.", bands.Count, _options.EqualizerControlName);
+        return bands;
     }
 
     public async Task SetBandLevelAsync(int bandIndex, int percentage, CancellationToken cancellationToken = default)
@@ -57,23 +73,49 @@ public partial class AlsaEqualizerService : IAlsaEqualizerService
         ArgumentOutOfRangeException.ThrowIfLessThan(percentage, 0);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(percentage, 100);
 
-        string args = $"-D {_options.EqualizerControlName} sset '{_options.EqualizerControlName}' {bandIndex} {percentage}%";
+        var bands = await GetBandsAsync(cancellationToken);
+        if (bandIndex >= bands.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(bandIndex), $"Band index {bandIndex} exceeds available bands count ({bands.Count}).");
+        }
+
+        string controlName = bands[bandIndex].ControlName;
+        await SetBandLevelByControlNameAsync(controlName, percentage, cancellationToken);
+    }
+
+    public async Task SetBandLevelByControlNameAsync(string controlName, int percentage, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(controlName);
+        ArgumentOutOfRangeException.ThrowIfLessThan(percentage, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(percentage, 100);
+
+        string args = $"-D {_options.EqualizerControlName} sset '{controlName}' {percentage}%";
         await _executor.ExecuteAsync("amixer", args, cancellationToken);
 
-        _logger.LogInformation("Set equalizer band {BandIndex} to {Percentage}% on device '{Device}'", bandIndex, percentage, _options.EqualizerControlName);
+        _logger.LogInformation("Set equalizer control '{ControlName}' to {Percentage}%", controlName, percentage);
     }
 
     public async Task SetAllBandsAsync(IEnumerable<int> percentages, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(percentages);
 
-        int index = 0;
-        foreach (int percentage in percentages)
+        var bandList = percentages.ToList();
+        var currentBands = await GetBandsAsync(cancellationToken);
+
+        if (bandList.Count > currentBands.Count)
         {
-            await SetBandLevelAsync(index++, percentage, cancellationToken);
+            throw new ArgumentException($"Provided percentage count ({bandList.Count}) exceeds available bands ({currentBands.Count}).", nameof(percentages));
+        }
+
+        for (int i = 0; i < bandList.Count; i++)
+        {
+            await SetBandLevelByControlNameAsync(currentBands[i].ControlName, bandList[i], cancellationToken);
         }
     }
 
+    [GeneratedRegex(@"'((?:\d+\.\s*)?([^']+))',0")]
+    private static partial Regex ControlNameRegex();
+
     [GeneratedRegex(@"\[(\d+)%\]")]
-    private static partial Regex BandRegex();
+    private static partial Regex PercentageRegex();
 }

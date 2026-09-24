@@ -23,7 +23,6 @@ public static class AlsaServiceCollectionExtensions
 
         services.AddSingleton<IAlsaProcessExecutor, AlsaProcessExecutor>();
         services.AddTransient<IAlsaEqualizerService, AlsaEqualizerService>();
-        services.AddTransient<IAlsaMixerService, AlsaMixerService>();
 
         return services;
     }
