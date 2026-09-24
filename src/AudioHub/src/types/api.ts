@@ -1,6 +1,15 @@
 // ==========================================
 // Generic Interfaces
 // ==========================================
+
+export interface EqualizerBand {
+  index: number
+  controlName: string
+  frequencyLabel: string
+  leftPercentage: number
+  rightPercentage: number
+}
+
 export interface ClientConfig {
   defaultCountry: string
 }

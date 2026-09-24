@@ -1,5 +1,6 @@
 import { useApiTransport, type TransportOptions } from './useApiTransport'
 import type {
+  EqualizerBand,
   ApiPlayRequest,
   ApiRepeatContextRequest,
   ApiRepeatTrackRequest,
@@ -53,6 +54,18 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
   const core = {
     getCountries: (): Promise<Record<string, string>> =>
       transport.request<Record<string, string>>('/api/v1/core/countrys'),
+    getEqualizerBands: (): Promise<EqualizerBand[]> =>
+      transport.request<EqualizerBand[]>('/api/v1/audiocontrol/equalizer/bands'),
+    setEqualizerBand: (index: number, value: number) =>
+      transport.request<void>(`/api/v1/audiocontrol/equalizer/bands/{index}`, {
+        method: 'PUT',
+        body: JSON.stringify({ percentage: value }),
+      }),
+    setEqualizerBands: (values: number[]) =>
+      transport.request<void>(`/api/v1/audiocontrol/equalizer/bands`, {
+        method: 'PUT',
+        body: JSON.stringify({ percentages: values }),
+      }),
   }
 
   // ==========================================
