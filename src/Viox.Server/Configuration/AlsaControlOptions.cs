@@ -13,7 +13,7 @@ public sealed class AlsaControlOptions
     /// <summary>
     /// Gets or sets the ALSA hardware card identifier (e.g., "hw:0,0" or "0").
     /// </summary>
-    public string Card { get; set; } = "hw:0,0";
+    public string Card { get; set; } = "0";
 
     /// <summary>
     /// Gets or sets the ALSA control device name used for alsaequal (e.g., "equal").

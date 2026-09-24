@@ -54,7 +54,8 @@ public sealed class AlsaProcessExecutor : IAlsaProcessExecutor
 
             if (process.ExitCode != 0)
             {
-                _logger.LogError("ALSA process execution failed with code {ExitCode}. Error: {Error}", process.ExitCode, error);
+               _logger.LogWarning("Error Executing ALSA process: {FileName} {Arguments}", fileName, arguments); 
+               _logger.LogError("ALSA process execution failed with code {ExitCode}. Error: {Error}", process.ExitCode, error);
                 throw new InvalidOperationException($"ALSA command failed with exit code {process.ExitCode}: {error}");
             }
 
