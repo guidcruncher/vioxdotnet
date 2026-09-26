@@ -1,0 +1,28 @@
+networks:
+  proxy:
+    external: true
+
+services:
+  vioxdotnet-speaker:
+    image: guidcruncher/vioxdotnet-speaker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vioxdotnet-speaker
+    hostname: vioxdotnet-speaker
+    restart: unless-stopped
+    # networks: - proxy
+    network_mode: host 
+    # Device access for audio
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+      - VIOX_HOST=tcp://192.168.1.202
+      - SPEAKER_NAME="VIOX Music Server""
+
+    # Capabilities for audio access
+    cap_add:
+      - SYS_NICE
+
+    # IPC for shared memory (PulseAudio)
+    ipc: host

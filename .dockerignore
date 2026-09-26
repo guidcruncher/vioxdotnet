@@ -1,0 +1,254 @@
+# Ignore .NET build output
+bin/
+obj/
+out/
+artifacts/
+
+# Ignore solution-level build output
+**/bin/
+**/obj/
+**/out/
+
+# Ignore test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Ignore local environment files
+.env
+.env.*
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor files
+.vscode/
+.vs/
+.idea/
+*.user
+*.suo
+*.iml
+
+# Ignore NuGet packages
+*.nupkg
+packages/
+.nuget/
+
+# Ignore Docker cache and metadata
+*.pid
+*.seed
+*.tar
+*.img
+
+# Ignore temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.old
+*.orig
+
+# Ignore publish output
+publish/
+dist/
+
+# Ignore generated code
+*.generated.cs
+*.g.cs
+
+# Ignore test data artifacts
+tests/TestData/*.bin
+
+# Ignore Configuration files
+appsettings.*
+
+# Dependencies
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs (if building in Docker)
+
+run/
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Git
+
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
+.dockerignore
+.docker/
+
+# CI/CD
+
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+jenkinsfile
+Jenkinsfile
+
+# Documentation
+
+*.md
+README*
+CHANGELOG*
+LICENSE
+docs/
+documentation/
+
+# Testing
+
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+.jest-cache/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+# **/**tests**/
+**/**mocks**/
+
+# IDE and editors
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+.vs/
+
+# OS files
+
+Thumbs.db
+Desktop.ini
+.AppleDouble
+.LSOverride
+
+# Environment files (keep .env.example if needed)
+
+*.secret
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Logs
+
+logs/
+*.log
+
+# Temporary files
+
+tmp/
+temp/
+*.tmp
+.temp/
+
+# Cache directories
+
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.npm/
+.yarn/cache
+
+# Optional files
+
+.prettierignore
+.eslintignore
+.editorconfig
+
+# Misc
+
+*.tsbuildinfo
+.turbo/
+.vercel/
+.serverless/
+
+# Version Control
+.git
+.github
+.gitignore
+
+# Dependencies (Must be reinstalled in Docker build container)
+node_modules
+.pnpm-store
+
+# Local Build Output (Rebuilt inside Docker container)
+dist
+build
+out
+*.tsbuildinfo
+
+# Environment Secrets & Configuration
+.env
+.env.*
+!.env.example
+
+# Logs & Debugging
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation & Markdown
+README.md
+docs
+*.md
+
+# IDEs, Editors, & OS Files
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Test Files & Coverage Outputs
+coverage
+.nyc_output
+tests
+__tests__
+*.test.ts
+*.spec.ts
+
+# Docker Configurations
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Cache & Temporary Files
+.cache
+.npm
+.eslintcache

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="170 100 620 920" fill="none" role="img" aria-label="Music Centre" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="mcNoteGrad" x1="196" y1="128" x2="762" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F5F3FF"/>
+      <stop offset="55%" stop-color="#EDE9FE"/>
+      <stop offset="100%" stop-color="#C4B5FD"/>
+    </linearGradient>
+  </defs>
+
+  <path
+    fill="url(#mcNoteGrad)"
+    fill-rule="evenodd"
+    d="
+      M 462 172
+      L 710 128
+      C 770 120 772 160 762 220
+      L 762 692
+      C 762 788 720 818 640 816
+      L 392 816
+      C 252 816 196 760 196 660
+      C 196 568 262 510 388 560
+      L 388 248
+      C 388 196 416 176 462 172
+      Z
+      M 501 558
+      A 124 124 0 1 0 501 806
+      A 124 124 0 1 0 501 558
+      Z
+    "/>
+
+  <circle cx="501" cy="682" r="130" stroke="#E0E7FF" stroke-width="22"/>
+
+  <g fill="#F0ABFC">
+    <rect x="362" y="892" width="28" height="72" rx="14"/>
+    <rect x="426" y="872" width="28" height="109" rx="14"/>
+    <rect x="490" y="847" width="28" height="153" rx="14"/>
+    <rect x="554" y="872" width="28" height="109" rx="14"/>
+    <rect x="618" y="892" width="28" height="71" rx="14"/>
+  </g>
+</svg>
