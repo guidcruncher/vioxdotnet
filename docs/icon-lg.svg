@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1002 1090" fill="none" role="img" aria-labelledby="mcTitle mcDesc" preserveAspectRatio="xMidYMid meet">
+  <title id="mcTitle">Music Centre</title>
+  <desc id="mcDesc">Stylized music-note mark with circular cutout and equalizer bars.</desc>
+
+  <defs>
+    <linearGradient id="mcNoteGrad" x1="0%" y1="0%" x2="100%" y2="30%">
+      <stop offset="0%" stop-color="#C084FC"/>
+      <stop offset="40%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1002" height="1090" rx="196" fill="#121A2D"/>
+  <rect x="6" y="6" width="990" height="1078" rx="190"
+        stroke="#526178" stroke-width="12"/>
+
+  <path
+    fill="url(#mcNoteGrad)"
+    fill-rule="evenodd"
+    d="
+      M 462 172
+      L 710 128
+      C 770 120 772 160 762 220
+      L 762 692
+      C 762 788 720 818 640 816
+      L 392 816
+      C 252 816 196 760 196 660
+      C 196 568 262 510 388 560
+      L 388 248
+      C 388 196 416 176 462 172
+      Z
+      M 501 558
+      A 124 124 0 1 0 501 806
+      A 124 124 0 1 0 501 558
+      Z
+    "/>
+
+  <circle cx="501" cy="682" r="130" stroke="#8B9BB3" stroke-width="11"/>
+
+  <g fill="#C236D7">
+    <rect x="362" y="892" width="23" height="72" rx="11.5"/>
+    <rect x="426" y="872" width="23" height="109" rx="11.5"/>
+    <rect x="490" y="847" width="23" height="153" rx="11.5"/>
+    <rect x="554" y="872" width="23" height="109" rx="11.5"/>
+    <rect x="618" y="892" width="23" height="71" rx="11.5"/>
+  </g>
+</svg>

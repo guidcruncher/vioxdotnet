@@ -1,0 +1,326 @@
+## .NET build artifacts
+wwwroot/
+api/
+_site
+_site/
+bin/
+obj/
+out/
+artifacts/
+BenchmarkDotNet.Artifacts/
+
+## Visual Studio / VS Code
+.vscode/
+.vs/
+*.user
+*.suo
+
+## Logs
+*.log
+logs/
+*.trace
+*.ds_store
+
+## OS-specific
+.DS_Store
+Thumbs.db
+
+## NuGet
+*.nupkg
+.nuget/
+packages/
+
+## Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+## Docker
+docker-compose.override.yml
+*.pid
+*.seed
+*.tar
+*.img
+
+## Build cache
+*.cache
+.cache/
+tmp/
+temp/
+
+## Rider / JetBrains
+.idea/
+*.iml
+
+## Environment files
+.env
+.env.*
+
+## Publish output
+publish/
+dist/
+
+## Generated files
+*.generated.cs
+*.g.cs
+
+## Backup files
+*.bak
+*.old
+*.orig
+
+## Local tooling
+tools/
+local/
+
+# Dependencies
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnp
+.pnp.js
+Cargo.lock
+config.json
+
+# Build outputs
+vite.config.js
+vite-lucide-icon-extractor.js
+target
+run
+dist/
+build/
+out/
+*.tsbuildinfo
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vite/
+
+# TypeScript
+
+*.js.map
+*.d.ts.map
+
+# Testing
+
+coverage/
+*.lcov
+.nyc_output/
+junit.xml
+test-results/
+playwright-report/
+.jest-cache/
+
+# Environment variables
+*.secret
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# IDE and editors
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+.vs/
+
+# OS files
+
+Thumbs.db
+Desktop.ini
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+
+tmp/
+temp/
+*.tmp
+.temp/
+
+# Optional npm cache directory
+
+.npm
+
+# Optional eslint cache
+
+.eslintcache
+
+# Optional stylelint cache
+
+.stylelintcache
+
+# Microbundle cache
+
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+
+.node_repl_history
+
+# Output of ‘npm pack’
+
+*.tgz
+
+# Yarn
+
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# TypeScript cache
+
+*.tsbuildinfo
+
+# Serverless directories
+
+.serverless/
+
+# FuseBox cache
+
+.fusebox/
+
+# DynamoDB Local files
+
+.dynamodb/
+
+# TernJS port file
+
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+
+.vscode-test
+
+# Turborepo
+
+.turbo
+
+# Vercel
+
+.vercel
+
+# Docker
+
+.docker/
+
+# Local development
+
+.local/
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Build Output / Compilation Artifacts
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Environment & Local Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.crt
+
+# Logs & Diagnostics
+logs/
+*.log
+silly-datetime.log
+npm-debug.log
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+*.lcov
+.clinic/
+
+# Cache Directories
+.cache/
+.npm/
+.eslintcache
+.stylelintcache
+.ts-node/
+
+# Framework / Tooling Specific Caches
+.vite/
+.nuxt/
+.next/
+.svelte-kit/
+.parcel-cache/
+
+# IDE & Editor Settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker Artifacts (Local Compose overrides)
+docker-compose.override.yml
