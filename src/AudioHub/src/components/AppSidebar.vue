@@ -178,7 +178,7 @@ const closeMobileMenu = () => {
             active-class="bg-slate-800 text-white font-medium"
             class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
             :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
-            :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Spotify Library' : ''"
+            :title="!isMobileOpen && (isCollapsed || isMobile) ? item.Title : ''"
           >
             <img :src="getIcon(key, item)" class="w-4 h-4" />
             <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">
@@ -214,7 +214,7 @@ const closeMobileMenu = () => {
           active-class="bg-slate-800 text-white font-medium"
           class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
-          :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Multi-Room (Snapcast)' : ''"
+          :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Multi-Room' : ''"
         >
           <svg
             class="w-4 h-4 text-indigo-400 shrink-0"
@@ -230,7 +230,7 @@ const closeMobileMenu = () => {
             />
           </svg>
           <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate"
-            >Multi-Room (Snapcast)</span
+            >Multi-Room</span
           >
         </router-link>
 
