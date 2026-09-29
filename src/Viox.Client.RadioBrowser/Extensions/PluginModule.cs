@@ -1,7 +1,5 @@
 namespace Viox.Client.RadioBrowser.Extensions;
 
-using System.Threading.Tasks;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,17 +9,18 @@ using Viox.Core.Services;
 
 public class PluginModule : IPluginModule
 {
-    public async Task ConfigureServices(IServiceCollection services, IConfiguration configuration)
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        string radioBrowserUrl = await RadioBrowserApiServerResolver.GetFastestApiUrlAsync();
+        services.AddSingleton<RadioBrowserInitializer>();
+        services.AddHostedService<RadioBrowserInitializerHostedService>();
 
         services.AddKeyedSingleton<IMediaMetaDataConverterBase, RadioBrowserStationConverter>("radiobrowser:station");
         services.AddKeyedSingleton<IMediaSource, RadioBrowserMediaSource>("radiobrowser");
 
         services.AddRadioBrowserClient(options =>
-            {
-                options.UserAgent = "Viox.net";
-                options.BaseAddress = new Uri($"https://{radioBrowserUrl}");
-            });
+        {
+            options.UserAgent = "Viox.net";
+            // BaseAddress will be filled in later
+        });
     }
 }
