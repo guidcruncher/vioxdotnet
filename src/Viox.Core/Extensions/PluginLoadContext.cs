@@ -1,4 +1,4 @@
-namespace Viox.Core.Services;
+namespace Viox.Core.Extensions;
 
 using System;
 using System.Reflection;
