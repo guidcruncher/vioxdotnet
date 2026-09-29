@@ -7,9 +7,6 @@ import type { MediaMetaData } from '@/types/api'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaCard from '@/components/MediaCard.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
-import { useQueryParams } from '@/composables/useQueryParams'
-
-const queryParams = useQueryParams()
 
 const STORAGE_KEY = 'library_view_mode'
 
@@ -17,19 +14,21 @@ const router = useRouter()
 const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
-const sources = ref<Record<string, string> | null>(null)
-const sourceProps = ref<Record<string, Record<string, string>> | null>(null)
+
+const sources = ref<Record<string, string>>({})
+const sourceProps = ref<Record<string, Record<string, string>>>({})
 
 const viewMode = ref<'grid' | 'list'>('grid')
 
 const { data: items, loading, execute } = api.createApiState<MediaMetaData[]>()
+
+let currentRequestId = 0
 
 const hasResults = computed(() => {
   if (!items.value) return false
   return items.value.length > 0
 })
 
-// Writable computed property to support two-way v-model binding with MediaTrackList
 const itemList = computed<MediaMetaData[]>({
   get: () => items.value || [],
   set: (val) => {
@@ -48,6 +47,15 @@ const pageTitle = computed<string>(() => {
   return ''
 })
 
+function getCleanQueryParams(query: typeof route.query): Record<string, string> {
+  const cleanParams: Record<string, string> = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (value === null || value === undefined) continue
+    cleanParams[key] = Array.isArray(value) ? value[0] || '' : value
+  }
+  return cleanParams
+}
+
 function toggleViewMode(mode: 'grid' | 'list') {
   viewMode.value = mode
   localStorage.setItem(STORAGE_KEY, mode)
@@ -56,11 +64,8 @@ function toggleViewMode(mode: 'grid' | 'list') {
 async function viewItem(item: MediaMetaData) {
   if (!item.uri) return
 
-  const props = sourceProps.value ? sourceProps.value[item.uri.source] : {}
-
   switch (item.uri.source) {
     case 'playlist':
-      break
     case 'file':
       break
     case 'spotify':
@@ -76,11 +81,9 @@ async function viewItem(item: MediaMetaData) {
           break
       }
       return
-      break
     case 'podverse':
       router.push(`/podverse/podcast/${encodeURIComponent(item.rawUri)}`)
       return
-      break
     case 'radiobrowser':
       break
     case 'tunein':
@@ -88,12 +91,11 @@ async function viewItem(item: MediaMetaData) {
         router.push(`/library/${item.uri.source}?id=${encodeURIComponent(item.uri.id)}`)
       }
       return
-      break
   }
 
-  if (item.uri.secondaryId && item.uri.secondaryId != '') {
+  if (item.uri.secondaryId && item.uri.secondaryId !== '') {
     router.push(
-      `/library/${item.uri.source}?type=${encodeURIComponent(item.uri.type)}&id=${encodeURIComponent(item.uri.id)}&secondaryid={encodeURIComponent(item.uri.secondaryId}`
+      `/library/${item.uri.source}?type=${encodeURIComponent(item.uri.type)}&id=${encodeURIComponent(item.uri.id)}&secondaryid=${encodeURIComponent(item.uri.secondaryId)}`
     )
     return
   }
@@ -110,37 +112,30 @@ async function playItem(item: MediaMetaData) {
 }
 
 async function loadLibrary() {
-  if (loading.value) {
-    return
-  }
-
   const sourceParam = route.params.source
   const source = Array.isArray(sourceParam) ? sourceParam[0] : sourceParam
 
   if (!source) return
 
-  const props = sourceProps.value ? sourceProps.value[source] : {}
-  await execute(() => api.library.getLibrary(source, queryParams.value))
+  const requestId = ++currentRequestId
+
+  await execute(async () => {
+    const queryParams = getCleanQueryParams(route.query)
+    const response = await api.library.getLibrary(source, queryParams)
+    if (requestId !== currentRequestId) {
+      return items.value || []
+    }
+    return response
+  })
 }
 
 async function refresh() {
   await loadLibrary()
 }
 
-// Watch for route parameter changes when switching between dynamic sources
 watch(
-  () => route.params.source,
-  async (newSource) => {
-    if (newSource) {
-      await loadLibrary()
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  () => route.query.id,
-  async (newId) => {
+  () => route.fullPath,
+  async () => {
     await loadLibrary()
   },
   { immediate: true }
@@ -152,15 +147,21 @@ onMounted(async () => {
     viewMode.value = savedMode
   }
 
-  sources.value = await api.library.getInstalledSources()
-  sourceProps.value = await api.library.getSourceProps()
-
-  await loadLibrary()
+  try {
+    const [installedSources, props] = await Promise.all([
+      api.library.getInstalledSources(),
+      api.library.getSourceProps(),
+    ])
+    sources.value = installedSources || {}
+    sourceProps.value = props || {}
+  } catch (err) {
+    console.error('Failed to load source metadata:', err)
+  }
 })
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" v-if="sources">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Section Header with View Mode Controls -->
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
