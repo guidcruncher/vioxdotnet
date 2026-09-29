@@ -7,6 +7,9 @@ import type { MediaMetaData } from '@/types/api'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaCard from '@/components/MediaCard.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
+import { useQueryParams } from '@/composables/useQueryParams'
+
+const queryParams = useQueryParams()
 
 const STORAGE_KEY = 'library_view_mode'
 
@@ -15,6 +18,7 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 const sources = ref<Record<string, string> | null>(null)
+const sourceProps = ref<Record<string, Record<string, string>> | null>(null)
 
 const viewMode = ref<'grid' | 'list'>('grid')
 
@@ -52,6 +56,8 @@ function toggleViewMode(mode: 'grid' | 'list') {
 async function viewItem(item: MediaMetaData) {
   if (!item.uri) return
 
+  const props = sourceProps.value ? sourceProps.value[item.uri.source] : {}
+
   switch (item.uri.source) {
     case 'playlist':
       break
@@ -69,15 +75,32 @@ async function viewItem(item: MediaMetaData) {
           router.push(`/spotify/playlist/${encodeURIComponent(item.uri.id)}`)
           break
       }
+      return
       break
     case 'podverse':
       router.push(`/podverse/podcast/${encodeURIComponent(item.rawUri)}`)
+      return
       break
     case 'radiobrowser':
       break
     case 'tunein':
+      if (item.uri.type !== 'station') {
+        router.push(`/library/${item.uri.source}?id=${encodeURIComponent(item.uri.id)}`)
+      }
+      return
       break
   }
+
+  if (item.uri.secondaryId && item.uri.secondaryId != '') {
+    router.push(
+      `/library/${item.uri.source}?type=${encodeURIComponent(item.uri.type)}&id=${encodeURIComponent(item.uri.id)}&secondaryid={encodeURIComponent(item.uri.secondaryId}`
+    )
+    return
+  }
+
+  router.push(
+    `/library/${item.uri.source}?type=${encodeURIComponent(item.uri.type)}&id=${encodeURIComponent(item.uri.id)}`
+  )
 }
 
 async function playItem(item: MediaMetaData) {
@@ -87,12 +110,17 @@ async function playItem(item: MediaMetaData) {
 }
 
 async function loadLibrary() {
+  if (loading.value) {
+    return
+  }
+
   const sourceParam = route.params.source
   const source = Array.isArray(sourceParam) ? sourceParam[0] : sourceParam
 
   if (!source) return
 
-  await execute(() => api.library.getLibrary(source, {}))
+  const props = sourceProps.value ? sourceProps.value[source] : {}
+  await execute(() => api.library.getLibrary(source, queryParams.value))
 }
 
 async function refresh() {
@@ -102,11 +130,20 @@ async function refresh() {
 // Watch for route parameter changes when switching between dynamic sources
 watch(
   () => route.params.source,
-  (newSource) => {
+  async (newSource) => {
     if (newSource) {
-      loadLibrary()
+      await loadLibrary()
     }
-  }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => route.query.id,
+  async (newId) => {
+    await loadLibrary()
+  },
+  { immediate: true }
 )
 
 onMounted(async () => {
@@ -116,8 +153,9 @@ onMounted(async () => {
   }
 
   sources.value = await api.library.getInstalledSources()
+  sourceProps.value = await api.library.getSourceProps()
 
-  loadLibrary()
+  await loadLibrary()
 })
 </script>
 

@@ -100,25 +100,19 @@ const isFavouriteSupported = computed(() => {
 <template>
   <div
     v-if="item"
-    class="flex flex-col w-full bg-slate-900/90 hover:bg-slate-800/80 
-           border border-slate-800/80 hover:border-indigo-500/50 
-           p-2 rounded-xl cursor-pointer transition-all duration-200 
-           group shadow-md hover:shadow-indigo-500/10 snap-start"
+    class="flex flex-col w-full bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800/80 hover:border-indigo-500/50 p-2 rounded-xl cursor-pointer transition-all duration-200 group shadow-md hover:shadow-indigo-500/10 snap-start"
   >
     <!-- Artwork + Text -->
     <div class="flex flex-col w-full">
-      
       <!-- Square Artwork Container -->
       <div
-        class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden 
-               shadow-inner mb-2.5 flex items-center justify-center"
+        class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-inner mb-2.5 flex items-center justify-center"
       >
         <img
           :src="imageUrl"
           :alt="item.title || 'Media Artwork'"
           @error="handleImageError"
-          class="max-w-full max-h-full object-contain rounded-lg 
-                 transition-transform duration-300 group-hover:scale-105"
+          class="max-w-full max-h-full object-contain rounded-lg transition-transform duration-300 group-hover:scale-105"
         />
       </div>
 
@@ -127,8 +121,10 @@ const isFavouriteSupported = computed(() => {
         <p class="font-bold text-xs sm:text-sm text-slate-100 truncate" :title="item.title">
           {{ item.title || 'Untitled' }}
         </p>
-        <p class="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5"
-           :title="item.artist || item.album">
+        <p
+          class="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5"
+          :title="item.artist || item.album"
+        >
           {{ item.artist || item.album || 'Unknown Artist' }}
         </p>
       </div>
@@ -136,15 +132,11 @@ const isFavouriteSupported = computed(() => {
 
     <!-- Action Buttons -->
     <div class="mt-3 flex items-center gap-1.5 w-full">
-      
       <!-- Play -->
       <button
         v-if="isPlayable"
         @click="playItem"
-        class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 
-               text-xs text-white py-2 sm:py-1.5 px-3 rounded-lg font-medium 
-               transition shadow-sm shadow-indigo-600/30 flex items-center 
-               justify-center space-x-1.5 min-w-0"
+        class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-xs text-white py-2 sm:py-1.5 px-3 rounded-lg font-medium transition shadow-sm shadow-indigo-600/30 flex items-center justify-center space-x-1.5 min-w-0"
       >
         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
           <path d="M8 5v14l11-7z" />
@@ -156,10 +148,7 @@ const isFavouriteSupported = computed(() => {
       <button
         v-else
         @click="viewItem"
-        class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 
-               text-xs text-slate-200 py-2 sm:py-1.5 px-3 rounded-lg font-medium 
-               border border-slate-700 transition flex items-center justify-center 
-               space-x-1.5 min-w-0"
+        class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs text-slate-200 py-2 sm:py-1.5 px-3 rounded-lg font-medium border border-slate-700 transition flex items-center justify-center space-x-1.5 min-w-0"
       >
         <span class="truncate">View</span>
       </button>
@@ -177,21 +166,13 @@ const isFavouriteSupported = computed(() => {
             : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-700',
         ]"
       >
-        <svg
-          v-if="isFavourite"
-          class="w-3.5 h-3.5 fill-current"
-          viewBox="0 0 24 24"
-        >
+        <svg v-if="isFavourite" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
           <path
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
           />
         </svg>
 
-        <svg
-          v-else
-          class="w-3.5 h-3.5 fill-none stroke-current stroke-2"
-          viewBox="0 0 24 24"
-        >
+        <svg v-else class="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
           <path
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
           />
@@ -200,4 +181,3 @@ const isFavouriteSupported = computed(() => {
     </div>
   </div>
 </template>
-
