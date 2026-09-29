@@ -1,7 +1,8 @@
-// File: RadioBrowserMediaSource.cs
 namespace Viox.Client.RadioBrowser.Services;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +21,9 @@ public class RadioBrowserMediaSource : IMediaSource
     private readonly ILogger<RadioBrowserMediaSource> _logger;
     private readonly IRadioBrowserClient _client;
     private readonly IMemoryCacheService<List<MediaMetaData>> _cache;
+    private readonly MediaMetaDataConverterResolver _resolver;
 
-    public string Source { get => "radiobrowser"; }
+    public string Source => "radiobrowser";
     public string Title => "RadioBrowser";
 
     public Dictionary<string, string> Props { get; } = new(StringComparer.OrdinalIgnoreCase)
@@ -34,14 +36,60 @@ public class RadioBrowserMediaSource : IMediaSource
     public RadioBrowserMediaSource(
         IRadioBrowserClient client,
         IMemoryCacheService<List<MediaMetaData>> cache,
-      ILogger<RadioBrowserMediaSource> logger)
+        ILogger<RadioBrowserMediaSource> logger,
+        MediaMetaDataConverterResolver resolver)
     {
+        ArgumentNullException.ThrowIfNull(resolver);
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(logger);
         _client = client;
+        _resolver = resolver;
         _cache = cache;
         _logger = logger;
+    }
+
+    private static bool IsNumeric(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return double.TryParse(value, out _);
+    }
+
+    private List<MediaMetaData> GetCountries()
+    {
+        Dictionary<string, string> source = IsoCountryCodes.GetIso3166Codes();
+        List<MediaMetaData> res = new();
+
+        Dictionary<string, string> sorted = source
+            .Where(kvp => !IsNumeric(kvp.Key))
+            .OrderBy(kvp => kvp.Value)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        foreach (string key in sorted.Keys)
+        {
+            MediaUri uri = new()
+            {
+                Source = "radiobrowser",
+                Type = "link",
+                Id = key
+            };
+
+            res.Add(new()
+            {
+                Uri = uri,
+                Album = "",
+                Artist = "",
+                Url = key,
+                Title = sorted[key],
+                ImageUrl = "/radiobrowser.png"
+            });
+        }
+
+        return res;
     }
 
     public async Task<MediaMetaData?> ResolveMetaData(MediaUri? uri, CancellationToken ct = default)
@@ -65,16 +113,7 @@ public class RadioBrowserMediaSource : IMediaSource
             return null;
         }
 
-        MediaMetaData metaData = new()
-        {
-            Uri = mediaUri,
-            Title = station.Name ?? string.Empty,
-            Album = station.Country ?? string.Empty,
-            Artist = station.State ?? string.Empty,
-            Url = station.UrlResolved ?? station.Url ?? string.Empty,
-            ImageUrl = station.Favicon ?? string.Empty
-        };
-
+        MediaMetaData? metaData = _resolver.Convert(station);
         return metaData;
     }
 
@@ -82,15 +121,10 @@ public class RadioBrowserMediaSource : IMediaSource
     {
         IReadOnlyList<Station> res = await _client.GetStationsByNameExactAsync(query, options: null, cancellationToken: ct);
 
-        List<MediaMetaData> items = res.Select(station => new MediaMetaData()
-        {
-            Uri = station.Uri?.ParseMediaUri(),
-            Title = station.Name ?? string.Empty,
-            Album = station.Country ?? string.Empty,
-            Artist = station.State ?? string.Empty,
-            Url = station.UrlResolved ?? station.Url ?? string.Empty,
-            ImageUrl = station.Favicon ?? string.Empty
-        }).ToList();
+        List<MediaMetaData> items = res
+            .Select(station => _resolver.Convert(station))
+            .OfType<MediaMetaData>()
+            .ToList();
 
         int offset = (pageNumber - 1) * limit;
         return new PagedList<MediaMetaData>(items, offset, limit);
@@ -99,6 +133,22 @@ public class RadioBrowserMediaSource : IMediaSource
     public async Task<IList<MediaMetaData>> ReadAsync(Dictionary<string, object>? parameters, CancellationToken cancellationToken = default)
     {
         List<MediaMetaData> res = new();
+        string id = parameters?.GetValueOrDefault("id")?.ToString() ?? "";
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return GetCountries();
+        }
+
+        IReadOnlyList<Station> stations = await _client.GetStationsByCountryCodeAsync(id, null, cancellationToken);
+        if (stations is null)
+        {
+            return res;
+        }
+
+        res = _resolver.ConvertList(stations)
+            .OfType<MediaMetaData>()
+            .ToList();
 
         return res;
     }
