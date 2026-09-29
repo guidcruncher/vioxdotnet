@@ -40,7 +40,7 @@ LIBRESPOT_PID=$!
 
 # 3. Start Snapclient
 echo "Starting Snapclient..."
-snapclient --player alsa -s "hw:CARD=AUDIO,DEV=0" \
+snapclient --player alsa -s "default" \
     --hostID "viox-net" \
     --sampleformat "44100:16:*" \
     --logsink stdout \
