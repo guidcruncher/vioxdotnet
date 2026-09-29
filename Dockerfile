@@ -9,7 +9,7 @@ WORKDIR /src/AudioHub
 
 # Copy package manifests and restore dependencies to leverage layer caching
 COPY src/AudioHub/package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copy frontend source files and compile Vite build to ./src/AudioHub/wwwroot
 COPY src/AudioHub ./
