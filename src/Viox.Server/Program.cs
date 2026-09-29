@@ -3,14 +3,7 @@ namespace Viox.Server;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 
-using Viox.Client.Files.Extensions;
-using Viox.Client.Librespot.Extensions;
 using Viox.Client.Mpd.Extensions;
-using Viox.Client.Podverse.Extensions;
-using Viox.Client.RadioBrowser.Extensions;
-using Viox.Client.RadioBrowser.Services;
-using Viox.Client.Spotify.Extensions;
-using Viox.Client.TuneIn.Extensions;
 using Viox.Core.Extensions;
 using Viox.Server.Extensions;
 using Viox.Snapcast.Extensions;
@@ -38,58 +31,31 @@ public static class Program
             options.AddServerHeader = false;
         });
 
-        builder.Services.AddFileScanner(builder.Configuration);
-        builder.Services.AddM3uPlaylistParser(builder.Configuration);
-        builder.Services.AddM3uPlaylistProvider();
         builder.Services.AddAlsaAudioControls(builder.Configuration);
         builder.Services.AddUserAgentProvider(builder.Configuration);
         builder.Services.AddMemoryCaches(builder.Configuration);
         builder.Services.AddClientOptionsServices(builder.Configuration);
-
         builder.Services.AddFavoritesEngine(builder.Configuration);
-        builder.Services.AddMediaResolvers(builder.Configuration);
         builder.Services.AddAudioProxyServices(builder.Configuration);
-        builder.Services.AddPodcastEpisodeParser(builder.Configuration);
         builder.Services.AddCurrentMediaService(builder.Configuration);
 
-        // Audio output services
-        builder.Services.AddLibrespotClient(builder.Configuration);
         builder.Services.AddSnapcastClient(builder.Configuration);
-
         builder.Services.AddMpdClient(options =>
         {
             options.Host = "127.0.0.1";
             options.Port = 6600;
         });
 
-        // Audio Source services
-        builder.Services.AddPodverseClient(builder.Configuration);
-        builder.Services.AddSpotifyClient(builder.Configuration);
-
-        string radioBrowserUrl = await RadioBrowserApiServerResolver.GetFastestApiUrlAsync();
-        builder.Services.AddRadioBrowserClient(options =>
-            {
-                options.UserAgent = "Viox.net";
-                options.BaseAddress = new Uri($"https://{radioBrowserUrl}");
-            });
-
-        builder.Services.AddSpotifyClient(builder.Configuration);
-        builder.Services.AddTuneInClient(builder.Configuration);
         builder.Services.AddCoreServices(builder.Configuration);
         builder.Services.AddMediaSearchServices(builder.Configuration);
-
-        // Register APIs
-        builder.Services.AddFileAuthStore(options =>
-        {
-            options.FilePath = "/data/auth_token.json";
-            options.CreateDirectoryIfNotExists = true;
-        });
-
-        builder.Services.AddSpotifyAuthServices(builder.Configuration);
         builder.Services.AddUnifiedMediaPlayerControlSurface(builder.Configuration);
-        builder.Services.AddApi(builder.Configuration);
-
         builder.Services.AddPodcastDownloader(builder.Configuration);
+
+        builder.Services.AddStaticPluginModules(builder.Configuration);
+        builder.Services.AddDynamicPluginModules(builder.Configuration);
+        builder.Services.AddMediaResolver(builder.Configuration);
+
+        builder.Services.AddApi(builder.Configuration);
 
         // Register CORS service conditionally for Development mode only
         if (builder.Environment.IsDevelopment())
