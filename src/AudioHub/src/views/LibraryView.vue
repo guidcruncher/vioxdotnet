@@ -85,6 +85,10 @@ async function viewItem(item: MediaMetaData) {
       router.push(`/podverse/podcast/${encodeURIComponent(item.rawUri)}`)
       return
     case 'radiobrowser':
+      if (item.uri.type !== 'station') {
+        router.push(`/library/${item.uri.source}?id=${encodeURIComponent(item.uri.id)}`)
+      }
+      return
       break
     case 'tunein':
       if (item.uri.type !== 'station') {

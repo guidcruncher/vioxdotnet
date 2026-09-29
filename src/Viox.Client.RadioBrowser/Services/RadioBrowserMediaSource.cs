@@ -30,7 +30,7 @@ public class RadioBrowserMediaSource : IMediaSource
     {
         ["Title"] = "Radio Browser",
         ["Icon"] = "",
-        ["Url"] = "/radio?id=:defaultCountry"
+        ["Url"] = "/library/radiobrowser?id=:defaultCountry"
     };
 
     public RadioBrowserMediaSource(
