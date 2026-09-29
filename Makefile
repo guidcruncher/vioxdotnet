@@ -100,7 +100,6 @@ publish: ## Publish Development image to Docker Repository
 		--builder vioxdotnet-base-builder \
 		--file ./Dockerfile \
 		--tag ghcr.io/$(IMAGE_NAME):dev \
-		--tag docker.io/$(IMAGE_NAME):dev \
 		--progress=plain \
 		--push \
 		.
@@ -112,8 +111,6 @@ release: ## Publish Release image to Docker Repository
 		--builder vioxdotnet-base-builder \
 		--platform linux/arm64 \
 		--file ./Dockerfile \
-		--tag docker.io/$(IMAGE_NAME):latest \
-		--tag docker.io/$(IMAGE_NAME):dev \
 		--tag ghcr.io/$(IMAGE_NAME):latest \
 		--tag ghcr.io/$(IMAGE_NAME):dev \
 		--progress=plain \

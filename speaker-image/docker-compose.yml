@@ -4,7 +4,7 @@ networks:
 
 services:
   vioxdotnet-speaker:
-    image: guidcruncher/vioxdotnet-speaker:latest
+    image: ghcr.io/guidcruncher/vioxdotnet-speaker:latest
     build:
       context: .
       dockerfile: Dockerfile
