@@ -32,7 +32,7 @@ RUN find . -type f -name "Viox*.deps.json" -exec cp -t /app/publish/ {} +
 COPY --from=node-build /src/AudioHub/wwwroot /app/publish/wwwroot
 
 # Stage 3: Runtime Environment
-FROM guidcruncher/vioxdotnet-base AS final
+FROM ghcr.io/guidcruncher/vioxdotnet-base AS final
 
 LABEL org.opencontainers.image.source="https://github.com/guidcruncher/vioxdotnet"
 LABEL org.opencontainers.image.title="VioxDotNet Music Server"

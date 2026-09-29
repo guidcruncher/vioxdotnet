@@ -1,4 +1,4 @@
-FROM guidcruncher/vioxdotnet-base AS final
+FROM ghcr.io/guidcruncher/vioxdotnet-base AS final
 
 LABEL org.opencontainers.image.source="https://github.com/guidcruncher/vioxdotnet"
 LABEL org.opencontainers.image.title="VioxDotNet Speaker Image"
