@@ -14,18 +14,21 @@ const router = useRouter()
 const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
-const sources = ref<Record<string, string> | null>(null)
+
+const sources = ref<Record<string, string>>({})
+const sourceProps = ref<Record<string, Record<string, string>>>({})
 
 const viewMode = ref<'grid' | 'list'>('grid')
 
 const { data: items, loading, execute } = api.createApiState<MediaMetaData[]>()
+
+let currentRequestId = 0
 
 const hasResults = computed(() => {
   if (!items.value) return false
   return items.value.length > 0
 })
 
-// Writable computed property to support two-way v-model binding with MediaTrackList
 const itemList = computed<MediaMetaData[]>({
   get: () => items.value || [],
   set: (val) => {
@@ -44,6 +47,15 @@ const pageTitle = computed<string>(() => {
   return ''
 })
 
+function getCleanQueryParams(query: typeof route.query): Record<string, string> {
+  const cleanParams: Record<string, string> = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (value === null || value === undefined) continue
+    cleanParams[key] = Array.isArray(value) ? value[0] || '' : value
+  }
+  return cleanParams
+}
+
 function toggleViewMode(mode: 'grid' | 'list') {
   viewMode.value = mode
   localStorage.setItem(STORAGE_KEY, mode)
@@ -54,7 +66,6 @@ async function viewItem(item: MediaMetaData) {
 
   switch (item.uri.source) {
     case 'playlist':
-      break
     case 'file':
       break
     case 'spotify':
@@ -69,15 +80,33 @@ async function viewItem(item: MediaMetaData) {
           router.push(`/spotify/playlist/${encodeURIComponent(item.uri.id)}`)
           break
       }
-      break
+      return
     case 'podverse':
       router.push(`/podverse/podcast/${encodeURIComponent(item.rawUri)}`)
-      break
+      return
     case 'radiobrowser':
+      if (item.uri.type !== 'station') {
+        router.push(`/library/${item.uri.source}?id=${encodeURIComponent(item.uri.id)}`)
+      }
+      return
       break
     case 'tunein':
-      break
+      if (item.uri.type !== 'station') {
+        router.push(`/library/${item.uri.source}?id=${encodeURIComponent(item.uri.id)}`)
+      }
+      return
   }
+
+  if (item.uri.secondaryId && item.uri.secondaryId !== '') {
+    router.push(
+      `/library/${item.uri.source}?type=${encodeURIComponent(item.uri.type)}&id=${encodeURIComponent(item.uri.id)}&secondaryid=${encodeURIComponent(item.uri.secondaryId)}`
+    )
+    return
+  }
+
+  router.push(
+    `/library/${item.uri.source}?type=${encodeURIComponent(item.uri.type)}&id=${encodeURIComponent(item.uri.id)}`
+  )
 }
 
 async function playItem(item: MediaMetaData) {
@@ -92,21 +121,28 @@ async function loadLibrary() {
 
   if (!source) return
 
-  await execute(() => api.library.getLibrary(source, {}))
+  const requestId = ++currentRequestId
+
+  await execute(async () => {
+    const queryParams = getCleanQueryParams(route.query)
+    const response = await api.library.getLibrary(source, queryParams)
+    if (requestId !== currentRequestId) {
+      return items.value || []
+    }
+    return response
+  })
 }
 
 async function refresh() {
   await loadLibrary()
 }
 
-// Watch for route parameter changes when switching between dynamic sources
 watch(
-  () => route.params.source,
-  (newSource) => {
-    if (newSource) {
-      loadLibrary()
-    }
-  }
+  () => route.fullPath,
+  async () => {
+    await loadLibrary()
+  },
+  { immediate: true }
 )
 
 onMounted(async () => {
@@ -115,14 +151,21 @@ onMounted(async () => {
     viewMode.value = savedMode
   }
 
-  sources.value = await api.library.getInstalledSources()
-
-  loadLibrary()
+  try {
+    const [installedSources, props] = await Promise.all([
+      api.library.getInstalledSources(),
+      api.library.getSourceProps(),
+    ])
+    sources.value = installedSources || {}
+    sourceProps.value = props || {}
+  } catch (err) {
+    console.error('Failed to load source metadata:', err)
+  }
 })
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" v-if="sources">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Section Header with View Mode Controls -->
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
