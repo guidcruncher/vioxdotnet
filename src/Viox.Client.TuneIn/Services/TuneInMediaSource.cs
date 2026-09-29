@@ -22,7 +22,7 @@ public class TuneInMediaSource : IMediaSource
     {
         ["Title"] = "TuneIn",
         ["Icon"] = "",
-        ["Url"] = "/tunein?id=:tuneInRegion"
+        ["Url"] = "/library/tunein?id=:tuneInRegion"
     };
 
     public TuneInMediaSource(
