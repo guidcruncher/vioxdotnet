@@ -1,4 +1,4 @@
-namespace Viox.Server.Configuration;
+namespace Viox.Core.Configuration;
 
 /// <summary>
 /// Options for configuring ALSA equalizer and mixer controls based on system configuration.

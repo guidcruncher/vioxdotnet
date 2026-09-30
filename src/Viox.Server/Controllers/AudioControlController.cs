@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 
-using Viox.Server.Models;
-using Viox.Server.Services;
+using Viox.Core.Models;
+using Viox.Core.Services;
 
 namespace Viox.Server.Controllers;
 
@@ -15,14 +15,18 @@ public sealed class AudioControlController : ControllerBase
 {
     private readonly IAlsaEqualizerService _equalizerService;
     private readonly ILogger<AudioControlController> _logger;
+    private readonly IEqPresetLoader _presetLoader;
 
     public AudioControlController(
+        IEqPresetLoader presetLoader,
         IAlsaEqualizerService equalizerService,
         ILogger<AudioControlController> logger)
     {
         ArgumentNullException.ThrowIfNull(equalizerService);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(presetLoader);
 
+        _presetLoader = presetLoader;
         _equalizerService = equalizerService;
         _logger = logger;
     }
@@ -93,6 +97,51 @@ public sealed class AudioControlController : ControllerBase
         _logger.LogInformation("HTTP PUT request received for updating all equalizer bands.");
         await _equalizerService.SetAllBandsAsync(request.Percentages, cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("equalizer/presets")]
+    [ProducesResponseType(typeof(IReadOnlyDictionary<string, int[]>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IReadOnlyDictionary<string, int[]>>> GetAllPresets(CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyDictionary<string, int[]> presets = await _presetLoader.LoadPresetsAsync(cancellationToken);
+            return Ok(presets);
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogError(ex, "Presets JSON file was not found.");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Preset configuration file is missing.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving EQ presets.");
+            return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while loading presets.");
+        }
+    }
+
+    [HttpGet("equalizer/presets/{name}")]
+    [ProducesResponseType(typeof(int[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<int[]>> GetPresetByName(string name, CancellationToken cancellationToken)
+    {
+        try
+        {
+            int[]? preset = await _presetLoader.GetPresetByNameAsync(name, cancellationToken);
+            if (preset is null)
+            {
+                return NotFound($"Preset '{name}' was not found.");
+            }
+
+            return Ok(preset);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving EQ preset for name: {PresetName}", name);
+            return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while loading the preset.");
+        }
     }
 
 }
