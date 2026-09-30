@@ -80,7 +80,7 @@ public sealed class LibrespotEventState
                 CurrentDurationMs = metadata.Duration;
 
                 PlaybackState state = GetPlaybackState(metadata);
-                Task.Run(async () => await _eventService.PublishPlaybackStatusAsync(state)).GetAwaiter().GetResult();
+                // Task.Run(async () => await _eventService.PublishPlaybackStatusAsync(state)).GetAwaiter().GetResult();
                 break;
             case WillPlayEvent willPlay:
                 PendingTrack = willPlay;
