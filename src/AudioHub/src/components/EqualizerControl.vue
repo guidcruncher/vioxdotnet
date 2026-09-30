@@ -7,6 +7,8 @@ import type { EqualizerBand } from '@/types/api'
 const api = useApiClient()
 
 const bands = ref<EqualizerBand[]>([])
+const presets = ref<Record<string, number[]>>({})
+const selectedPreset = ref<string>('')
 const isLoading = ref<boolean>(true)
 const isSaving = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
@@ -15,9 +17,9 @@ const linkChannels = ref<boolean>(true)
 // Debounce timer registry per band index using browser-safe return type
 const debounceTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
-// Load equalizer bands on mount
+// Load equalizer bands and dynamic presets on mount
 onMounted(async () => {
-  await fetchBands()
+  await Promise.all([fetchBands(), fetchPresets()])
 })
 
 async function fetchBands(): Promise<void> {
@@ -32,10 +34,21 @@ async function fetchBands(): Promise<void> {
   }
 }
 
+async function fetchPresets(): Promise<void> {
+  try {
+    presets.value = await api.equalizer.getPresets()
+  } catch (err) {
+    errorMessage.value = 'Failed to load equalizer presets.'
+  }
+}
+
 // Handle slider changes for individual bands with debounced API execution
 function handleBandInput(index: number, channel: 'left' | 'right', value: number): void {
   const band = bands.value.find((b) => b.index === index)
   if (!band) return
+
+  // Unset selected preset if user manually adjusts sliders
+  selectedPreset.value = ''
 
   if (channel === 'left') {
     band.leftPercentage = value
@@ -73,20 +86,15 @@ function handleBandInput(index: number, channel: 'left' | 'right', value: number
   debounceTimers.set(index, timer)
 }
 
-// Preset application with batch API update
-async function applyPreset(presetName: 'flat' | 'bass' | 'treble' | 'vocal'): Promise<void> {
-  if (bands.value.length === 0) return
+// Dynamic preset application triggered by dropdown selection
+async function handlePresetChange(event: Event): Promise<void> {
+  const presetName = (event.target as HTMLSelectElement).value
+  if (!presetName || bands.value.length === 0) return
 
-  const presets: Record<string, number[]> = {
-    flat: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
-    bass: [80, 75, 70, 60, 50, 50, 50, 50, 50, 50],
-    treble: [50, 50, 50, 50, 50, 60, 70, 75, 80, 85],
-    vocal: [40, 45, 50, 65, 75, 75, 65, 50, 45, 40],
-  }
+  const targetValues = presets.value[presetName]
+  if (!targetValues) return
 
-  const targetValues = presets[presetName] || presets.flat
-
-  // Map values onto local bands array
+  // Map preset values onto local bands array
   bands.value.forEach((band, idx) => {
     const val = targetValues[idx] ?? 50
     band.leftPercentage = val
@@ -106,59 +114,84 @@ async function applyPreset(presetName: 'flat' | 'bass' | 'treble' | 'vocal'): Pr
   }
 }
 
+// Capitalize preset names for UI display (e.g. 'bass' -> 'Bass')
+function formatPresetName(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
 // Reset all bands to default mid point (50%)
 async function resetEqualizer(): Promise<void> {
-  await applyPreset('flat')
+  selectedPreset.value = ''
+  bands.value.forEach((band) => {
+    band.leftPercentage = 50
+    band.rightPercentage = 50
+  })
+
+  isSaving.value = true
+  errorMessage.value = null
+  try {
+    const allPercentages = bands.value.map(() => 50)
+    await api.equalizer.setEqualizerBands(allPercentages)
+  } catch (err) {
+    errorMessage.value = 'Failed to reset equalizer.'
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>
 
 <template>
   <div
-    class="w-full max-w-4xl rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-100 shadow-2xl"
+    class="w-full max-w-4xl rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-6 text-slate-100 shadow-2xl"
   >
     <!-- Header -->
     <div
-      class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4"
+      class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4"
     >
       <div>
         <h2 class="text-xl font-bold tracking-wide text-white">10-Band Equalizer</h2>
         <p class="text-xs text-slate-400">Adjust audio frequencies and balance</p>
       </div>
 
-      <!-- Quick Preset Controls -->
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50"
-          :disabled="isLoading || isSaving"
-          @click="applyPreset('flat')"
-        >
-          Flat
-        </button>
-        <button
-          type="button"
-          class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50"
-          :disabled="isLoading || isSaving"
-          @click="applyPreset('bass')"
-        >
-          Bass Boost
-        </button>
-        <button
-          type="button"
-          class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50"
-          :disabled="isLoading || isSaving"
-          @click="applyPreset('treble')"
-        >
-          Treble Boost
-        </button>
-        <button
-          type="button"
-          class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50"
-          :disabled="isLoading || isSaving"
-          @click="applyPreset('vocal')"
-        >
-          Vocal
-        </button>
+      <!-- Responsive EQ Preset Dropdown -->
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <label for="eq-preset" class="text-xs font-medium text-slate-400 shrink-0"> Preset: </label>
+        <div class="relative w-full sm:w-48">
+          <select
+            id="eq-preset"
+            v-model="selectedPreset"
+            class="w-full appearance-none rounded-lg border border-slate-700 bg-slate-800 py-2 pl-3 pr-8 text-xs font-medium text-slate-200 transition-colors hover:border-slate-600 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="isLoading || isSaving || Object.keys(presets).length === 0"
+            @change="handlePresetChange"
+          >
+            <option value="" disabled selected>Select preset...</option>
+            <option
+              v-for="(values, name) in presets"
+              :key="name"
+              :value="name"
+              class="bg-slate-900 text-slate-200"
+            >
+              {{ formatPresetName(name) }}
+            </option>
+          </select>
+
+          <!-- Custom SVG Chevron Arrow -->
+          <div
+            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400"
+          >
+            <svg
+              class="h-4 w-4 fill-current"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -181,14 +214,14 @@ async function resetEqualizer(): Promise<void> {
     <!-- Equalizer Grid -->
     <div v-else-if="bands.length > 0" class="flex flex-col gap-6">
       <!-- Sliders Container -->
-      <div class="grid grid-cols-5 gap-4 sm:grid-cols-10">
+      <div class="grid grid-cols-5 gap-2 sm:gap-4 sm:grid-cols-10">
         <div
           v-for="band in bands"
           :key="band.index"
-          class="flex flex-col items-center rounded-lg bg-slate-950/50 p-3 transition-colors hover:bg-slate-950"
+          class="flex flex-col items-center rounded-lg bg-slate-950/50 p-2 sm:p-3 transition-colors hover:bg-slate-950"
         >
           <!-- Value Readout -->
-          <span class="mb-2 font-mono text-[11px] text-cyan-400">
+          <span class="mb-2 font-mono text-[10px] sm:text-[11px] text-cyan-400">
             {{
               linkChannels
                 ? `${band.leftPercentage}%`
@@ -229,9 +262,6 @@ async function resetEqualizer(): Promise<void> {
           <!-- Frequency Label -->
           <span class="mt-3 text-xs font-semibold text-slate-300">
             {{ band.frequencyLabel }}
-          </span>
-          <span class="text-[10px] text-slate-500">
-            {{ band.controlName }}
           </span>
         </div>
       </div>

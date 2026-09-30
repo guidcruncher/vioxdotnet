@@ -1,4 +1,4 @@
-namespace Viox.Server.Services;
+namespace Viox.Core.Services;
 
 /// <summary>
 /// Abstraction for executing underlying process commands.

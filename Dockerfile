@@ -40,6 +40,7 @@ LABEL org.opencontainers.image.description="VioxDotNet Music Server system"
 LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
+ENV AUDIO_CARD="hw:CARD=AUDIO,DEV=0"
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 ENV AudioSettings__DefaultOutputDevice=equal
@@ -54,7 +55,8 @@ COPY ./config/config.yml /etc/golibrespot/config.yml
 COPY ./config/config.yml /etc/golibrespot/config-template.yml
 COPY ./config/mpd.conf /etc/mpd.conf
 COPY ./config/asound.conf /etc/asound.conf
-
+COPY ./config/eq.json /etc/eq.json
+ 
 RUN chmod -R 755 /music
 
 # Copy published .NET application

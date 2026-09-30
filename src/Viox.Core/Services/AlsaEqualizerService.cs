@@ -1,11 +1,12 @@
 using System.Text.RegularExpressions;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Viox.Server.Configuration;
-using Viox.Server.Models;
+using Viox.Core.Configuration;
+using Viox.Core.Models;
 
-namespace Viox.Server.Services;
+namespace Viox.Core.Services;
 
 /// <summary>
 /// Service for managing ALSA equalizer (alsaequal) controls via amixer.

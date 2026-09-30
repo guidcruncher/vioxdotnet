@@ -75,6 +75,8 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
   // Equalizer API Module
   // ==========================================
   const equalizer = {
+    getPresets: (): Promise<Record<string, number[]>> =>
+      transport.request<Record<string, number[]>>('/api/v1/audiocontrol/equalizer/presets'),
     getEqualizerBands: (): Promise<EqualizerBand[]> =>
       transport.request<EqualizerBand[]>('/api/v1/audiocontrol/equalizer/bands'),
     setEqualizerBand: (index: number, value: number) =>

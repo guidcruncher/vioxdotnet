@@ -1,10 +1,11 @@
 using System.Diagnostics;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Viox.Server.Configuration;
+using Viox.Core.Configuration;
 
-namespace Viox.Server.Services;
+namespace Viox.Core.Services;
 
 /// <summary>
 /// Executes system commands for ALSA tools (e.g., amixer).

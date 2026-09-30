@@ -31,6 +31,7 @@ public static class Program
             options.AddServerHeader = false;
         });
 
+        builder.Services.AddEqPresetServices(builder.Configuration);
         builder.Services.AddAlsaAudioControls(builder.Configuration);
         builder.Services.AddUserAgentProvider(builder.Configuration);
         builder.Services.AddMemoryCaches(builder.Configuration);

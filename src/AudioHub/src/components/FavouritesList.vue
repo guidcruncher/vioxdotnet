@@ -135,7 +135,7 @@ onMounted(() => {
       <div
         v-for="n in 6"
         :key="n"
-        class="flex-none w-24 sm:w-28 bg-slate-900 border border-slate-800/80 p-2 rounded-xl animate-pulse"
+        class="flex-none w-32 sm:w-36 bg-slate-900 border border-slate-800/80 p-2 rounded-xl animate-pulse"
       >
         <div class="w-full aspect-square bg-slate-800 rounded-lg mb-2"></div>
         <div class="h-2.5 bg-slate-800 rounded w-3/4 mb-1"></div>
@@ -175,24 +175,24 @@ onMounted(() => {
         v-for="item in favourites"
         :key="item.rawUri"
         @click="handlePlay(item)"
-        class="flex-none w-24 sm:w-28 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800/80 hover:border-indigo-500/50 p-2 rounded-xl flex flex-col justify-between cursor-pointer transition-all duration-200 group shadow-md hover:shadow-indigo-500/10 snap-start focus:outline-none"
+        class="flex-none w-32 sm:w-36 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800/80 hover:border-indigo-500/50 p-2 rounded-xl flex flex-col justify-between cursor-pointer transition-all duration-200 group shadow-md hover:shadow-indigo-500/10 snap-start focus:outline-none"
         tabindex="0"
         role="button"
         @keydown.enter="handlePlay(item)"
         @keydown.space.prevent="handlePlay(item)"
       >
-        <!-- Artwork Container -->
+        <!-- Artwork Container (MediaCard-like sizing & behaviour) -->
         <div
-          class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden relative mb-1.5 shadow-inner"
+          class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-inner mb-2.5 flex items-center justify-center relative"
         >
           <img
             :src="item.imageUrl || defaultImage"
             :alt="item.title || 'Favourite Artwork'"
             @error="handleImageError"
-            class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+            class="max-w-full max-h-full object-contain rounded-lg transition-transform duration-300 group-hover:scale-105"
           />
 
-          <!-- Hover Overlay Play Icon -->
+          <!-- Hover Overlay Play Icon (existing favourite UI kept) -->
           <div
             class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
           >
@@ -206,16 +206,16 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Track / Station Details -->
+        <!-- Track / Station Details (match MediaCard text scale) -->
         <div class="w-full min-w-0">
           <p
-            class="font-bold text-[10px] sm:text-[11px] text-slate-100 group-hover:text-indigo-400 transition-colors truncate w-full"
+            class="font-bold text-xs sm:text-sm text-slate-100 group-hover:text-indigo-400 transition-colors truncate w-full"
             :title="item.title"
           >
             {{ item.title || 'Untitled' }}
           </p>
           <p
-            class="text-[9px] sm:text-[10px] text-slate-400 truncate w-full mt-0.5"
+            class="text-[11px] sm:text-xs text-slate-400 truncate w-full mt-0.5"
             :title="item.artist || item.album"
           >
             {{ item.artist || item.album || 'Unknown Artist' }}

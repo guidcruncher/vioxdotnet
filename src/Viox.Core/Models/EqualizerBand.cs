@@ -1,4 +1,4 @@
-namespace Viox.Server.Models;
+namespace Viox.Core.Models;
 
 /// <summary>
 /// Represents a single equalizer frequency band and its current state.

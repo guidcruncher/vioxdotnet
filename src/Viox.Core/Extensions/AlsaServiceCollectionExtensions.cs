@@ -1,7 +1,10 @@
-using Viox.Server.Configuration;
-using Viox.Server.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Viox.Server.Extensions;
+using Viox.Core.Configuration;
+using Viox.Core.Services;
+
+namespace Viox.Core.Extensions;
 
 /// <summary>
 /// Dependency Injection extensions for ALSA control services.

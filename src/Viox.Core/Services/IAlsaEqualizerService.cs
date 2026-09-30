@@ -1,6 +1,6 @@
-using Viox.Server.Models;
+using Viox.Core.Models;
 
-namespace Viox.Server.Services;
+namespace Viox.Core.Services;
 
 /// <summary>
 /// Service contract for controlling ALSA equalizer (alsaequal) settings.
