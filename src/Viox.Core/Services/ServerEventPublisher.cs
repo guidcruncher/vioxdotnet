@@ -29,7 +29,11 @@ public sealed class ServerEventPublisher : IServerEventPublisher
 
     public ValueTask PublishAsync<T>(string eventType, T payload, CancellationToken cancellationToken = default)
     {
-        string json = JsonSerializer.Serialize(payload);
+        string json = JsonSerializer.Serialize(payload, new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase
+        });
         return PublishAsync(eventType, json, cancellationToken);
     }
 

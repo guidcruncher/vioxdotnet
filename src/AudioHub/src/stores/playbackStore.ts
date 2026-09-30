@@ -4,10 +4,14 @@ import type { MediaMetaData, PlaybackState } from '@/types/api'
 import { useApiClient } from '@/composables/useApiClient'
 import { useServerEvents, type EventPayload } from '@/composables/useServerEvents'
 
+export interface ExtendedPlaybackState extends Omit<PlaybackState, 'track'> {
+  track: MediaMetaData | null
+}
+
 export const usePlaybackStore = defineStore('playback', () => {
   const api = useApiClient()
 
-  const state = ref<PlaybackState>({
+  const state = ref<ExtendedPlaybackState>({
     playing: false,
     activeBackend: '',
     track: null,
@@ -15,25 +19,23 @@ export const usePlaybackStore = defineStore('playback', () => {
     isLive: false,
   })
 
-  // Initialize SSE composable with unknown type to allow flexible event payloads
   const sse = useServerEvents({
     autoReconnect: true,
     immediate: true,
   })
 
-  // Helper to normalize state and determine isLive flag
-  const applyStateUpdates = (incomingState: PlaybackState) => {
+  const applyStateUpdates = (incomingState: Partial<PlaybackState>) => {
     const hasTrackUri = incomingState.track?.uri?.type
     const isLive = hasTrackUri ? hasTrackUri === 'station' : (state.value.isLive ?? false)
 
     state.value = {
       ...state.value,
       ...incomingState,
+      track: incomingState.track !== undefined ? (incomingState.track ?? null) : state.value.track,
       isLive,
     }
   }
 
-  // Helper to handle track-specific event payloads
   const handleTrackEvent = (trackPayload: MediaMetaData | undefined, playingState?: boolean) => {
     const track = trackPayload || null
     const isLive = track?.uri?.type === 'station'
@@ -46,22 +48,29 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
-  // Handle incoming status event (returns full PlaybackState)
-  sse.on('status', (payload: EventPayload<unknown>) => {
-    const data = payload.data as PlaybackState | undefined
-    if (data) {
-      applyStateUpdates(data)
+  sse.on('status', (payload: EventPayload) => {
+    try {
+      if (payload.message) {
+        const data = JSON.parse(payload.message) as PlaybackState
+        applyStateUpdates(data)
+      }
+    } catch (err) {
+      console.error('Failed to parse status event message:', err)
     }
   })
 
-  // Handle incoming track/media events (return MediaMetaData)
   const trackEventTypes = ['play', 'pause', 'previous', 'next', 'trackchanged']
   trackEventTypes.forEach((eventType) => {
-    sse.on(eventType, (payload: EventPayload<unknown>) => {
-      const data = payload.data as MediaMetaData | undefined
-      const playingState = eventType === 'play' ? true : eventType === 'pause' ? false : undefined
+    sse.on(eventType, (payload: EventPayload) => {
+      try {
+        const data = payload.message ? (JSON.parse(payload.message) as MediaMetaData) : undefined
 
-      handleTrackEvent(data, playingState)
+        const playingState = eventType === 'play' ? true : eventType === 'pause' ? false : undefined
+
+        handleTrackEvent(data, playingState)
+      } catch (err) {
+        console.error(`Failed to parse ${eventType} event message:`, err)
+      }
     })
   })
 
