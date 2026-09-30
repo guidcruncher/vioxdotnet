@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading.Channels;
 
 using Microsoft.Extensions.Logging;
@@ -26,13 +27,19 @@ public sealed class ServerEventPublisher : IServerEventPublisher
 
     public int ActiveSubscriberCount => _subscribers.Count;
 
-    public async ValueTask PublishAsync(string eventType, string message, CancellationToken cancellationToken = default)
+    public ValueTask PublishAsync<T>(string eventType, T payload, CancellationToken cancellationToken = default)
+    {
+        string json = JsonSerializer.Serialize(payload);
+        return PublishAsync(eventType, json, cancellationToken);
+    }
+
+    public ValueTask PublishAsync(string eventType, string message, CancellationToken cancellationToken = default)
     {
         // 1. Short-circuit immediately if no clients are connected
         if (_subscribers.IsEmpty)
         {
             _logger.LogDebug("Skipped publishing event '{EventType}': No active subscribers connected.", eventType);
-            return;
+            return ValueTask.CompletedTask;
         }
 
         EventPayload payload = new(
@@ -59,7 +66,7 @@ public sealed class ServerEventPublisher : IServerEventPublisher
             }
         }
 
-        await ValueTask.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     public async IAsyncEnumerable<EventPayload> SubscribeAsync([EnumeratorCancellation] CancellationToken cancellationToken)

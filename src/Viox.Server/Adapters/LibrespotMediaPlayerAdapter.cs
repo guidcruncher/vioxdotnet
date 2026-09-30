@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Viox.Client.Librespot.Models;
 using Viox.Client.Librespot.Services;
 using Viox.Server.Abstraction;
+using Viox.Core.Services;
 
 /// <summary>
 /// Adapter wrapping ILibrespotRestClient to support Spotify playback.

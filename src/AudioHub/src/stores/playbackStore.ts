@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { PlaybackState } from '@/types/api'
+import type { MediaMetaData, PlaybackState } from '@/types/api'
 import { useApiClient } from '@/composables/useApiClient'
+import { useServerEvents, type EventPayload } from '@/composables/useServerEvents'
 
 export const usePlaybackStore = defineStore('playback', () => {
   const api = useApiClient()
+
   const state = ref<PlaybackState>({
     playing: false,
     activeBackend: '',
@@ -12,20 +14,61 @@ export const usePlaybackStore = defineStore('playback', () => {
     position: 0,
     isLive: false,
   })
-  let pollingTimer: number | null = null
 
-  async function pollState() {
+  // Initialize SSE composable with unknown type to allow flexible event payloads
+  const sse = useServerEvents({
+    autoReconnect: true,
+    immediate: true,
+  })
+
+  // Helper to normalize state and determine isLive flag
+  const applyStateUpdates = (incomingState: PlaybackState) => {
+    const hasTrackUri = incomingState.track?.uri?.type
+    const isLive = hasTrackUri ? hasTrackUri === 'station' : (state.value.isLive ?? false)
+
+    state.value = {
+      ...state.value,
+      ...incomingState,
+      isLive,
+    }
+  }
+
+  // Helper to handle track-specific event payloads
+  const handleTrackEvent = (trackPayload: MediaMetaData | undefined, playingState?: boolean) => {
+    const track = trackPayload || null
+    const isLive = track?.uri?.type === 'station'
+
+    state.value = {
+      ...state.value,
+      track,
+      isLive,
+      ...(playingState !== undefined && { playing: playingState }),
+    }
+  }
+
+  // Handle incoming status event (returns full PlaybackState)
+  sse.on('status', (payload: EventPayload<unknown>) => {
+    const data = payload.data as PlaybackState | undefined
+    if (data) {
+      applyStateUpdates(data)
+    }
+  })
+
+  // Handle incoming track/media events (return MediaMetaData)
+  const trackEventTypes = ['play', 'pause', 'previous', 'next', 'trackchanged']
+  trackEventTypes.forEach((eventType) => {
+    sse.on(eventType, (payload: EventPayload<unknown>) => {
+      const data = payload.data as MediaMetaData | undefined
+      const playingState = eventType === 'play' ? true : eventType === 'pause' ? false : undefined
+
+      handleTrackEvent(data, playingState)
+    })
+  })
+
+  async function syncState() {
     const res = await api.media.getPlaybackState()
     if (res) {
-      if (res.track && res.track.uri) {
-        if (res.track.uri.type == 'station') {
-          res.isLive = true
-        } else {
-          res.isLive = false
-        }
-      }
-
-      state.value = res
+      applyStateUpdates(res)
     } else {
       state.value = {
         playing: false,
@@ -37,40 +80,30 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
-  function startPolling() {
-    pollState()
-    if (!pollingTimer) {
-      pollingTimer = window.setInterval(pollState, 3000)
-    }
-  }
-
   async function togglePlayPause() {
     if (state.value.playing) {
       await api.media.pause()
     } else {
       await api.media.resume()
     }
-    await pollState()
   }
 
   async function next() {
     await api.media.next()
-    await pollState()
   }
 
   async function previous() {
     await api.media.previous()
-    await pollState()
   }
 
   async function playUri(uri: string) {
     await api.media.play({ uri })
-    await pollState()
   }
 
   return {
     state,
-    startPolling,
+    sse,
+    syncState,
     togglePlayPause,
     next,
     previous,

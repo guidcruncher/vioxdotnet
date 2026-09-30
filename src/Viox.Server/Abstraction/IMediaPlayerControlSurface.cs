@@ -22,5 +22,6 @@ public interface IMediaPlayerControlSurface
     Task SetVolumeAsync(int volumePercent, CancellationToken cancellationToken = default);
     Task<int> GetVolumeAsync(CancellationToken cancellationToken = default);
     Task<IMediaPlayerAdapter?> GetActivePlayerAsync(CancellationToken cancellationToken = default);
+    Task<PlaybackState> GetStatusAsync(CancellationToken cancellationToken = default);
 }
 

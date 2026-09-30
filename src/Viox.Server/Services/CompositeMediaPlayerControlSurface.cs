@@ -2,6 +2,7 @@ namespace Viox.Server.Services;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,15 +27,18 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     private readonly ICurrentMediaService _currentMedia;
     private readonly MediaSourceResolverService _mediaResolver;
     private readonly AudioCacheManager _cacheManager;
+    private readonly IMediaEventService _eventService;
 
     public CompositeMediaPlayerControlSurface(
-    AudioCacheManager cacheManager,
+        AudioCacheManager cacheManager,
         IEnumerable<IMediaPlayerAdapter> adapters,
         ICurrentMediaService currentMedia,
         MediaSourceResolverService mediaResolver,
         IOptions<MediaPlayerOptions> options,
+        IMediaEventService eventService,
         ILogger<CompositeMediaPlayerControlSurface> logger)
     {
+        _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
         _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         _mediaResolver = mediaResolver ?? throw new ArgumentNullException(nameof(mediaResolver));
         _currentMedia = currentMedia ?? throw new ArgumentNullException(nameof(currentMedia));
@@ -80,10 +84,11 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         if (targetAdapter.UseProxy && mediaUri.Source == "podverse")
         {
             string? localFilePath = await _cacheManager.GetOrDownloadAudioAsync(metaData.Url, metaData.ReleaseDate, cancellationToken);
-            if (string.IsNullOrEmpty(localFilePath) || !System.IO.File.Exists(localFilePath))
+            if (string.IsNullOrEmpty(localFilePath) || !File.Exists(localFilePath))
             {
                 return;
             }
+
             _logger.LogInformation("Playing local file '{File}'", localFilePath);
             await targetAdapter.PlayAsync(localFilePath, cancellationToken);
         }
@@ -99,45 +104,75 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             }
         }
 
+        await _eventService.PublishMediaActionAsync("play", metaData, cancellationToken);
         _lastActivePlayerName = targetAdapter.Name;
     }
 
     public MediaMetaData? GetCurrentTrack() => _currentMedia.CurrentMedia;
 
+    public async Task<PlaybackState> GetStatusAsync(CancellationToken cancellationToken = default)
+    {
+        PlaybackState state = new();
+        MediaMetaData? metaData = GetCurrentTrack();
+        IMediaPlayerAdapter? activePlayer = await GetActivePlayerAsync(cancellationToken);
+
+        if (activePlayer is not null)
+        {
+            state.ActiveBackend = activePlayer.Name;
+            state.Playing = true;
+            if (metaData is not null)
+            {
+                state.Track = metaData;
+                double? position = await activePlayer.GetPlaybackPositionAsync(cancellationToken);
+                state.Position = position ?? 0;
+                state.IsLive = state.Track.Duration is not null;
+            }
+        }
+
+        await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
+        return state;
+    }
+
     public async Task PauseAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.PauseAsync(cancellationToken);
+        await _eventService.PublishMediaActionAsync("pause", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task ResumeAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.ResumeAsync(cancellationToken);
+        await _eventService.PublishMediaActionAsync("resume", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.StopAsync(cancellationToken);
+        await _eventService.PublishMediaActionAsync("stop", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task SeekAsync(TimeSpan position, CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.SeekAsync(position, cancellationToken);
+        await _eventService.PublishMediaActionAsync("seek", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task NextAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.NextAsync(cancellationToken);
+        await _eventService.PublishMediaActionAsync("next", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task PreviousAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.PreviousAsync(cancellationToken);
+        await _eventService.PublishMediaActionAsync("previous", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task SetVolumeAsync(int volumePercent, CancellationToken cancellationToken = default)
@@ -164,7 +199,6 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
                 return adapter;
             }
         }
-
         return null;
     }
 

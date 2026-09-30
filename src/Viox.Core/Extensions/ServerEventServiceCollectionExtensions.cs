@@ -16,6 +16,7 @@ public static class ServerEventServiceCollectionExtensions
             configuration.GetSection(ServerEventOptions.SectionName));
 
         services.AddSingleton<IServerEventPublisher, ServerEventPublisher>();
+        services.AddTransient<IMediaEventService, MediaEventService>();
 
         return services;
     }
