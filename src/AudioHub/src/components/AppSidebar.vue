@@ -69,8 +69,8 @@ const toggleSidebar = () => {
 const getUrl = (source: string, item: Record<string, string>) => {
   let url = ''
 
-  if (item['Url'] && item['Url'] != '') {
-    url = item['Url']
+  if (item['url'] && item['url'] != '') {
+    url = item['url']
   } else {
     url = `/library/${source}`
   }
@@ -83,7 +83,7 @@ const getUrl = (source: string, item: Record<string, string>) => {
 const getIcon = (source: string, item: Record<string, string>) => {
   let icon = ''
 
-  if (item['Icon'] && item['Icon'] != '') {
+  if (item['icon'] && item['icon'] != '') {
     icon = item['icon']
   } else {
     icon = `/${source}.png`
@@ -178,11 +178,11 @@ const closeMobileMenu = () => {
             active-class="bg-slate-800 text-white font-medium"
             class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
             :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
-            :title="!isMobileOpen && (isCollapsed || isMobile) ? item.Title : ''"
+            :title="!isMobileOpen && (isCollapsed || isMobile) ? item.title : ''"
           >
             <img :src="getIcon(key, item)" class="w-4 h-4" />
             <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">
-              {{ item.Title }}
+              {{ item.title }}
             </span>
           </router-link>
         </template>

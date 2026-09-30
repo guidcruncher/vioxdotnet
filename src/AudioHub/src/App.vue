@@ -52,8 +52,6 @@ onMounted(async () => {
       return
     }
   }
-
-  store.startPolling()
 })
 </script>
 

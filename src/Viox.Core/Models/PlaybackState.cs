@@ -1,6 +1,4 @@
-using Viox.Core.Models;
-
-namespace Viox.Server.Models;
+namespace Viox.Core.Models;
 
 public class PlaybackState
 {

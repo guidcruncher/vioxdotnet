@@ -208,23 +208,7 @@ public sealed class MediaPlayerController : ControllerBase
     [ProducesResponseType(typeof(PlaybackState), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCurrentTrack(CancellationToken cancellationToken)
     {
-        PlaybackState state = new();
-        MediaMetaData? metaData = _controlSurface.GetCurrentTrack();
-        IMediaPlayerAdapter? activePlayer = await _controlSurface.GetActivePlayerAsync(cancellationToken);
-
-        if (activePlayer is not null)
-        {
-            state.ActiveBackend = activePlayer.Name;
-            state.Playing = true;
-            if (metaData is not null)
-            {
-                state.Track = metaData;
-                double? position = await activePlayer.GetPlaybackPositionAsync(cancellationToken);
-                state.Position = position ?? 0;
-                state.IsLive = state.Track.Duration is not null;
-            }
-        }
-
+        PlaybackState state = await _controlSurface.GetStatusAsync();
         return Ok(state);
     }
 }
