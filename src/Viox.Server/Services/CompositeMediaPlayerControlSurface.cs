@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,6 +30,8 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     private readonly MediaSourceResolverService _mediaResolver;
     private readonly AudioCacheManager _cacheManager;
     private readonly IMediaEventService _eventService;
+
+    private string lastState = string.Empty;
 
     public CompositeMediaPlayerControlSurface(
         AudioCacheManager cacheManager,
@@ -113,6 +117,14 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     public async Task<PlaybackState> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         PlaybackState state = new();
+        JsonSerializerOptions options = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = false
+        };
+
         MediaMetaData? metaData = GetCurrentTrack();
         IMediaPlayerAdapter? activePlayer = await GetActivePlayerAsync(cancellationToken);
 
@@ -127,9 +139,24 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
                 state.Position = position ?? 0;
                 state.IsLive = state.Track.Duration is not null;
             }
+
+            string currentState = JsonSerializer.Serialize(state, options);
+            if (currentState != lastState)
+            {
+                await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
+                lastState = currentState;
+            }
+        }
+        else
+        {
+            state.Playing = false;
+            if (!string.IsNullOrEmpty(lastState))
+            {
+                await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
+                lastState = string.Empty;
+            }
         }
 
-        await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
         return state;
     }
 

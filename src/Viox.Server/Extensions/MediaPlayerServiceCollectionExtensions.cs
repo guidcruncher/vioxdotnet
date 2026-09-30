@@ -28,6 +28,8 @@ public static class MediaPlayerServiceCollectionExtensions
         services.AddSingleton<IMediaPlayerAdapter, MpdMediaPlayerAdapter>();
         services.AddSingleton<IMediaPlayerControlSurface, CompositeMediaPlayerControlSurface>();
 
+        services.AddHostedService<MediaPlayerPollingService>();
+
         return services;
     }
 }

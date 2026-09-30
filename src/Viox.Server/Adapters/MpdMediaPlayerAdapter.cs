@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 
 using Viox.Client.Mpd.Services;
 using Viox.Server.Abstraction;
-using Viox.Core.Services;
 
 /// <summary>
 /// Adapter wrapping IMpdClient for video, local audio, and general network media streams.
