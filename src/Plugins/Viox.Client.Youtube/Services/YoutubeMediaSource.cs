@@ -20,6 +20,7 @@ public class YoutubeMediaSource : IMediaSource
     private readonly ILogger<YoutubeMediaSource> _logger;
     private readonly IYoutubeMusicClient _client;
     private readonly MediaMetaDataConverterResolver _resolver;
+    private readonly IMemoryCacheService<List<MediaMetaData>> _cache;
 
     public string Source { get => "youtube"; }
     public string Title => "Youtube Music";
@@ -34,17 +35,36 @@ public class YoutubeMediaSource : IMediaSource
     public YoutubeMediaSource(
         IYoutubeMusicClient client,
         ILogger<YoutubeMediaSource> logger,
+        IMemoryCacheService<List<MediaMetaData>> cache,
         MediaMetaDataConverterResolver resolver)
     {
         ArgumentNullException.ThrowIfNull(resolver);
         ArgumentNullException.ThrowIfNull(client);
+   ArgumentNullException.ThrowIfNull(cache);
+
+        _cache = cache;
         _client = client;
         _resolver = resolver;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<MediaMetaData?> ResolveMetaData(MediaUri? uri, CancellationToken ct = default)
+    public async Task<MediaMetaData?> ResolveMetaData(MediaUri? uri, CancellationToken cancellationToken = default)
     {
+        if (uri is null)
+        {
+            return null;
+        }
+
+
+        bool existsBefore = await _cache.ExistsAsync("youtube.search", cancellationToken);
+        if (existsBefore)
+        {
+            List<MediaMetaData>? cachedRes = await _cache.GetAsync("youtube.search", cancellationToken);
+            if (cachedRes is not null)
+            {
+                return cachedRes.FirstOrDefault(t => t.RawUri == $"youtube:track:{uri.Id}");
+            }
+        }
         return null;
     }
 
@@ -63,7 +83,7 @@ public class YoutubeMediaSource : IMediaSource
         }
 
         var items = _resolver.ConvertList(results);
-
+        await _cache.SetAsync("youtube.search", items.ToList(), absoluteExpiration: TimeSpan.FromHours(1), cancellationToken: ct);
         return new PagedList<MediaMetaData>(items, items.Count(), 0, limit);
     }
 
