@@ -148,6 +148,7 @@ public class RadioBrowserMediaSource : IMediaSource
 
         res = _resolver.ConvertList(stations)
             .OfType<MediaMetaData>()
+        .OrderBy(t => t.Title)
             .ToList();
 
         return res;
@@ -157,4 +158,10 @@ public class RadioBrowserMediaSource : IMediaSource
     {
         return new List<MediaMetaData>();
     }
+
+    public async Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default)
+    {
+        return input.Url;
+    }
+
 }

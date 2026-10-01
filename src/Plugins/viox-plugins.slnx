@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="Viox.Client.Youtube/Viox.Client.Youtube.csproj" Type="9a19103f-16f7-4668-be54-9a1e7a4f7556">
+    <Configuration Platform="Debug|Any CPU" />
+    <Configuration Platform="Release|Any CPU" />
+  </Project>
+</Solution>

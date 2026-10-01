@@ -36,4 +36,7 @@ public interface IMediaSource
     /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     /// <returns>A collection of media metadata items.</returns>
     Task<IList<MediaMetaData>> ReadAsync(Dictionary<string, object>? parameters, CancellationToken cancellationToken = default);
+
+    Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default);
+
 }

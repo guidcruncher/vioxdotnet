@@ -115,9 +115,12 @@ public class PodverseMediaSource : IMediaSource
             return new PagedList<MediaMetaData>();
         }
 
-        List<MediaMetaData> items = res.Items?.OfType<Podcast>()
-            .Select(podcast => MapToMediaMetaData(podcast))
-            .ToList() ?? [];
+        List<MediaMetaData> items = res.Items?
+            .OfType<Podcast>()
+            .Select(p => _resolver.Convert(p))
+            .OfType<MediaMetaData>()   // removes nulls AND fixes the type
+            .ToList()
+            ?? [];
 
         int offset = (pageNumber - 1) * limit;
         return new PagedList<MediaMetaData>(items, res.TotalCount, offset, items.Count);
@@ -209,4 +212,10 @@ public class PodverseMediaSource : IMediaSource
 
         return items;
     }
+
+    public async Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default)
+    {
+        return input.Url;
+    }
+
 }

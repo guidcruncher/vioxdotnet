@@ -457,4 +457,10 @@ public class SpotifyMediaSource : IMediaSource
 
         return res;
     }
+
+    public async Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default)
+    {
+        if (input.Uri is null) { return string.Empty; }
+        return input.Uri.Id;
+    }
 }

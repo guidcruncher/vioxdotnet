@@ -67,4 +67,10 @@ public class FileMediaSource : IMediaSource
     {
         return new List<MediaMetaData>();
     }
+
+    public async Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default)
+    {
+        return input.Url;
+    }
+
 }

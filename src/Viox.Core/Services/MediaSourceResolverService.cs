@@ -1,4 +1,3 @@
-
 // File: MediaSourceResolver.cs
 namespace Viox.Core.Services;
 
@@ -35,6 +34,18 @@ public class MediaSourceResolverService
         {
             _logger.LogInformation("Found {Count} IMediaSource implementations.", count);
         }
+    }
+
+    public async Task<string> GetPlayBackUrl(MediaMetaData input, CancellationToken ct = default)
+    {
+        if (input.Uri is null) { return input.Url; }
+
+        IMediaSource? source = ResolveMediaSource(input.Uri.Source);
+        if (source is null)
+        {
+            return input.Url;
+        }
+        return await source.GetPlaybackUrl(input, ct);
     }
 
     public async Task<MediaMetaData?> ResolveMetaData(MediaUri? uri, CancellationToken ct)

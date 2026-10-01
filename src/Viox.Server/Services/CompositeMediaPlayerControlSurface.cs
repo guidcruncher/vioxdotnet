@@ -82,12 +82,14 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             await currentActive.StopAsync(cancellationToken);
         }
 
+        string playBackUrl = await _mediaResolver.GetPlayBackUrl(metaData, cancellationToken);
+
         _currentMedia.SetCurrentMedia(metaData);
-        _logger.LogInformation("Dispatching play command for URI '{Uri}', URL '{Url}' to engine '{Engine}'.", uri, metaData.Url, targetAdapter.Name);
+        _logger.LogInformation("Dispatching play command for URI '{Uri}', URL '{Url}' to engine '{Engine}'.", uri, playBackUrl, targetAdapter.Name);
 
         if (targetAdapter.UseProxy && mediaUri.Source == "podverse")
         {
-            string? localFilePath = await _cacheManager.GetOrDownloadAudioAsync(metaData.Url, metaData.ReleaseDate, cancellationToken);
+            string? localFilePath = await _cacheManager.GetOrDownloadAudioAsync(playBackUrl, metaData.ReleaseDate, cancellationToken);
             if (string.IsNullOrEmpty(localFilePath) || !File.Exists(localFilePath))
             {
                 return;
@@ -104,7 +106,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             }
             else
             {
-                await targetAdapter.PlayAsync(metaData.Url, cancellationToken);
+                await targetAdapter.PlayAsync(playBackUrl, cancellationToken);
             }
         }
 

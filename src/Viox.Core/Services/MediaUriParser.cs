@@ -11,8 +11,7 @@ using Viox.Core.Models;
 /// </summary>
 public static class MediaUriParser
 {
-    private static readonly string[] validSources = ["spotify", "tunein", "radiobrowser", "podverse", "playlist", "file"];
-    private static readonly string[] validTypes = ["album", "track", "episode", "podcast", "show", "station", "playlist", "link", "media", "item "];
+    private static readonly string[] validTypes = ["album", "track", "episode", "podcast", "show", "station", "playlist", "link", "media", "item"];
 
     /// <summary>
     /// Parses a formatted media URI string into a <see cref="MediaUri"/> instance.
@@ -31,11 +30,6 @@ public static class MediaUriParser
         string[] segments = uri.Split(":");
 
         if (segments.Length < 3 || segments.Length > 4)
-        {
-            return null;
-        }
-
-        if (!validSources.Contains(segments[0]))
         {
             return null;
         }
@@ -82,10 +76,7 @@ public static class MediaUriParser
         {
             return null;
         }
-        if (!validSources.Contains(segments[0]))
-        {
-            return null;
-        }
+
         if (!validTypes.Contains(segments[1]))
         {
             return null;
