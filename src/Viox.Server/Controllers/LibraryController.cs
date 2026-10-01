@@ -136,7 +136,7 @@ public class LibraryController : ControllerBase
         IList<MediaMetaData> res = await library.ReadAsync(filters, cancellationToken);
         if (res is null || res.Count == 0)
         {
-	    return Ok(new List<MediaMetaData>());
+            return Ok(new List<MediaMetaData>());
         }
 
         return Ok(res);

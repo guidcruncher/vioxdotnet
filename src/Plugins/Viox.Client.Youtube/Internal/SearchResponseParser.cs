@@ -1,6 +1,8 @@
+// /home/jcrocker/src/viox.net/src/Plugins/Viox.Client.Youtube/Internal/SearchResponseParser.cs
 using System.Globalization;
 using System.Text.Json;
-
+using Viox.Core.Models;
+using Viox.Core.Services;
 using Viox.Client.Youtube.Models;
 
 namespace Viox.Client.Youtube.Internal;
@@ -11,14 +13,12 @@ internal static class SearchResponseParser
     {
         var results = new List<YoutubeTrack>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
-
         foreach (var node in root.Descendants())
         {
             if (node.ValueKind != JsonValueKind.Object)
             {
                 continue;
             }
-
             if (node.TryGetProperty("musicResponsiveListItemRenderer", out var listItem))
             {
                 var parsed = ParseListItem(listItem);
@@ -36,7 +36,6 @@ internal static class SearchResponseParser
                 }
             }
         }
-
         return results;
     }
 
@@ -49,26 +48,24 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             var id = panel.GetPropertyOrNull("videoId")?.GetString()
                      ?? panel.GetPropertyOrNull("navigationEndpoint")
                          ?.GetPropertyOrNull("watchEndpoint")
                          ?.GetPropertyOrNull("videoId")
                          ?.GetString();
-
             if (!string.Equals(id, videoId, StringComparison.Ordinal))
             {
                 continue;
             }
-
             var title = panel.GetPropertyOrNull("title").ReadRunsText() ?? videoId;
             var artists = ExtractArtists(panel.GetPropertyOrNull("longBylineText") ?? panel.GetPropertyOrNull("shortBylineText"));
             var duration = DurationParser.TryParse(panel.GetPropertyOrNull("lengthText").ReadRunsText());
             var image = BestThumbnail(panel.GetPropertyOrNull("thumbnail")?.GetPropertyOrNull("thumbnails"));
             var (album, albumId) = ExtractAlbum(panel.GetPropertyOrNull("longBylineText"));
-
+            var uri = $"youtube:track:{videoId}";
             return new YoutubeTrack
             {
+                Uri = MediaUriParser.ParseMediaUriValue(uri),
                 VideoId = videoId,
                 Title = title,
                 Album = album,
@@ -80,7 +77,6 @@ internal static class SearchResponseParser
                 Kind = InferKind(panel)
             };
         }
-
         return null;
     }
 
@@ -95,10 +91,8 @@ internal static class SearchResponseParser
         {
             duration = TimeSpan.FromSeconds(seconds);
         }
-
         var thumbnails = details?.GetPropertyOrNull("thumbnail")?.GetPropertyOrNull("thumbnails");
         var image = BestThumbnail(thumbnails);
-
         var micro = root.GetPropertyOrNull("microformat")?.GetPropertyOrNull("playerMicroformatRenderer");
         var publishedText = micro?.GetPropertyOrNull("publishDate")?.GetString()
                             ?? micro?.GetPropertyOrNull("uploadDate")?.GetString();
@@ -107,7 +101,6 @@ internal static class SearchResponseParser
         {
             published = parsedDate;
         }
-
         var streamUrl = SelectAudioStreamUrl(root.GetPropertyOrNull("streamingData"));
         return (title, author, duration, published, image, streamUrl);
     }
@@ -120,7 +113,6 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             if (node.TryGetProperty("subtitle", out var subtitle))
             {
                 foreach (var (text, _, _, _) in ((JsonElement?)subtitle).ReadRuns())
@@ -132,7 +124,6 @@ internal static class SearchResponseParser
                     }
                 }
             }
-
             if (node.TryGetProperty("year", out var yearNode))
             {
                 var text = yearNode.ValueKind == JsonValueKind.Object
@@ -145,7 +136,6 @@ internal static class SearchResponseParser
                 }
             }
         }
-
         return null;
     }
 
@@ -158,19 +148,16 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             var title = chip.GetPropertyOrNull("text").ReadRunsText();
             if (!string.Equals(title, chipTitle, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
-
             return chip.GetPropertyOrNull("navigationEndpoint")
                 ?.GetPropertyOrNull("searchEndpoint")
                 ?.GetPropertyOrNull("params")
                 ?.GetString();
         }
-
         return null;
     }
 
@@ -182,18 +169,15 @@ internal static class SearchResponseParser
         {
             return null;
         }
-
         var columns = item.GetPropertyOrNull("flexColumns");
         var title = ReadColumnText(columns, 0) ?? videoId;
         var subtitleRuns = ReadColumnRuns(columns, 1);
-
         var artists = new List<string>();
         string? album = null;
         string? albumId = null;
         TimeSpan? duration = null;
         DateOnly? releaseDate = null;
         var kind = YoutubeMusicResultKind.Song;
-
         foreach (var (text, pageType, browseId, _) in subtitleRuns)
         {
             var trimmed = text.Trim();
@@ -201,72 +185,62 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             if (DurationParser.LooksLikeDuration(trimmed))
             {
                 duration = DurationParser.TryParse(trimmed);
                 continue;
             }
-
             if (LooksLikeViews(trimmed) || LooksLikeLikes(trimmed))
             {
                 continue;
             }
-
             if (string.Equals(pageType, "MUSIC_PAGE_TYPE_ALBUM", StringComparison.OrdinalIgnoreCase))
             {
                 album = trimmed;
                 albumId = browseId;
                 continue;
             }
-
             if (string.Equals(pageType, "MUSIC_PAGE_TYPE_ARTIST", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(pageType, "MUSIC_PAGE_TYPE_USER_CHANNEL", StringComparison.OrdinalIgnoreCase))
             {
                 artists.Add(trimmed);
                 continue;
             }
-
             if (string.Equals(trimmed, "Song", StringComparison.OrdinalIgnoreCase))
             {
                 kind = YoutubeMusicResultKind.Song;
                 continue;
             }
-
             if (string.Equals(trimmed, "Video", StringComparison.OrdinalIgnoreCase))
             {
                 kind = YoutubeMusicResultKind.Video;
                 continue;
             }
-
             if (string.Equals(trimmed, "Episode", StringComparison.OrdinalIgnoreCase))
             {
                 kind = YoutubeMusicResultKind.Episode;
                 continue;
             }
-
             if (TryParseLooseDate(trimmed, out var date))
             {
                 releaseDate = date;
                 continue;
             }
-
             if (artists.Count == 0 && pageType is null && album is null && !LooksLikeCategory(trimmed))
             {
                 artists.Add(trimmed);
             }
         }
-
         var image = BestThumbnail(
             item.GetPropertyOrNull("thumbnail")
                 ?.GetPropertyOrNull("musicThumbnailRenderer")
                 ?.GetPropertyOrNull("thumbnail")
                 ?.GetPropertyOrNull("thumbnails"));
-
         var isExplicit = item.ToString().Contains("MUSIC_EXPLICIT_BADGE", StringComparison.Ordinal);
-
+        var uri = $"youtube:track:{videoId}";
         return new YoutubeTrack
         {
+                Uri = MediaUriParser.ParseMediaUriValue(uri),
             VideoId = videoId,
             Title = title,
             Album = album,
@@ -292,12 +266,10 @@ internal static class SearchResponseParser
                               ?.GetString())
                           .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id))
                       ?? FindFirstVideoId(card);
-
         if (string.IsNullOrWhiteSpace(videoId))
         {
             return null;
         }
-
         var title = card.GetPropertyOrNull("title").ReadRunsText() ?? videoId;
         var subtitleRuns = ((JsonElement?)card.GetPropertyOrNull("subtitle")).ReadRuns();
         var artists = ExtractArtists(card.GetPropertyOrNull("subtitle"));
@@ -309,7 +281,6 @@ internal static class SearchResponseParser
                 ?.GetPropertyOrNull("musicThumbnailRenderer")
                 ?.GetPropertyOrNull("thumbnail")
                 ?.GetPropertyOrNull("thumbnails"));
-
         var kind = YoutubeMusicResultKind.Video;
         foreach (var (text, _, _, _) in subtitleRuns)
         {
@@ -318,9 +289,10 @@ internal static class SearchResponseParser
                 kind = YoutubeMusicResultKind.Song;
             }
         }
-
+        var uri = $"youtube:track:{videoId}";
         return new YoutubeTrack
         {
+                Uri = MediaUriParser.ParseMediaUriValue(uri),
             VideoId = videoId,
             Title = title,
             Artists = artists,
@@ -341,14 +313,12 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             if (string.Equals(pageType, "MUSIC_PAGE_TYPE_ARTIST", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(pageType, "MUSIC_PAGE_TYPE_USER_CHANNEL", StringComparison.OrdinalIgnoreCase))
             {
                 artists.Add(trimmed);
             }
         }
-
         if (artists.Count == 0)
         {
             foreach (var (text, pageType, _, _) in byline.ReadRuns())
@@ -367,7 +337,6 @@ internal static class SearchResponseParser
                 }
             }
         }
-
         return artists;
     }
 
@@ -380,7 +349,6 @@ internal static class SearchResponseParser
                 return (text.Trim(), browseId);
             }
         }
-
         return (null, null);
     }
 
@@ -392,7 +360,6 @@ internal static class SearchResponseParser
             ?.GetPropertyOrNull("watchEndpointMusicConfig")
             ?.GetPropertyOrNull("musicVideoType")
             ?.GetString();
-
         return type switch
         {
             "MUSIC_VIDEO_TYPE_ATV" => YoutubeMusicResultKind.Song,
@@ -415,13 +382,11 @@ internal static class SearchResponseParser
         {
             return [];
         }
-
         var array = columns.Value.EnumerateArray().ToList();
         if (index >= array.Count)
         {
             return [];
         }
-
         var textNode = array[index]
             .GetPropertyOrNull("musicResponsiveListItemFlexColumnRenderer")
             ?.GetPropertyOrNull("text");
@@ -443,7 +408,6 @@ internal static class SearchResponseParser
                 }
             }
         }
-
         return null;
     }
 
@@ -453,7 +417,6 @@ internal static class SearchResponseParser
         {
             return null;
         }
-
         string? best = null;
         var bestArea = -1;
         foreach (var thumb in thumbnails.Value.EnumerateArray())
@@ -463,7 +426,6 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             var width = thumb.GetPropertyOrNull("width")?.GetInt32() ?? 0;
             var height = thumb.GetPropertyOrNull("height")?.GetInt32() ?? 0;
             var area = width * height;
@@ -473,7 +435,6 @@ internal static class SearchResponseParser
                 best = url;
             }
         }
-
         return best;
     }
 
@@ -483,7 +444,6 @@ internal static class SearchResponseParser
         {
             return null;
         }
-
         JsonElement? best = null;
         var bestBitrate = -1;
         foreach (var name in new[] { "adaptiveFormats", "formats" })
@@ -493,7 +453,6 @@ internal static class SearchResponseParser
             {
                 continue;
             }
-
             foreach (var format in formats.Value.EnumerateArray())
             {
                 var mime = format.GetPropertyOrNull("mimeType")?.GetString() ?? string.Empty;
@@ -501,14 +460,12 @@ internal static class SearchResponseParser
                 {
                     continue;
                 }
-
                 var bitrate = format.GetPropertyOrNull("bitrate")?.GetInt32() ?? 0;
                 var url = format.GetPropertyOrNull("url")?.GetString();
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     continue;
                 }
-
                 if (bitrate > bestBitrate)
                 {
                     bestBitrate = bitrate;
@@ -516,7 +473,6 @@ internal static class SearchResponseParser
                 }
             }
         }
-
         return best?.GetPropertyOrNull("url")?.GetString();
     }
 
@@ -536,13 +492,11 @@ internal static class SearchResponseParser
         {
             return true;
         }
-
         if (DateOnly.TryParseExact(text, ["MMM d, yyyy", "MMM dd, yyyy", "d MMM yyyy", "yyyy"],
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
         {
             return true;
         }
-
         date = default;
         return false;
     }

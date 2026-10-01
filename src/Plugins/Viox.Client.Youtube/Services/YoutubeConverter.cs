@@ -24,11 +24,9 @@ public sealed class YoutubeConverter : IMediaMetaDataConverter<YoutubeTrack>
 
     public MediaMetaData Convert(YoutubeTrack input)
     {
-        string uri = "{Source}:{Type}:{input.VideoId}";
-
         MediaMetaData metaData = new()
         {
-            Uri = uri.ParseMediaUri(),
+            Uri = input.Uri,
             Title = input.Title ?? string.Empty,
             Album = input.Album ?? string.Empty,
             Artist = input.Artists is not null ? string.Join(", ", input.Artists) : string.Empty,

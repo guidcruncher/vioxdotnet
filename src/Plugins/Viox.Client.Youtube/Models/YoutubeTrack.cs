@@ -1,10 +1,14 @@
 namespace Viox.Client.Youtube.Models;
 
+using Viox.Core.Models;
+
 /// <summary>
 /// Catalog metadata for a YouTube Music track, shaped for MPD queueing and tagging.
 /// </summary>
 public sealed record YoutubeTrack
 {
+    public required MediaUri Uri { get; set; }
+
     /// <summary>YouTube video / track id.</summary>
     public required string VideoId { get; init; }
 
