@@ -28,25 +28,25 @@ public sealed class YtDlpStreamExtractor : IYtDlpStreamExtractor
     public async Task<YtDlpMediaStream> ExtractStreamAsync(string youtubeUrl, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(youtubeUrl);
-
-        // --get-url (-g) fetches direct stream URL
-        // --user-agent fetches exact User-Agent string used during request
-        string arguments = $"-g --user-agent -f \"{youtubeUrl}\"";
-
         _logger.LogInformation("Executing yt-dlp to resolve stream URL for: {Url}", youtubeUrl);
 
-        using var process = new Process
+        var startInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = _options.ExecutablePath,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            FileName = _options.ExecutablePath,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
+
+        // Safe argument passing without string escaping issues
+        startInfo.ArgumentList.Add("-g");
+        startInfo.ArgumentList.Add("--user-agent");
+        startInfo.ArgumentList.Add("-f");
+        startInfo.ArgumentList.Add("ba[protocol^=http]/bestaudio[protocol^=http]");
+        startInfo.ArgumentList.Add(youtubeUrl);
+
+        using var process = new Process { StartInfo = startInfo };
 
         try
         {
