@@ -1,11 +1,11 @@
 SOLUTION = viox-plugin.sln
 
 
-.PHONY: help build test restore
+.PHONY: help build test restore deploy clean
 
 default: help
 
-help: ## Show command usage and description format
+help: ## Show command usage and description format deploy
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
@@ -22,3 +22,11 @@ build: ## Build the plugins
 
 format: ## Formats the code
 	dotnet format ./viox-plugins.sln
+
+clean: ## Cleans the solution
+	dotnet clean ./viox-plugins.sln
+
+deploy: ## Deploys the Plugin
+	@find . -type f -name "*.dll" -not -path "../../../runtime/plugins/*" -exec sudo cp -f {} "../../../runtime/plugins/" \;
+	@find . -type f -name "*.dll" -not -path "../../../runtime/plugins/*" -exec sudo cp -f {} "../../../runtime/plugins/" \;
+	@sudo rm  ../../../runtime/plugins/Viox.Core.*
