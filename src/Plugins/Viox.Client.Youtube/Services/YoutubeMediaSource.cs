@@ -21,7 +21,7 @@ public class YoutubeMediaSource : IMediaSource
     private readonly IYoutubeMusicClient _client;
     private readonly MediaMetaDataConverterResolver _resolver;
     private readonly IMemoryCacheService<List<MediaMetaData>> _cache;
-
+    private readonly IYtDlpStreamExtractor _ytdlp;
     public string Source { get => "youtube"; }
     public string Title => "Youtube Music";
 
@@ -33,6 +33,7 @@ public class YoutubeMediaSource : IMediaSource
     };
 
     public YoutubeMediaSource(
+        IYtDlpStreamExtractor ytdlp,
         IYoutubeMusicClient client,
         ILogger<YoutubeMediaSource> logger,
         IMemoryCacheService<List<MediaMetaData>> cache,
@@ -41,7 +42,9 @@ public class YoutubeMediaSource : IMediaSource
         ArgumentNullException.ThrowIfNull(resolver);
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(ytdlp);
 
+        _ytdlp = ytdlp;
         _cache = cache;
         _client = client;
         _resolver = resolver;
@@ -70,6 +73,17 @@ public class YoutubeMediaSource : IMediaSource
 
     public async Task<PagedList<MediaMetaData>> Query(string query, int pageNumber, int limit, CancellationToken ct = default)
     {
+        string key = $"youtube-search-{query}";
+        bool existsBefore = await _cache.ExistsAsync(key, ct);
+        if (existsBefore)
+        {
+            List<MediaMetaData>? cachedRes = await _cache.GetAsync(key, ct);
+            if (cachedRes is not null)
+            {
+                return new PagedList<MediaMetaData>(cachedRes, cachedRes.Count(), 0, limit);
+            }
+        }
+
         var results = await _client.SearchAsync(query, new MusicSearchOptions
         {
             Limit = limit,
@@ -83,6 +97,7 @@ public class YoutubeMediaSource : IMediaSource
         }
 
         var items = _resolver.ConvertList(results);
+        await _cache.SetAsync(key, items.ToList(), absoluteExpiration: TimeSpan.FromHours(1), cancellationToken: ct);
         await _cache.SetAsync("youtube.search", items.ToList(), absoluteExpiration: TimeSpan.FromHours(1), cancellationToken: ct);
         return new PagedList<MediaMetaData>(items, items.Count(), 0, limit);
     }
@@ -99,6 +114,16 @@ public class YoutubeMediaSource : IMediaSource
 
     public async Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default)
     {
-        return input.Url;
+        var ytUrl = await _ytdlp.ExtractStreamAsync(input.Url, ct);
+
+        if (ytUrl is null)
+        {
+            _logger.LogError("Unable to resolve Youtube URL for {Uri}", input.RawUri);
+            return input.Url;
+        }
+
+        _logger.LogInformation("Uri {RawUri} - Extracted Direct URL: {Url}", input.RawUri, ytUrl.DirectUrl);
+        _logger.LogInformation("Uri {RawUri} - Extracted User-Agent: {UserAgent}", input.RawUri, ytUrl.UserAgent);
+        return ytUrl.DirectUrl;
     }
 }

@@ -14,6 +14,8 @@ RUN DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y --no-
     caps \
     curl \
     ca-certificates \
+    python3 \
+    ffmpeg \
     jq \
     tar \
     build-essential \
@@ -57,6 +59,10 @@ RUN SNAPCLIENT_URL=$(curl -s https://api.github.com/repos/Snapcast/snapcast/rele
         make install && \
         rm -rf /tmp/snapcast ; \
     fi
+
+# Download and install ytdlp
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64 -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
 # Configure ALSA sound server to pass audio through the equalizer plugin
 RUN printf 'pcm.!default {\n\

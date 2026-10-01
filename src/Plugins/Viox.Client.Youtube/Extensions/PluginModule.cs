@@ -18,6 +18,7 @@ public class PluginModule : IPluginModule
         services.AddKeyedSingleton<IMediaMetaDataConverterBase, YoutubeConverter>("youtube:track");
         services.AddKeyedSingleton<IMediaSource, YoutubeMediaSource>("youtube");
 
+        services.AddYtDlpMpdIntegration(configuration);
         services.AddYoutubeMusic(options =>
         {
             options.Region = "US";
