@@ -40,7 +40,7 @@ public class YoutubeMediaSource : IMediaSource
     {
         ArgumentNullException.ThrowIfNull(resolver);
         ArgumentNullException.ThrowIfNull(client);
-   ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(cache);
 
         _cache = cache;
         _client = client;
