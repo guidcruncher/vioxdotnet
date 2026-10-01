@@ -1,8 +1,9 @@
 using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
+
 using Viox.Client.Youtube.Internal;
 using Viox.Client.Youtube.Models;
-using Viox.Core.Models;
 using Viox.Core.Services;
 
 namespace Viox.Client.Youtube.Services;

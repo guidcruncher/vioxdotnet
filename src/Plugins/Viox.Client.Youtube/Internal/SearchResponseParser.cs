@@ -1,9 +1,9 @@
 // /home/jcrocker/src/viox.net/src/Plugins/Viox.Client.Youtube/Internal/SearchResponseParser.cs
 using System.Globalization;
 using System.Text.Json;
-using Viox.Core.Models;
-using Viox.Core.Services;
+
 using Viox.Client.Youtube.Models;
+using Viox.Core.Services;
 
 namespace Viox.Client.Youtube.Internal;
 
@@ -240,7 +240,7 @@ internal static class SearchResponseParser
         var uri = $"youtube:track:{videoId}";
         return new YoutubeTrack
         {
-                Uri = MediaUriParser.ParseMediaUriValue(uri),
+            Uri = MediaUriParser.ParseMediaUriValue(uri),
             VideoId = videoId,
             Title = title,
             Album = album,
@@ -292,7 +292,7 @@ internal static class SearchResponseParser
         var uri = $"youtube:track:{videoId}";
         return new YoutubeTrack
         {
-                Uri = MediaUriParser.ParseMediaUriValue(uri),
+            Uri = MediaUriParser.ParseMediaUriValue(uri),
             VideoId = videoId,
             Title = title,
             Artists = artists,
