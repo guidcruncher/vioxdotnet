@@ -1,15 +1,14 @@
 using System.Diagnostics;
-
+using System.IO;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Viox.Client.Youtube.Configuration;
 using Viox.Client.Youtube.Models;
 
 namespace Viox.Client.Youtube.Services;
 
 /// <summary>
-/// Extracts direct playable HTTP stream URLs via yt-dlp CLI and controls MPD over raw TCP protocol.
+/// Service implementation for extracting direct playable HTTP stream URLs using yt-dlp CLI.
 /// </summary>
 public sealed class YtDlpStreamExtractor : IYtDlpStreamExtractor
 {
@@ -28,6 +27,7 @@ public sealed class YtDlpStreamExtractor : IYtDlpStreamExtractor
     public async Task<YtDlpMediaStream> ExtractStreamAsync(string youtubeUrl, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(youtubeUrl);
+
         _logger.LogInformation("Executing yt-dlp to resolve stream URL for: {Url}", youtubeUrl);
 
         var startInfo = new ProcessStartInfo
@@ -39,9 +39,9 @@ public sealed class YtDlpStreamExtractor : IYtDlpStreamExtractor
             CreateNoWindow = true
         };
 
-        // Safe argument passing without string escaping issues
+        // Output strictly the direct stream URL
         startInfo.ArgumentList.Add("-g");
-        startInfo.ArgumentList.Add("--user-agent");
+        startInfo.ArgumentList.Add("--js-runtimes=deno");
         startInfo.ArgumentList.Add("-f");
         startInfo.ArgumentList.Add("ba[protocol^=http]/bestaudio[protocol^=http]");
         startInfo.ArgumentList.Add(youtubeUrl);
@@ -52,42 +52,47 @@ public sealed class YtDlpStreamExtractor : IYtDlpStreamExtractor
         {
             process.Start();
 
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
+            Task<string> outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+            Task<string> errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
 
+            await Task.WhenAll(outputTask, errorTask);
             await process.WaitForExitAsync(cancellationToken);
+
+            string output = outputTask.Result;
+            string error = errorTask.Result;
 
             if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
             {
-                _logger.LogError("yt-dlp URL extraction failed. Error: {Error}", error);
+                _logger.LogError("yt-dlp URL extraction failed with exit code {ExitCode}. Error output: {Error}", process.ExitCode, error);
                 throw new InvalidOperationException($"Failed to extract stream URL from yt-dlp: {error}");
             }
 
-            // Standard stdout gives User-Agent on line 1, URL on line 2 (or vice versa based on version)
-            string[] lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            if (lines.Length < 2)
-            {
-                _logger.LogError("Unexpected stdout format from yt-dlp: {Output}", output);
-                throw new InvalidDataException("yt-dlp did not return both stream URL and User-Agent.");
-            }
-
-            string userAgent = lines[0].StartsWith("Mozilla/", StringComparison.OrdinalIgnoreCase) ? lines[0] : lines[1];
-            string directUrl = lines[0].StartsWith("http", StringComparison.OrdinalIgnoreCase) ? lines[0] : lines[1];
+            string directUrl = lines.FirstOrDefault(line => line.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
+                                                            line.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidDataException($"Could not locate a valid HTTP/HTTPS media stream URL in yt-dlp output. Raw output: {output}");
 
             _logger.LogInformation("Successfully extracted direct stream URL.");
 
-            return new YtDlpMediaStream(directUrl.Trim(), userAgent.Trim(), TimeSpan.Zero);
+            // Fallback User-Agent string provided since yt-dlp is configured to return only the URL
+            const string fallbackUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+            return new YtDlpMediaStream(directUrl, fallbackUserAgent, TimeSpan.Zero);
         }
         catch (OperationCanceledException ex)
         {
-            _logger.LogWarning(ex, "Stream extraction timed out or was cancelled.");
+            _logger.LogWarning(ex, "Stream extraction operation was cancelled or timed out.");
             if (!process.HasExited)
             {
                 process.Kill(entireProcessTree: true);
             }
             throw;
         }
+        catch (Exception ex) when (ex is not InvalidOperationException && ex is not InvalidDataException)
+        {
+            _logger.LogError(ex, "An unhandled exception occurred during yt-dlp execution.");
+            throw;
+        }
     }
-
 }
