@@ -148,6 +148,7 @@ public class RadioBrowserMediaSource : IMediaSource
 
         res = _resolver.ConvertList(stations)
             .OfType<MediaMetaData>()
+	    .OrderBy(t=>t.Title)
             .ToList();
 
         return res;

@@ -73,7 +73,7 @@ public enum StationOrder
 public class ListQueryOptions
 {
     /// <summary>Gets or sets the field used to sort results.</summary>
-    public StationOrder? Order { get; set; }
+    public StationOrder? Order { get; set; } = StationOrder.Name;
 
     /// <summary>Gets or sets whether the sort order is reversed.</summary>
     public bool? Reverse { get; set; }
