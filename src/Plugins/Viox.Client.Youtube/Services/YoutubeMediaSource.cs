@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
+using Viox.Client.Youtube.Models;
 using Viox.Core.Models;
 using Viox.Core.Plugins;
 using Viox.Core.Services;
@@ -26,7 +27,7 @@ public class YoutubeMediaSource : IMediaSource
     public Dictionary<string, string> Props { get; } = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Title"] = "Youtube Music",
-        ["Icon"] = "",
+        ["Icon"] = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0ibWF4LXdpZHRoOiAxMDI0cHg7IG1heC1oZWlnaHQ6IDEwMjRweDsiPiA8IS0tIFJlZCBiYWNrZ3JvdW5kIGNpcmNsZSAtLT4gPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDgiIGZpbGw9IiNGRjAwMDAiIC8+IDwhLS0gT3V0ZXIgcmluZyAtLT4gPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI2IiAvPiA8IS0tIENlbnRyYWwgcGxheSBidXR0b24gLS0+IDxwb2x5Z29uIHBvaW50cz0iNDQsMzggNDQsNjIgNjIsNTAiIGZpbGw9IiNGRkZGRkYiIC8+IDwvc3ZnPg==",
         ["Url"] = ""
     };
 
@@ -49,7 +50,21 @@ public class YoutubeMediaSource : IMediaSource
 
     public async Task<PagedList<MediaMetaData>> Query(string query, int pageNumber, int limit, CancellationToken ct = default)
     {
-        return new PagedList<MediaMetaData>();
+        var results = await _client.SearchAsync(query, new MusicSearchOptions
+        {
+            Limit = limit,
+            SongsOnly = true,
+            EnrichMetadata = true
+        });
+
+        if (results is null)
+        {
+            return new PagedList<MediaMetaData>();
+        }
+
+        var items = _resolver.ConvertList(results);
+
+        return new PagedList<MediaMetaData>(items, items.Count(), 0, limit);
     }
 
     public async Task<IList<MediaMetaData>> ReadAsync(Dictionary<string, object>? parameters, CancellationToken cancellationToken = default)
