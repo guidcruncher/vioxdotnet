@@ -90,7 +90,7 @@ internal sealed class YoutubeMusicClient : IYoutubeMusicClient
         var uri = $"youtube:track:{videoId}";
         metadata ??= new YoutubeTrack
         {
-            Uri = MediaUriParser.ParseMediaUriValue(uri),
+            Uri = MediaUriParser.ParseMediaUriValue(uri)!,
             VideoId = videoId,
             Title = videoId,
             TrackUrl = VideoIdParser.ToTrackUrl(videoId)
@@ -219,4 +219,3 @@ internal sealed class YoutubeMusicClient : IYoutubeMusicClient
         return string.IsNullOrWhiteSpace(candidate) ? fallback : candidate;
     }
 }
-
