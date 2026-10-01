@@ -212,4 +212,10 @@ public class PodverseMediaSource : IMediaSource
 
         return items;
     }
+
+    public async Task<string> GetPlaybackUrl(MediaMetaData input, CancellationToken ct = default)
+    {
+        return input.Url;
+    }
+
 }
