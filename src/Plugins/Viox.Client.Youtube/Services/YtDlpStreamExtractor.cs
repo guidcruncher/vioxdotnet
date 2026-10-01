@@ -31,7 +31,7 @@ public sealed class YtDlpStreamExtractor : IYtDlpStreamExtractor
 
         // --get-url (-g) fetches direct stream URL
         // --user-agent fetches exact User-Agent string used during request
-        string arguments = $"-g --user-agent -f bestaudio \"{youtubeUrl}\"";
+        string arguments = $"-g --user-agent -f \"{youtubeUrl}\"";
 
         _logger.LogInformation("Executing yt-dlp to resolve stream URL for: {Url}", youtubeUrl);
 
