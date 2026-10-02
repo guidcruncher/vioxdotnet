@@ -36,7 +36,7 @@ public static class VioxCoreServiceCollectionExtension
         services.AddCurrentMediaService(configuration);
         services.AddAlsaAudioControls(configuration);
         services.AddEqPresetServices(configuration);
-	services.AddHtmlSanitizer();
+        services.AddHtmlSanitizer();
         services.AddFavoritesEngine(configuration);
         services.AddMediaResolver(configuration);
         services.AddMediaSearchServices(configuration);
