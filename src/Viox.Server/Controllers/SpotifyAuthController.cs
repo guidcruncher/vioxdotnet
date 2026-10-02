@@ -112,7 +112,7 @@ public sealed class SpotifyAuthController : ControllerBase
         if (profile is not null && profile.Data is not null)
         {
             await _tokenStore.SaveUserNameAsync(profile.Data.Id, cancellationToken);
-            await _librespotManager.UpdateAccessToken(profile.Data.Id, tokenResponse.AccessToken, cancellationToken);
+            // await _librespotManager.UpdateAccessToken(profile.Data.Id, tokenResponse.AccessToken, cancellationToken);
         }
 
         string returnUrl = "/";

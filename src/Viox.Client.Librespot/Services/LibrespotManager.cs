@@ -6,7 +6,7 @@ public sealed class LibrespotManager
 {
     public async Task UpdateAccessToken(string username, string token, CancellationToken cancellationToken = default)
     {
-        string template = "/etc/golibrespot/config-template.yml";
+        string template = "/etc/golibrespot/config.yml.template";
         string configFile = "/data/golibrespot/config.yml";
         // string state = "/data/golibrespot/state.json";
         string content = string.Empty;
