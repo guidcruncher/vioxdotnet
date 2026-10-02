@@ -36,12 +36,23 @@ public static class VioxCoreServiceCollectionExtension
         services.AddCurrentMediaService(configuration);
         services.AddAlsaAudioControls(configuration);
         services.AddEqPresetServices(configuration);
+	services.AddHtmlSanitizer();
         services.AddFavoritesEngine(configuration);
         services.AddMediaResolver(configuration);
         services.AddMediaSearchServices(configuration);
         services.AddStaticPluginModules(configuration);
         services.AddDynamicPluginModules(configuration);
 
+        return services;
+    }
+
+    /// <summary>
+    /// Adds HTML sanitizer service to the DI container.
+    /// </summary>
+    public static IServiceCollection AddHtmlSanitizer(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<IHtmlSanitizerService, HtmlSanitizerService>();
         return services;
     }
 
