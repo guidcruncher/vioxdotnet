@@ -54,6 +54,20 @@ watch(
 const playItem = () => item.value && emit('play', item.value)
 const viewItem = () => item.value && emit('view', item.value)
 
+/* --- CLICK FLASH OVERLAY FLAG --- */
+const showClickOverlay = ref(false)
+
+const handleImageClick = () => {
+  if (isPlayable.value) playItem()
+  else viewItem()
+
+  // Flash overlay for 600ms
+  showClickOverlay.value = true
+  setTimeout(() => {
+    showClickOverlay.value = false
+  }, 600)
+}
+
 const toggleFavourite = async () => {
   if (!item.value || isSubmitting.value) return
 
@@ -104,9 +118,10 @@ const isFavouriteSupported = computed(() => {
   >
     <!-- Artwork + Text -->
     <div class="flex flex-col w-full">
-      <!-- Square Artwork Container -->
+      <!-- Artwork Container with hover + click overlay -->
       <div
-        class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-inner mb-2.5 flex items-center justify-center"
+        class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-inner mb-2.5 flex items-center justify-center relative cursor-pointer"
+        @click="handleImageClick"
       >
         <img
           :src="imageUrl"
@@ -114,6 +129,23 @@ const isFavouriteSupported = computed(() => {
           @error="handleImageError"
           class="max-w-full max-h-full object-contain rounded-lg transition-transform duration-300 group-hover:scale-105"
         />
+
+        <!-- Hover + Click overlay -->
+        <div
+          class="absolute inset-0 bg-slate-950/40 transition-opacity duration-200 flex items-center justify-center"
+          :class="{
+            'opacity-100': showClickOverlay,
+            'opacity-0 group-hover:opacity-100': !showClickOverlay
+          }"
+        >
+          <div
+            class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-100 scale-90 transition-transform duration-200 ring-2 ring-indigo-400/70"
+          >
+            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current ml-0.5" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       <!-- Title + Artist -->
@@ -130,30 +162,8 @@ const isFavouriteSupported = computed(() => {
       </div>
     </div>
 
-    <!-- Action Buttons -->
+    <!-- Favourite Button -->
     <div class="mt-3 flex items-center gap-1.5 w-full">
-      <!-- Play -->
-      <button
-        v-if="isPlayable"
-        @click="playItem"
-        class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-xs text-white py-2 sm:py-1.5 px-3 rounded-lg font-medium transition shadow-sm shadow-indigo-600/30 flex items-center justify-center space-x-1.5 min-w-0"
-      >
-        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z" />
-        </svg>
-        <span class="truncate">Play</span>
-      </button>
-
-      <!-- View -->
-      <button
-        v-else
-        @click="viewItem"
-        class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs text-slate-200 py-2 sm:py-1.5 px-3 rounded-lg font-medium border border-slate-700 transition flex items-center justify-center space-x-1.5 min-w-0"
-      >
-        <span class="truncate">View</span>
-      </button>
-
-      <!-- Favourite -->
       <button
         v-if="isFavouriteSupported"
         @click="toggleFavourite"
