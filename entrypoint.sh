@@ -1,81 +1,109 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -eo pipefail
 
-mkdir -p /audio /tmp /run/mpd /var/lib/mpd/ /music/cache /data /data/cache /data/playlists /data/golibrespot /data/snapserver
-cp /etc/golibrespot/config.yml /data/golibrespot/config.yml
+# 0. Pre-flight Hardware Access Check
+if [ ! -d /dev/snd ]; then
+  echo "WARNING: /dev/snd directory not found!"
+  echo "Ensure you pass sound hardware into Docker using '--device /dev/snd' or Compose 'devices:' mapping."
+fi
 
-rm -rf /audio/output /tmp/mpd_socket.sock
+# 1. Directory Structure Setup
+mkdir -p /tmp /run/mpd /var/lib/mpd /music/cache /data /data/cache /data/playlists /data/golibrespot /data/snapserver /var/log/audio-services
 
-mkfifo /audio/output
+# Copy default golibrespot config ONLY if a persistent config does not already exist
+if [ ! -f /data/golibrespot/config.yml ] && [ -f /etc/golibrespot/config.yml ]; then
+    echo "Initializing default Golibrespot configuration..."
+    cp /etc/golibrespot/config.yml /data/golibrespot/config.yml
+fi
+
+# 2. FIFO Pipe Cleanup & Initialization
+rm -f /tmp/snapfifo /tmp/mpd_socket.sock
+
+mkfifo /tmp/snapfifo
 mkfifo /tmp/mpd_socket.sock
 
-chmod 666 /tmp/mpd_socket.sock
-chmod 666 /audio/output
-chmod 777 -R /music
+chmod 666 /tmp/snapfifo /tmp/mpd_socket.sock
 
-# Create log directory if it does not exist
-mkdir -p /var/log/audio-services
-
-# Trap termination signals to gracefully stop background processes
+# 3. Graceful Termination Handler
 cleanup() {
-    echo "Termination signal received. Shutting down background processes..."
-    mpd --kill
-    kill -TERM "$SNAPCLIENT_PID" "$SNAPSERVER_PID" "$LIBRESPOT_PID" "$DOTNET_PID" 2>/dev/null || true
-    wait "$SNAPCLIENT_PID" "$SNAPSERVER_PID" "$LIBRESPOT_PID" "$DOTNET_PID" 2>/dev/null || true
-    echo "Services stopped cleanly."
+    echo "Termination signal received. Gracefully shutting down audio services and .NET server..."
+
+    # Gracefully stop MPD
+    mpd --kill 2>/dev/null ||utrue
+
+    # Terminate remaining background jobs
+    if [ -n "$SNAPSERVER_PID" ] || [ -n "$LIBRESPOT_PID" ] || [ -n "$SNAPCLIENT_PID" ] || [ -n "$DOTNET_PID" ]; then
+        kill -TERM "$SNAPSERVER_PID" "$LIBRESPOT_PID" "$SNAPCLIENT_PID" "$DOTNET_PID" 2>/dev/null || true
+        wait "$SNAPSERVER_PID" "$LIBRESPOT_PID" "$SNAPCLIENT_PID" "$DOTNET_PID" 2>/dev/null || true
+    fi
+
+    echo "All processes stopped cleanly."
     exit 0
 }
 
 trap cleanup SIGTERM SIGINT
 
-# 1. Start Snapserver in background
+# 4. Start Services
+
 echo "Starting Snapserver..."
-snapserver > /var/log/audio-services/snapserver.log 2>&1 &
+snapserver --config /etc/snapserver.conf &
 SNAPSERVER_PID=$!
 
-# 2. Start go-librespot in background
 echo "Starting go-librespot..."
-go-librespot --config_dir /data/golibrespot/ > /var/log/audio-services/go-librespot.log 2>&1 &
+go-librespot --config_dir /data/golibrespot/ &
 LIBRESPOT_PID=$!
 
-# 3. Start Snapclient
-echo "Starting Snapclient..."
-snapclient --player alsa -s "default" \
+echo "Starting Snapclient (Targeting ALSA 'hardware' device)..."
+# Critical: Use -s hardware to prevent audio loopback through alsaequal/snapfifo
+snapclient --player alsa \
+    -s "hardware" \
     --hostID "viox-net" \
     --sampleformat "44100:16:*" \
-    --logsink stdout \
-    tcp://127.0.0.1 > /var/log/audio-services/snapclient.log 2>&1 &
+    --latency 30 \
+    tcp://127.0.0.1:1704 &
 SNAPCLIENT_PID=$!
 
-# 4. Start MPD in background
 echo "Starting MPD..."
-mpd
-mpc update
+# Run MPD in no-daemon mode so we capture its PID cleanly for health tracking
+mpd --no-daemon &
+MPD_PID=$!
 
-# 5. Start .NET 10 Web API in background
+# Wait briefly for MPD socket initialization before triggering mpc
+sleep 1
+mpc update 2>/dev/null || true
+
 echo "Starting .NET 10 Web API..."
 dotnet Viox.Server.dll &
 DOTNET_PID=$!
 
-# Process health check loop
+# 5. Process Health Monitor Loop
+echo "All audio services started. Monitoring process health..."
+
 while true; do
     if ! kill -0 "$SNAPSERVER_PID" 2>/dev/null; then
-        echo "ERROR: Snapserver process died unexpectedly. Check /var/log/audio-services/snapserver.log"
+        echo "CRITICAL: Snapserver process died unexpectedly."
         cleanup
-        exit 1
+    fi
+
+    if ! kill -0 "$LIBRESPOT_PID" 2>/dev/null; then
+        echo "CRITICAL: go-librespot process died unexpectedly."
+        cleanup
     fi
 
     if ! kill -0 "$SNAPCLIENT_PID" 2>/dev/null; then
-        echo "ERROR: Snapclient process died unexpectedly. Check /var/log/audio-services/snapclient.log"
+        echo "CRITICAL: Snapclient process died unexpectedly."
         cleanup
-        exit 1
+    fi
+
+    if ! kill -0 "$MPD_PID" 2>/dev/null; then
+        echo "CRITICAL: MPD process died unexpectedly."
+        cleanup
     fi
 
     if ! kill -0 "$DOTNET_PID" 2>/dev/null; then
-        echo "ERROR: .NET Web API process died unexpectedly."
+        echo "CRITICAL: .NET Web API process died unexpectedly."
         cleanup
-        exit 1
     fi
 
-    sleep 2
+    sleep 3
 done
