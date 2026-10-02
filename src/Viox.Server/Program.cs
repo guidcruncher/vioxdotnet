@@ -2,11 +2,8 @@ namespace Viox.Server;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
-
-using Viox.Client.Mpd.Extensions;
-using Viox.Core.Extensions;
 using Viox.Server.Extensions;
-using Viox.Snapcast.Extensions;
+using Viox.Core.Extensions;
 
 /// <summary>
 /// Application entry point and bootstrapping host builder for services.
@@ -14,7 +11,7 @@ using Viox.Snapcast.Extensions;
 public static class Program
 {
     /// <summary>
-    /// Configures and runs the unified  application host.
+    /// Configures and runs the unified application host.
     /// </summary>
     /// <param name="args">Command-line arguments.</param>
     public static async Task Main(string[] args)
@@ -31,34 +28,9 @@ public static class Program
             options.AddServerHeader = false;
         });
 
-	builder.Services.AddVioxPlaylists(builder.Configuration);
-        builder.Services.AddServerEventPublisher(builder.Configuration);
-        builder.Services.AddEqPresetServices(builder.Configuration);
-        builder.Services.AddAlsaAudioControls(builder.Configuration);
-        builder.Services.AddUserAgentProvider(builder.Configuration);
-        builder.Services.AddMemoryCaches(builder.Configuration);
-        builder.Services.AddClientOptionsServices(builder.Configuration);
-        builder.Services.AddFavoritesEngine(builder.Configuration);
-        builder.Services.AddAudioProxyServices(builder.Configuration);
-        builder.Services.AddCurrentMediaService(builder.Configuration);
-
-        builder.Services.AddSnapcastClient(builder.Configuration);
-        builder.Services.AddMpdClient(options =>
-        {
-            options.Host = "127.0.0.1";
-            options.Port = 6600;
-        });
-
-        builder.Services.AddCoreServices(builder.Configuration);
-        builder.Services.AddMediaSearchServices(builder.Configuration);
-        builder.Services.AddUnifiedMediaPlayerControlSurface(builder.Configuration);
-        builder.Services.AddPodcastDownloader(builder.Configuration);
-
-        builder.Services.AddStaticPluginModules(builder.Configuration);
-        builder.Services.AddDynamicPluginModules(builder.Configuration);
-        builder.Services.AddMediaResolver(builder.Configuration);
-
-        builder.Services.AddApi(builder.Configuration);
+        // Register all application services via the new unified extension method
+	builder.Services.AddVioxCoreServices(builder.Configuration);
+        builder.Services.AddVioxServerServices(builder.Configuration);
 
         // Register CORS service conditionally for Development mode only
         if (builder.Environment.IsDevelopment())
@@ -85,7 +57,7 @@ public static class Program
 
         app.UseRouting();
 
-        // Enable OpenAPI endpoints and Scalar UI in development
+        // Enable OpenAPI endpoints and Scalar UI in development[span_0](start_span)[span_0](end_span)
         app.UseOpenApi(app.Configuration);
 
         app.MapControllers();
