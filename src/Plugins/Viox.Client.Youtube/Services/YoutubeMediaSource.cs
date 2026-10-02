@@ -88,7 +88,8 @@ public class YoutubeMediaSource : IMediaSource
         {
             Limit = limit,
             SongsOnly = true,
-            EnrichMetadata = true
+            EnrichMetadata = false,
+	    ResolveStreamUrl = false
         });
 
         if (results is null)
