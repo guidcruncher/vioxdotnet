@@ -8,6 +8,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 WORKDIR /app
 
 RUN DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y --no-install-recommends \
+    gettext \
     alsa-utils \
     libasound2-plugins \
     libasound2-plugin-equal \

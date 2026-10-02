@@ -40,6 +40,8 @@ LABEL org.opencontainers.image.description="VioxDotNet Music Server system"
 LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
+ENV INITIAL_VOLUME=80
+ENV DEVICE_NAME="VIOX-NET"
 ENV AUDIO_CARD="hw:CARD=AUDIO,DEV=0"
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
@@ -50,10 +52,10 @@ ENV Logging__LogLevel__Microsoft.AspNetCore=Warning
 
 # Config
 RUN mkdir -p /plugins /etc/golibrespot /music /data/golibrespot /data/snapserver
-COPY ./config/snapserver.conf /etc/snapserver.conf
+COPY ./config/snapserver.conf /etc/snapserver.conf.template
 COPY ./config/config.yml /etc/golibrespot/config.yml
-COPY ./config/config.yml /etc/golibrespot/config-template.yml
-COPY ./config/mpd.conf /etc/mpd.conf
+COPY ./config/config.yml /etc/golibrespot/config.yml.template
+COPY ./config/mpd.conf /etc/mpd.conf.template
 COPY ./config/asound.conf /etc/asound.conf
 COPY ./config/eq.json /etc/eq.json
  

@@ -26,7 +26,7 @@ log_level: info # Log level configuration (trace, debug, info, warn, error)
 log_disable_timestamp: false # Whether to disable timestamps in log output
 
 device_id: '' # Spotify device ID (auto-generated)
-device_name: "VIOX-NET" # Spotify device name
+device_name: "${DEVICE_NAME}" # Spotify device name
 device_type: speaker # Spotify device type (icon)
 
 # --- Updated Audio Output Section ---
@@ -43,7 +43,7 @@ audio_output_pipe_wait_for_reader: false # Unused when audio_backend is 'alsa'
 
 bitrate: 320 # Playback bitrate (96, 160, 320)
 volume_steps: 100 # Volume steps count
-initial_volume: 70 # Initial volume in steps (not applied to the mixer device)
+initial_volume: ${INITIAL_VOLUME} # Initial volume in steps (not applied to the mixer device)
 ignore_last_volume: false # Whether to ignore the last saved volume and always use initial_volume
 external_volume: true # Whether volume is controlled externally 
 disable_autoplay: true # Whether autoplay of more songs should be disabled
