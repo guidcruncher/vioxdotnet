@@ -70,6 +70,7 @@ MPD_PID=$!
 
 # Wait briefly for MPD socket initialization before triggering mpc
 sleep 1
+mpc volume 80 2>/dev/null || true
 mpc update 2>/dev/null || true
 
 echo "Starting .NET 10 Web API..."
