@@ -22,6 +22,7 @@ services:
       - ../runtime/data:/data
       - ../runtime/plugins:/plugins
     environment:
+      - AUDIO_CARD=0
       - ASPNETCORE_ENVIRONMENT=Development
       - AudioSettings__DefaultOutputDevice=equal
       - AudioSettings__EnableEqualizer=true

@@ -1,4 +1,4 @@
-namespace Viox.Core.Extensions;
+namespace Viox.Core.Plugins;
 
 using System;
 using System.Reflection;
