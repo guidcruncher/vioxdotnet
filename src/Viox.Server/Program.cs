@@ -31,6 +31,7 @@ public static class Program
             options.AddServerHeader = false;
         });
 
+	builder.Services.AddVioxPlaylists(builder.Configuration);
         builder.Services.AddServerEventPublisher(builder.Configuration);
         builder.Services.AddEqPresetServices(builder.Configuration);
         builder.Services.AddAlsaAudioControls(builder.Configuration);
