@@ -1,5 +1,6 @@
 // File: PlaylistService.cs
 using Microsoft.Extensions.Logging;
+
 using Viox.Core.Models;
 
 namespace Viox.Core.Playlists;
@@ -23,12 +24,12 @@ public class PlaylistService : IPlaylistService
         ArgumentException.ThrowIfNullOrWhiteSpace(playlistName);
         ArgumentNullException.ThrowIfNull(item);
 
-        var playlist = await _repository.LoadPlaylistAsync(playlistName, cancellationToken) 
+        var playlist = await _repository.LoadPlaylistAsync(playlistName, cancellationToken)
                        ?? new MediaMetaDataPlaylist { Title = playlistName };
 
         playlist.Items.Add(item);
         await _repository.SavePlaylistAsync(playlist, cancellationToken);
-        
+
         _logger.LogInformation("Added item {ItemTitle} to playlist {PlaylistName}", item.Title, playlistName);
     }
 

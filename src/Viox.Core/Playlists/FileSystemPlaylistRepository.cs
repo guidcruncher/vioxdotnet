@@ -1,10 +1,11 @@
 // File: FileSystemPlaylistRepository.cs
-using System.IO;
 using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Viox.Core.Models;
+
 using Viox.Core.Configuration;
+using Viox.Core.Models;
 
 namespace Viox.Core.Playlists;
 
@@ -35,7 +36,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
     public async Task SavePlaylistAsync(MediaMetaDataPlaylist playlist, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(playlist);
-        
+
         var safeName = GetSafeFilename(playlist.Title);
         var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}.json");
 
@@ -60,7 +61,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
 
         _logger.LogInformation("Loading playlist {PlaylistName} from {FilePath}", name, filePath);
         var json = await File.ReadAllTextAsync(filePath, cancellationToken);
-        
+
         return JsonSerializer.Deserialize<MediaMetaDataPlaylist>(json, _jsonOptions);
     }
 

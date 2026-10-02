@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using Viox.Core.Configuration;
+using Viox.Core.Playlists;
 using Viox.Core.Plugins;
 using Viox.Core.Services;
 using Viox.Core.Storage;
@@ -30,6 +29,9 @@ public static class VioxCoreServiceCollectionExtension
         ArgumentNullException.ThrowIfNull(configuration);
 
         services.AddMemoryCache();
+        services.AddServerEventPublisher(configuration);
+        services.AddUserAgentProvider(configuration);
+        services.AddVioxPlaylists(configuration);
         services.AddClientOptionsServices(configuration);
         services.AddCurrentMediaService(configuration);
         services.AddAlsaAudioControls(configuration);
@@ -38,6 +40,7 @@ public static class VioxCoreServiceCollectionExtension
         services.AddMediaResolver(configuration);
         services.AddMediaSearchServices(configuration);
         services.AddStaticPluginModules(configuration);
+        services.AddDynamicPluginModules(configuration);
 
         return services;
     }
@@ -54,6 +57,19 @@ public static class VioxCoreServiceCollectionExtension
         services.AddSingleton<IAlsaProcessExecutor, AlsaProcessExecutor>();
         services.AddTransient<IAlsaEqualizerService, AlsaEqualizerService>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Adds playlist management services and options to the DI container.
+    /// </summary>
+    public static IServiceCollection AddVioxPlaylists(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+        services.Configure<PlaylistOptions>(configuration.GetSection(PlaylistOptions.SectionName));
+        services.AddSingleton<IPlaylistRepository, FileSystemPlaylistRepository>();
+        services.AddSingleton<IPlaylistService, PlaylistService>();
         return services;
     }
 
@@ -194,6 +210,109 @@ public static class VioxCoreServiceCollectionExtension
         return services;
     }
 
+    public static IServiceCollection AddDynamicPluginModules(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.Configure<PluginLoaderConfiguration>(
+            configuration.GetSection(PluginLoaderConfiguration.SectionName));
+
+        var section = configuration.GetSection(PluginLoaderConfiguration.SectionName);
+        var options = section.Get<PluginLoaderConfiguration>() ?? new PluginLoaderConfiguration();
+
+        // 1. Create a lightweight, dedicated LoggerFactory for startup logging
+        using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConfiguration(configuration.GetSection("Logging"));
+            builder.AddConsole();
+        });
+        ILogger logger = loggerFactory.CreateLogger(typeof(VioxCoreServiceCollectionExtension));
+
+        if (string.IsNullOrWhiteSpace(options.PluginFolderPath) ||
+            !Directory.Exists(options.PluginFolderPath))
+        {
+            logger.LogWarning("Plugin folder path '{FolderPath}' does not exist.", options.PluginFolderPath);
+            return services;
+        }
+
+        string searchPattern = string.IsNullOrWhiteSpace(options.SearchPattern)
+            ? "*.dll"
+            : options.SearchPattern;
+
+        string[] dllFiles = Directory.GetFiles(
+            options.PluginFolderPath,
+            searchPattern,
+            SearchOption.TopDirectoryOnly);
+
+        // 2. Pass 1: Instantiation & Discovery
+        // Discover and instantiate all modules FIRST into an array so we do not mutate
+        // 'services' while actively scanning files/types.
+        List<(IPluginModule Module, string DllPath)> discoveredModules = new();
+
+        foreach (string dllPath in dllFiles)
+        {
+            try
+            {
+                string absolutePath = Path.GetFullPath(dllPath);
+                var loadContext = new PluginLoadContext(absolutePath);
+                Assembly assembly = loadContext.LoadFromAssemblyPath(absolutePath);
+
+                Type[] moduleTypes = assembly.GetTypes()
+                    .Where(type =>
+                        typeof(IPluginModule).IsAssignableFrom(type) &&
+                        !type.IsInterface &&
+                        !type.IsAbstract)
+                    .ToArray();
+
+                foreach (Type moduleType in moduleTypes)
+                {
+                    if (Activator.CreateInstance(moduleType) is IPluginModule module)
+                    {
+                        discoveredModules.Add((module, absolutePath));
+                        logger.LogInformation(
+                            "Discovered dynamic plugin module '{ModuleType}' from '{AssemblyPath}'",
+                            moduleType.FullName,
+                            absolutePath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to load dynamic plugin module from path '{DllPath}'",
+                    dllPath);
+            }
+        }
+
+        // 3. Pass 2: Configuration
+        // Execute ConfigureServices sequentially outside of any type/assembly scanning loop.
+        foreach ((IPluginModule module, string absolutePath) in discoveredModules)
+        {
+            try
+            {
+                module.ConfigureServices(services, configuration);
+                logger.LogInformation(
+                    "Successfully configured services for dynamic module '{ModuleType}' from '{AssemblyPath}'",
+                    module.GetType().FullName,
+                    absolutePath);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed during ConfigureServices execution for dynamic module '{ModuleType}' from '{AssemblyPath}'",
+                    module.GetType().FullName,
+                    absolutePath);
+            }
+        }
+
+        return services;
+    }
+
     /// <summary>
     /// Discovers and registers compile-time plugin modules into the service collection.
     /// </summary>
@@ -273,6 +392,38 @@ public static class VioxCoreServiceCollectionExtension
             }
         }
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the <see cref="UserAgentProvider"/> as a Singleton to ensure the selected User-Agent stays identical for the application's lifecycle.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">Configuration section to bind options from (optional).</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddUserAgentProvider(
+        this IServiceCollection services,
+        IConfiguration? configuration = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddOptions<UserAgentOptions>();
+        if (configuration is not null)
+        {
+            services.Configure<UserAgentOptions>(
+                configuration.GetSection(UserAgentOptions.SectionName));
+        }
+        services.AddSingleton<IUserAgentProvider, UserAgentProvider>();
+        return services;
+    }
+
+    public static IServiceCollection AddServerEventPublisher(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<ServerEventOptions>(
+            configuration.GetSection(ServerEventOptions.SectionName));
+        services.AddSingleton<IServerEventPublisher, ServerEventPublisher>();
+        services.AddTransient<IMediaEventService, MediaEventService>();
         return services;
     }
 

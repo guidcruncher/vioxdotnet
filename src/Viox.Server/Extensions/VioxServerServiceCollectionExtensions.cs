@@ -4,15 +4,21 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Viox.Client.Mpd.Extensions;
+using Viox.Core.Extensions;
 using Viox.Core.Models;
 using Viox.Server.Abstraction;
 using Viox.Server.Adapters;
 using Viox.Server.Configuration;
+using Viox.Server.Extensions;
 using Viox.Server.Services;
+using Viox.Snapcast.Extensions;
 
 /// <summary>
 /// Extension methods for registering all provided application services into a single unified service collection.
@@ -32,23 +38,14 @@ public static class VioxServerServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        // 1. Base Service Registrations from Program order
-        services.AddVioxPlaylists(configuration);
-        services.AddServerEventPublisher(configuration);
-        services.AddEqPresetServices(configuration);
-        services.AddAlsaAudioControls(configuration);
-        services.AddUserAgentProvider(configuration);
 
         // 2. Memory Caches
         services.AddMemoryCacheService<List<MediaMetaData>>(configuration);
 
-        services.AddClientOptionsServices(configuration);
-        services.AddFavoritesEngine(configuration);
-
         // 3. Audio Proxy Services & Controllers Setup
         services.Configure<StreamingOptions>(
             configuration.GetSection(StreamingOptions.SectionName));
-        
+
         services.AddLogging(loggingBuilder =>
         {
             loggingBuilder.AddConsole();
@@ -71,17 +68,12 @@ public static class VioxServerServiceCollectionExtensions
             AutomaticDecompression = DecompressionMethods.None
         });
 
-        services.AddCurrentMediaService(configuration);
-
         services.AddSnapcastClient(configuration);
         services.AddMpdClient(options =>
         {
             options.Host = "127.0.0.1";
             options.Port = 6600;
         });
-
-        services.AddCoreServices(configuration);
-        services.AddMediaSearchServices(configuration);
 
         // 4. Unified Media Player Control Surface
         services.Configure<MediaPlayerOptions>(configuration.GetSection(MediaPlayerOptions.SectionName));
@@ -94,10 +86,6 @@ public static class VioxServerServiceCollectionExtensions
         services.Configure<PodcastDownloadOptions>(configuration.GetSection(PodcastDownloadOptions.SectionName));
         services.AddTransient<IPodcastProvider, FavoritesPodcastProvider>();
         services.AddHostedService<PodcastDownloaderBackgroundService>();
-
-        services.AddStaticPluginModules(configuration);
-        services.AddDynamicPluginModules(configuration);
-        services.AddMediaResolver(configuration);
 
         // 6. API and OpenAPI Setup with JSON Options
         services.AddControllers()
@@ -121,4 +109,5 @@ public static class VioxServerServiceCollectionExtensions
 
         return services;
     }
+
 }

@@ -2,8 +2,9 @@ namespace Viox.Server;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
-using Viox.Server.Extensions;
+
 using Viox.Core.Extensions;
+using Viox.Server.Extensions;
 
 /// <summary>
 /// Application entry point and bootstrapping host builder for services.
@@ -29,7 +30,7 @@ public static class Program
         });
 
         // Register all application services via the new unified extension method
-	builder.Services.AddVioxCoreServices(builder.Configuration);
+        builder.Services.AddVioxCoreServices(builder.Configuration);
         builder.Services.AddVioxServerServices(builder.Configuration);
 
         // Register CORS service conditionally for Development mode only
