@@ -18,7 +18,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
     private readonly ILogger<FileSystemPlaylistRepository> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    private const fileExtension = ".playlist.json";
+    private readonly string fileExtension = ".playlist.json";
 
     public FileSystemPlaylistRepository(
         IOptions<PlaylistOptions> options,
@@ -97,7 +97,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
         return Task.FromResult(true);
     }
 
-    private static string GetSafeFilename(string title)
+    private string GetSafeFilename(string title)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
         var filename = string.Concat(title.Select(c => invalidChars.Contains(c) ? '_' : c));
