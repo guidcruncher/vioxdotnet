@@ -40,9 +40,11 @@ LABEL org.opencontainers.image.description="VioxDotNet Music Server system"
 LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
-ENV INITIAL_VOLUME=80
+ENV GOLIBRESPOT_INPUT_VOLUME=80
+ENV MPD_INPUT_VOLUME=80
 ENV DEVICE_NAME="VIOX-NET"
-ENV AUDIO_CARD="hw:CARD=AUDIO,DEV=0"
+ENV AUDIO_CARD="0"
+
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 ENV AudioSettings__DefaultOutputDevice=equal

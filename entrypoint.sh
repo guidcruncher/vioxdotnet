@@ -53,6 +53,10 @@ SNAPSERVER_PID=$!
 echo "Starting go-librespot..."
 go-librespot --config_dir /data/golibrespot/ &
 LIBRESPOT_PID=$!
+sleep 1
+curl -X POST "http://127.0.0.1:3678/player/volume" \
+     -H "Content-Type: application/json" \
+     -d "{\"volume\": ${GOLIBRESPOT_INPUT_VOLUME}}"
 
 echo "Starting Snapclient (Targeting ALSA 'hardware' device)..."
 # Critical: Use -s hardware to prevent audio loopback through alsaequal/snapfifo
@@ -72,7 +76,7 @@ MPD_PID=$!
 
 # Wait briefly for MPD socket initialization before triggering mpc
 sleep 1
-mpc volume $INITIAL_VOLUME 2>/dev/null || true
+mpc volume $MPD_INPUT_VOLUME 2>/dev/null || true
 mpc update 2>/dev/null || true
 
 echo "Starting .NET 10 Web API..."
