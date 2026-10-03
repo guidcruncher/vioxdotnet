@@ -245,9 +245,8 @@ const isPlaylistSupported = computed(() => {
 
       <!-- Favourite Button -->
       <button
-        v-if="isFavouriteSupported"
+        :disabled="!isFavouriteSupported || isSubmitting"
         @click="toggleFavourite"
-        :disabled="isSubmitting"
         type="button"
         class="py-2 sm:py-1.5 px-2.5 rounded-lg border transition-all duration-300 ease-out flex items-center justify-center shrink-0 active:scale-95"
         :class="[

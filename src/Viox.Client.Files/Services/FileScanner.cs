@@ -12,10 +12,12 @@ using Microsoft.Extensions.Options;
 
 using Viox.Client.Files.Configuration;
 using Viox.Core.Models;
+using Viox.Core.Services;
 using Viox.Core.Utilities;
 
 public class FileScanner(
     ILogger<FileScanner> logger,
+    IFavoritesService favourites,
     IOptions<MediaScannerOptions> options) : IFileScanner
 {
     private readonly MediaScannerOptions _options = options.Value;
@@ -77,6 +79,7 @@ public class FileScanner(
                         Artist = "",
                         ImageUrl = "/file.png"
                     };
+                    metadata.Favourite = favourites.Exists(metadata.RawUri);
                     results.Add(metadata);
                 }
             }
