@@ -1,172 +1,134 @@
 // File: PlaylistsController.cs
-namespace Viox.Server.Controllers;
-
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-
-using Viox.Client.Files.Services;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
+
+namespace Viox.Api.Controllers;
 
 /// <summary>
-/// API controller for managing, searching, and reloading in-memory M3U playlists.
+/// Manages playlist operations such as retrieval, item modification, and deletion.
 /// </summary>
 [ApiController]
-[Route("api/v1/media/playlists")]
+[Route("api/v1/playlists")]
+[Produces("application/json")]
 public class PlaylistsController : ControllerBase
 {
-    private readonly IM3uPlaylistProvider _playlistProvider;
+    private readonly IPlaylistService _playlistService;
     private readonly ILogger<PlaylistsController> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PlaylistsController"/> class.
     /// </summary>
-    /// <param name="playlistProvider">The M3U playlist provider service.</param>
-    /// <param name="logger">The logger instance.</param>
-    public PlaylistsController(
-        IM3uPlaylistProvider playlistProvider,
-        ILogger<PlaylistsController> logger)
+    /// <param name="playlistService">The playlist service implementation.</param>
+    /// <param name="logger">The logging service instance.</param>
+    public PlaylistsController(IPlaylistService playlistService, ILogger<PlaylistsController> logger)
     {
-        _playlistProvider = playlistProvider ?? throw new ArgumentNullException(nameof(playlistProvider));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _playlistService = playlistService;
+        _logger = logger;
     }
 
     /// <summary>
-    /// Retrieves all currently loaded playlists and their associated media items.
+    /// Retrieves all stored playlist names.
     /// </summary>
-    /// <returns>A dictionary of playlist keys mapped to arrays of <see cref="MediaMetaData"/>.</returns>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>An enumeration of playlist names.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyDictionary<string, MediaMetaData[]>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllPlaylists()
+    [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<string>>> GetPlaylistNamesAsync(CancellationToken cancellationToken)
     {
-        var playlists = _playlistProvider.Playlists;
-        if (playlists.Count() == 0)
-        {
-            await _playlistProvider.LoadAsync();
-            playlists = _playlistProvider.Playlists;
-        }
-
-        return Ok(playlists.OrderBy(pair => pair.Key)
-                     .ToDictionary(pair => pair.Key, pair => pair.Value));
+        _logger.LogInformation("Retrieving all playlist names.");
+        var names = await _playlistService.GetPlaylistNamesAsync(cancellationToken);
+        return Ok(names);
     }
 
     /// <summary>
-    /// Retrieves media items for a specific playlist key.
+    /// Loads a specific playlist by its name or file identifier.
     /// </summary>
-    /// <param name="key">The identifier key of the target playlist.</param>
-    /// <returns>An array of <see cref="MediaMetaData"/> items associated with the given key.</returns>
-    [HttpGet("{key}")]
-    [ProducesResponseType(typeof(MediaMetaData[]), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    /// <param name="name">The name or identifier of the playlist.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The playlist metadata if found; otherwise, a 404 Not Found response.</returns>
+    [HttpGet("{name}")]
+    [ProducesResponseType(typeof(MediaMetaDataPlaylist), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPlaylistByKey(string key)
+    public async Task<ActionResult<MediaMetaDataPlaylist>> LoadPlaylistAsync(string name, CancellationToken cancellationToken)
     {
-        if (_playlistProvider.Playlists.Count() == 0)
+        _logger.LogInformation("Loading playlist with name: {PlaylistName}", name);
+        var playlist = await _playlistService.LoadPlaylistAsync(name, cancellationToken);
+        
+        if (playlist == null)
         {
-            await _playlistProvider.LoadAsync();
+            _logger.LogWarning("Playlist with name: {PlaylistName} was not found.", name);
+            return NotFound();
         }
 
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            return BadRequest("Playlist key cannot be null or empty.");
-        }
-
-        if (!_playlistProvider.Playlists.ContainsKey(key))
-        {
-            return NotFound($"Playlist with key '{key}' was not found.");
-        }
-
-        var items = _playlistProvider.GetPlaylist(key);
-        return Ok(items);
+        return Ok(playlist);
     }
 
     /// <summary>
-    /// Searches across all loaded playlists for a media item matching the specified URI string.
+    /// Deletes a playlist by its name.
     /// </summary>
-    /// <param name="uri">The URI string value to look up (Url, RawUri, or formatted Uri).</param>
-    /// <returns>The matching <see cref="MediaMetaData"/> item if found; otherwise, 404 Not Found.</returns>
-    [HttpGet("find")]
-    [ProducesResponseType(typeof(MediaMetaData), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    /// <param name="name">The name of the playlist to delete.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>No content if successfully deleted; otherwise, a 404 Not Found response.</returns>
+    [HttpDelete("{name}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> FindByUri([FromQuery] string uri)
+    public async Task<IActionResult> DeletePlaylistAsync(string name, CancellationToken cancellationToken)
     {
-        if (_playlistProvider.Playlists.Count() == 0)
+        _logger.LogInformation("Deleting playlist with name: {PlaylistName}", name);
+        var deleted = await _playlistService.DeletePlaylistAsync(name, cancellationToken);
+
+        if (!deleted)
         {
-            await _playlistProvider.LoadAsync();
+            _logger.LogWarning("Failed to delete playlist with name: {PlaylistName} as it was not found.", name);
+            return NotFound();
         }
 
-        if (string.IsNullOrWhiteSpace(uri))
-        {
-            return BadRequest("The 'uri' query parameter is required.");
-        }
-
-        var item = _playlistProvider.FindByUri(uri);
-        if (item is null)
-        {
-            return NotFound($"No media item found matching URI: '{uri}'.");
-        }
-
-        return Ok(item);
+        return NoContent();
     }
 
     /// <summary>
-    /// Loads and parses a dictionary of playlist sources into memory.
+    /// Adds a media item to a specified playlist.
     /// </summary>
-    /// <param name="sources">Key-value pairs where the key is a playlist identifier and the value is a file path, URL, or raw M3U string.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>Status indicating success and current count of loaded playlists.</returns>
-    [HttpPost("load")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    /// <param name="playlistName">The name of the target playlist.</param>
+    /// <param name="item">The media metadata item to add.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>No content on success, or a bad request if the item is invalid.</returns>
+    [HttpPost("{playlistName}/items")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> LoadPlaylists(
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> AddItemToPlaylistAsync(string playlistName, [FromBody] MediaMetaData item, CancellationToken cancellationToken)
     {
-        await _playlistProvider.LoadAsync(cancellationToken).ConfigureAwait(false);
-
-        return Ok(new
+        if (item == null)
         {
-            Message = "Playlists loaded successfully.",
-            PlaylistCount = _playlistProvider.Playlists.Count
-        });
+            return BadRequest("Item metadata cannot be null.");
+        }
+
+        _logger.LogInformation("Adding item to playlist: {PlaylistName}", playlistName);
+        await _playlistService.AddItemToPlaylistAsync(playlistName, item, cancellationToken);
+        
+        return NoContent();
     }
 
     /// <summary>
-    /// Reloads all currently registered playlist sources from their original locations.
+    /// Removes a media item from a specified playlist using its raw URI.
     /// </summary>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>Status indicating success and total refreshed playlist count.</returns>
-    [HttpPost("reload")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> ReloadPlaylists(CancellationToken cancellationToken)
+    /// <param name="playlistName">The name of the target playlist.</param>
+    /// <param name="rawUri">The raw URI of the media item to remove.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>No content on success.</returns>
+    [HttpDelete("{playlistName}/items")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveItemFromPlaylistAsync(string playlistName, [FromQuery] string rawUri, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("API request received to reload all registered playlist sources.");
-        await _playlistProvider.ReloadAsync(cancellationToken).ConfigureAwait(false);
-
-        return Ok(new
-        {
-            Message = "Playlists reloaded successfully.",
-            PlaylistCount = _playlistProvider.Playlists.Count
-        });
-    }
-
-    /// <summary>
-    /// Clears all loaded playlist data and search indices from memory.
-    /// </summary>
-    /// <returns>Status indicating success.</returns>
-    [HttpDelete]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult ClearPlaylists()
-    {
-        _logger.LogInformation("API request received to clear all in-memory playlist data.");
-        _playlistProvider.Clear();
-
-        return Ok(new { Message = "All playlists have been cleared successfully." });
+        _logger.LogInformation("Removing item with URI {RawUri} from playlist: {PlaylistName}", rawUri, playlistName);
+        await _playlistService.RemoveItemFromPlaylistAsync(playlistName, rawUri, cancellationToken);
+        
+        return NoContent();
     }
 }
-
