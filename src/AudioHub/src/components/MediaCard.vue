@@ -135,7 +135,7 @@ const isFavouriteSupported = computed(() => {
           class="absolute inset-0 bg-slate-950/40 transition-opacity duration-200 flex items-center justify-center"
           :class="{
             'opacity-100': showClickOverlay,
-            'opacity-0 group-hover:opacity-100': !showClickOverlay
+            'opacity-0 group-hover:opacity-100': !showClickOverlay,
           }"
         >
           <div

@@ -25,7 +25,7 @@ public class PluginModule : IPluginModule
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
         });
         services.AddSingleton<ILibrespotWebSocketClient, LibrespotWebSocketClient>();
-	services.AddSingleton<LibrespotManager>();
+        services.AddSingleton<LibrespotManager>();
 
     }
 }

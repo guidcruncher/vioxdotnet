@@ -48,4 +48,11 @@ public class PlaylistService : IPlaylistService
             _logger.LogInformation("Removed {Count} items matching {RawUri} from playlist {PlaylistName}", removedCount, rawUri, playlistName);
         }
     }
+
+    public async Task<MediaMetaDataPlaylist?> LoadPlaylistAsync(string name, CancellationToken cancellationToken = default) => await _repository.LoadPlaylistAsync(name, cancellationToken);
+
+    public async Task<IEnumerable<string>> GetPlaylistNamesAsync(CancellationToken cancellationToken = default) => await _repository.GetPlaylistNamesAsync(cancellationToken);
+
+    public async Task<bool> DeletePlaylistAsync(string name, CancellationToken cancellationToken = default) => await _repository.DeletePlaylistAsync(name, cancellationToken);
+
 }
