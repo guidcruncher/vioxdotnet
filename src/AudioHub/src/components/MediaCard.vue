@@ -44,16 +44,36 @@ const FAVOURITE_ALLOWED_TYPES = new Set([
 
 const PLAYLIST_ALLOWED_TYPES = new Set(['track', 'album', 'station', 'episode', 'show', 'media'])
 
-const isFavourite = ref(false)
-const isSubmitting = ref(false)
-const isInPlaylist = ref(false)
+/* Pretty type labels */
+const PRETTY_TYPE_LABELS: Record<string, string> = {
+  track: 'Track',
+  album: 'Album',
+  station: 'Radio',
+  episode: 'Episode',
+  show: 'Show',
+  media: 'Media',
+  podcast: 'Podcast',
+  audiobook: 'Audiobook',
+  playlist: 'Playlist',
+  file: 'File',
+  link: '',
+}
 
-/* Sync favourite + playlist flags */
+const prettyType = computed(() => {
+  const type = item.value?.uri?.type
+  return PRETTY_TYPE_LABELS[type ?? ''] ?? type ?? ''
+})
+
+const isFavourite = ref(false)
+const isInPlaylist = ref(false)
+const isSubmitting = ref(false)
+
+/* FIXED watcher — now updates correctly */
 watch(
-  () => [item.value?.rawUri, item.value?.favourite, item.value?.inPlaylist],
+  () => [item.value?.favourite, item.value?.inPlaylist],
   () => {
-    isFavourite.value = Boolean(item.value?.favourite)
-    isInPlaylist.value = Boolean(item.value?.inPlaylist)
+    isFavourite.value = !!item.value?.favourite
+    isInPlaylist.value = !!item.value?.inPlaylist
   },
   { immediate: true }
 )
@@ -192,27 +212,35 @@ const isPlaylistSupported = computed(() => {
         @click.stop="togglePlaylist"
         :disabled="!isPlaylistSupported || isSubmitting"
         type="button"
+        class="py-2 sm:py-1.5 px-2.5 rounded-lg border transition-all duration-300 ease-out flex items-center justify-center shrink-0 active:scale-95"
         :class="[
-          'py-2 sm:py-1.5 px-2.5 rounded-lg border transition flex items-center justify-center shrink-0 active:scale-95',
           !isPlaylistSupported
             ? 'bg-slate-800 border-slate-700 text-slate-600 opacity-40 cursor-not-allowed'
             : isInPlaylist
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-              : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-700',
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 scale-110'
+              : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-700 scale-95',
         ]"
       >
-        <svg v-if="isInPlaylist" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+        <svg
+          v-if="isInPlaylist"
+          class="w-3.5 h-3.5 fill-current transition-all duration-300"
+          viewBox="0 0 24 24"
+        >
           <path d="M3 17h12M3 12h12M3 7h12M17 7v10l4-5z" />
         </svg>
 
-        <svg v-else class="w-3.5 h-3.5 stroke-current stroke-2" viewBox="0 0 24 24">
+        <svg
+          v-else
+          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300"
+          viewBox="0 0 24 24"
+        >
           <path d="M3 17h12M3 12h12M3 7h12M17 7v10l4-5z" />
         </svg>
       </button>
 
-      <!-- Type Label -->
-      <p class="text-[10px] sm:text-xs text-slate-500 text-center flex-1 select-none">
-        {{ item.uri?.type }}
+      <!-- Pretty Type Label -->
+      <p class="text-[10px] sm:text-xs text-slate-400 text-center flex-1 select-none">
+        {{ prettyType }}
       </p>
 
       <!-- Favourite Button -->
@@ -221,23 +249,30 @@ const isPlaylistSupported = computed(() => {
         @click="toggleFavourite"
         :disabled="isSubmitting"
         type="button"
+        class="py-2 sm:py-1.5 px-2.5 rounded-lg border transition-all duration-300 ease-out flex items-center justify-center shrink-0 active:scale-95"
         :class="[
-          'py-2 sm:py-1.5 px-2.5 rounded-lg border transition flex items-center justify-center shrink-0 active:scale-95',
           isFavourite
-            ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20'
-            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-700',
+            ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20 scale-110'
+            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-700 scale-95',
         ]"
       >
-        <svg v-if="isFavourite" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+        <svg
+          v-if="isFavourite"
+          class="w-3.5 h-3.5 fill-current transition-all duration-300"
+          viewBox="0 0 24 24"
+        >
           <path
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22
-8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
           />
         </svg>
-        <svg v-else class="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+
+        <svg
+          v-else
+          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300"
+          viewBox="0 0 24 24"
+        >
           <path
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22
-8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
           />
         </svg>
       </button>
