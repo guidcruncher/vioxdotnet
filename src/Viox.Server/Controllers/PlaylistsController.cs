@@ -1,10 +1,6 @@
 // File: PlaylistsController.cs
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+
 using Viox.Core.Models;
 using Viox.Core.Playlists;
 
@@ -59,7 +55,7 @@ public class PlaylistsController : ControllerBase
     {
         _logger.LogInformation("Loading playlist with name: {PlaylistName}", name);
         var playlist = await _playlistService.LoadPlaylistAsync(name, cancellationToken);
-        
+
         if (playlist == null)
         {
             _logger.LogWarning("Playlist with name: {PlaylistName} was not found.", name);
@@ -111,7 +107,7 @@ public class PlaylistsController : ControllerBase
 
         _logger.LogInformation("Adding item to playlist: {PlaylistName}", playlistName);
         await _playlistService.AddItemToPlaylistAsync(playlistName, item, cancellationToken);
-        
+
         return NoContent();
     }
 
@@ -128,7 +124,7 @@ public class PlaylistsController : ControllerBase
     {
         _logger.LogInformation("Removing item with URI {RawUri} from playlist: {PlaylistName}", rawUri, playlistName);
         await _playlistService.RemoveItemFromPlaylistAsync(playlistName, rawUri, cancellationToken);
-        
+
         return NoContent();
     }
 }
