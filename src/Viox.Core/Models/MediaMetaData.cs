@@ -48,6 +48,8 @@ public class MediaMetaData
 
     public bool Favourite { get; set; } = false;
 
+    public bool InPlaylist { get; set; } = false;
+
     public DateTimeOffset? ReleaseDate { get; set; } = null;
 
 }

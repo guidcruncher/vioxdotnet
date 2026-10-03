@@ -17,6 +17,7 @@ const emit = defineEmits<{
   (e: 'play', item: MediaMetaData): void
   (e: 'view', item: MediaMetaData): void
   (e: 'favourite', isFav: boolean, item: MediaMetaData): void
+  (e: 'playlist', isInPlaylist: boolean, item: MediaMetaData): void
 }>()
 
 const api = useApiClient()
@@ -30,6 +31,7 @@ const NON_PLAYABLE_TYPES = new Set([
   'playlist',
   'file',
 ])
+
 const FAVOURITE_ALLOWED_TYPES = new Set([
   'track',
   'album',
@@ -40,49 +42,46 @@ const FAVOURITE_ALLOWED_TYPES = new Set([
   'media',
 ])
 
+const PLAYLIST_ALLOWED_TYPES = new Set(['track', 'album', 'station', 'episode', 'show', 'media'])
+
 const isFavourite = ref(false)
 const isSubmitting = ref(false)
+const isInPlaylist = ref(false)
 
+/* Sync favourite + playlist flags */
 watch(
-  () => [item.value?.rawUri, item.value?.favourite],
+  () => [item.value?.rawUri, item.value?.favourite, item.value?.inPlaylist],
   () => {
     isFavourite.value = Boolean(item.value?.favourite)
+    isInPlaylist.value = Boolean(item.value?.inPlaylist)
   },
   { immediate: true }
 )
 
+/* Play / View */
 const playItem = () => item.value && emit('play', item.value)
 const viewItem = () => item.value && emit('view', item.value)
 
-/* --- CLICK FLASH OVERLAY FLAG --- */
+/* Click overlay */
 const showClickOverlay = ref(false)
-
 const handleImageClick = () => {
   if (isPlayable.value) playItem()
   else viewItem()
-
-  // Flash overlay for 600ms
   showClickOverlay.value = true
-  setTimeout(() => {
-    showClickOverlay.value = false
-  }, 600)
+  setTimeout(() => (showClickOverlay.value = false), 600)
 }
 
+/* Favourite toggle */
 const toggleFavourite = async () => {
   if (!item.value || isSubmitting.value) return
-
   const previous = isFavourite.value
   const next = !previous
-
   isFavourite.value = next
   isSubmitting.value = true
-
   const updated: MediaMetaData = { ...item.value, favourite: next }
-
   try {
     if (next) await api.favourites.add(updated)
     else await api.favourites.remove(item.value.rawUri)
-
     item.value = updated
     emit('favourite', next, updated)
   } catch (err) {
@@ -93,6 +92,26 @@ const toggleFavourite = async () => {
   }
 }
 
+/* Playlist toggle */
+const togglePlaylist = async () => {
+  if (!item.value || isSubmitting.value) return
+  const previous = isInPlaylist.value
+  const next = !previous
+  isInPlaylist.value = next
+  isSubmitting.value = true
+  const updated: MediaMetaData = { ...item.value, inPlaylist: next }
+  try {
+    item.value = updated
+    emit('playlist', next, updated)
+  } catch (err) {
+    isInPlaylist.value = previous
+    console.error(err)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+/* Image fallback */
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
   if (img.src !== props.defaultimage) img.src = props.defaultimage
@@ -109,6 +128,11 @@ const isFavouriteSupported = computed(() => {
   const type = item.value?.uri?.type
   return Boolean(type && FAVOURITE_ALLOWED_TYPES.has(type))
 })
+
+const isPlaylistSupported = computed(() => {
+  const type = item.value?.uri?.type
+  return Boolean(type && PLAYLIST_ALLOWED_TYPES.has(type))
+})
 </script>
 
 <template>
@@ -118,7 +142,6 @@ const isFavouriteSupported = computed(() => {
   >
     <!-- Artwork + Text -->
     <div class="flex flex-col w-full">
-      <!-- Artwork Container with hover + click overlay -->
       <div
         class="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-inner mb-2.5 flex items-center justify-center relative cursor-pointer"
         @click="handleImageClick"
@@ -162,8 +185,37 @@ const isFavouriteSupported = computed(() => {
       </div>
     </div>
 
-    <!-- Favourite Button -->
-    <div class="mt-3 flex items-center gap-1.5 w-full">
+    <!-- Bottom Controls -->
+    <div class="mt-3 flex items-center w-full justify-between">
+      <!-- Playlist Button -->
+      <button
+        @click.stop="togglePlaylist"
+        :disabled="!isPlaylistSupported || isSubmitting"
+        type="button"
+        :class="[
+          'py-2 sm:py-1.5 px-2.5 rounded-lg border transition flex items-center justify-center shrink-0 active:scale-95',
+          !isPlaylistSupported
+            ? 'bg-slate-800 border-slate-700 text-slate-600 opacity-40 cursor-not-allowed'
+            : isInPlaylist
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+              : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-700',
+        ]"
+      >
+        <svg v-if="isInPlaylist" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M3 17h12M3 12h12M3 7h12M17 7v10l4-5z" />
+        </svg>
+
+        <svg v-else class="w-3.5 h-3.5 stroke-current stroke-2" viewBox="0 0 24 24">
+          <path d="M3 17h12M3 12h12M3 7h12M17 7v10l4-5z" />
+        </svg>
+      </button>
+
+      <!-- Type Label -->
+      <p class="text-[10px] sm:text-xs text-slate-500 text-center flex-1 select-none">
+        {{ item.uri?.type }}
+      </p>
+
+      <!-- Favourite Button -->
       <button
         v-if="isFavouriteSupported"
         @click="toggleFavourite"
@@ -178,13 +230,14 @@ const isFavouriteSupported = computed(() => {
       >
         <svg v-if="isFavourite" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
           <path
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22
+8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
           />
         </svg>
-
         <svg v-else class="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
           <path
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22
+8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
           />
         </svg>
       </button>

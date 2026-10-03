@@ -20,7 +20,7 @@ export interface MediaMetaData {
   duration?: number
 
   favourite?: boolean
-
+  inPlaylist?: boolean
   releaseDate?: string
 }
 
