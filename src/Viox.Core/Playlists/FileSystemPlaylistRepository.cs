@@ -18,6 +18,8 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
     private readonly ILogger<FileSystemPlaylistRepository> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
+    private const fileExtension = ".playlist.json";
+
     public FileSystemPlaylistRepository(
         IOptions<PlaylistOptions> options,
         ILogger<FileSystemPlaylistRepository> logger)
@@ -38,7 +40,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
         ArgumentNullException.ThrowIfNull(playlist);
 
         var safeName = GetSafeFilename(playlist.Title);
-        var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}.json");
+        var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}");
 
         _logger.LogInformation("Saving playlist {PlaylistTitle} to {FilePath}", playlist.Title, filePath);
 
@@ -51,7 +53,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         var safeName = GetSafeFilename(name);
-        var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}.json");
+        var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}");
 
         if (!File.Exists(filePath))
         {
@@ -72,7 +74,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
             return Task.FromResult(Enumerable.Empty<string>());
         }
 
-        var files = Directory.GetFiles(_options.StorageDirectory, "*.json");
+        var files = Directory.GetFiles(_options.StorageDirectory, $"*{fileExtension}");
         var names = files.Select(Path.GetFileNameWithoutExtension).Where(n => n != null).Cast<string>();
 
         return Task.FromResult(names);
@@ -83,7 +85,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         var safeName = GetSafeFilename(name);
-        var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}.json");
+        var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}");
 
         if (!File.Exists(filePath))
         {
@@ -95,9 +97,11 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
         return Task.FromResult(true);
     }
 
-    private static string GetSafeFilename(string filename)
+    private static string GetSafeFilename(string title)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
-        return string.Concat(filename.Select(c => invalidChars.Contains(c) ? '_' : c));
+        var filename = string.Concat(title.Select(c => invalidChars.Contains(c) ? '_' : c));
+        return $"{filename}{fileExtension}";
     }
+
 }

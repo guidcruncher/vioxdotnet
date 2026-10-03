@@ -1,4 +1,4 @@
-// File: PlaylistsController.cs
+// File: FilePlaylistsController.cs
 namespace Viox.Server.Controllers;
 
 using System;
@@ -21,16 +21,16 @@ using Viox.Core.Models;
 public class FilePlaylistsController : ControllerBase
 {
     private readonly IM3uPlaylistProvider _playlistProvider;
-    private readonly ILogger<PlaylistsController> _logger;
+    private readonly ILogger<FilePlaylistsController> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PlaylistsController"/> class.
+    /// Initializes a new instance of the <see cref="FilePlaylistsController"/> class.
     /// </summary>
     /// <param name="playlistProvider">The M3U playlist provider service.</param>
     /// <param name="logger">The logger instance.</param>
-    public PlaylistsController(
+    public FilePlaylistsController(
         IM3uPlaylistProvider playlistProvider,
-        ILogger<PlaylistsController> logger)
+        ILogger<FilePlaylistsController> logger)
     {
         _playlistProvider = playlistProvider ?? throw new ArgumentNullException(nameof(playlistProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
