@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
-import type { MediaMetaData } from '@/types/api'
+import type { MediaMetaData } from '@/types'
 import { useRoute, useRouter } from 'vue-router'
 
 const emit = defineEmits<{

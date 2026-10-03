@@ -2,7 +2,7 @@
 import { watch, ref, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { MediaMetaData } from '../types/api'
+import type { MediaMetaData } from '@/types'
 import { useRoute, useRouter } from 'vue-router'
 import MediaCard from '@/components/MediaCard.vue'
 import CountryCard from '@/components/CountryCard.vue'

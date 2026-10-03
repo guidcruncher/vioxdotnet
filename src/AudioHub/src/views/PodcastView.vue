@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { MediaMetaData } from '../types/api'
+import type { MediaMetaData } from '@/types'
 
 const route = useRoute()
 const api = useApiClient()

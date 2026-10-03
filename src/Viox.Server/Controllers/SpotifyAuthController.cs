@@ -41,6 +41,22 @@ public sealed class SpotifyAuthController : ControllerBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+
+    /// <summary>
+    /// Gets detailed profile information about the current user.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>Current user profile.</returns>
+    [HttpGet("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<SpotifyResponse<SpotifyUserProfile>>> GetCurrentUserProfile(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Retrieving current user profile");
+
+        var result = await _spotifyClient.GetCurrentUserProfileAsync(cancellationToken);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Initiates the Spotify authorization process by generating a state token and redirecting to Spotify.
     /// </summary>

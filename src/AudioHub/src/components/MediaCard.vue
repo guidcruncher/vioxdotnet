@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
-import type { MediaMetaData } from '@/types/api'
+import type { MediaMetaData } from '@/types'
 
 interface Props {
   defaultimage?: string

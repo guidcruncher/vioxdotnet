@@ -3,7 +3,7 @@ import { watch, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { PagedList, MediaMetaData } from '@/types/api'
+import type { PagedList, MediaMetaData } from '@/types'
 
 const router = useRouter()
 const route = useRoute()

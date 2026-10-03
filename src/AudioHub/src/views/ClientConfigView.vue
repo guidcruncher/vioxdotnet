@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
-import type { ClientConfig } from '@/types/api'
+import type { ClientConfiguration } from '@/types'
 
 const api = useApiClient()
 
@@ -14,7 +14,7 @@ const successMessage = ref<string | null>(null)
 
 // Form configuration data model
 const countries = ref<Record<string, string>>({})
-const config = ref<ClientConfig | null>(null)
+const config = ref<ClientConfiguration | null>(null)
 
 async function loadConfig() {
   isLoading.value = true

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { MediaMetaData, PlaybackState } from '@/types/api'
+import type { MediaMetaData, PlaybackState } from '@/types'
 import { useApiClient } from '@/composables/useApiClient'
 import { useServerEvents, type EventPayload } from '@/composables/useServerEvents'
 

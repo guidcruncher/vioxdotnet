@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useApiClient } from '@/composables/useApiClient'
-import type { SetVolumeResponse, GetVolumeResponse } from '../types/api'
+import type { GetVolumeResponse, SetVolumeRequest, VolumeState } from '@/types'
 
 const store = usePlaybackStore()
 const api = useApiClient()
@@ -43,7 +43,7 @@ function onVolumeChange() {
 
   debounceTimer = setTimeout(async () => {
     try {
-      const res: SetVolumeResponse = await api.media.setVolume({ volumePercent: masterVol.value })
+      await api.media.setVolume({ volumePercent: masterVol.value })
     } catch (error) {
       console.error('Failed to set volume:', error)
     }

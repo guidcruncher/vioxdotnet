@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { MediaMetaData } from '../types/api'
+import type { MediaMetaData } from '@/types'
 
 const api = useApiClient()
 const playbackStore = usePlaybackStore()
@@ -34,7 +34,7 @@ async function fetchPlaylists() {
   isLoading.value = true
   errorMessage.value = null
   try {
-    const data = await api.playlist.getPlaylists()
+    const data = await api.filePlaylists.getPlaylists()
     playlistsMap.value = data || {}
     const names = Object.keys(playlistsMap.value)
     if (names.length > 0) {
