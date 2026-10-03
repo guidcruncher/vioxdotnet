@@ -162,11 +162,7 @@ onMounted(async () => {
 
           <!-- Action Buttons -->
           <div class="flex justify-end pt-4">
-            <button
-              type="submit"
-              :disabled="isSaving"
-              class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800/50 disabled:cursor-not-allowed text-white font-medium text-sm shadow-lg hover:scale-105 active:scale-95 transition"
-            >
+            <AppButton type="submit" :disabled="isSaving">
               <svg
                 v-if="isSaving"
                 class="animate-spin h-4 w-4 text-white"
@@ -188,7 +184,7 @@ onMounted(async () => {
                 ></path>
               </svg>
               <span>{{ isSaving ? 'Saving Changes...' : 'Save Configuration' }}</span>
-            </button>
+            </AppButton>
           </div>
         </form>
       </template>
