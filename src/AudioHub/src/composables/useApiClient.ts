@@ -133,24 +133,33 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
   ========================================== */
 
   const playlists = {
-    getAll: () => transport.request<string[]>('/api/v1/playlists'),
+    getAll: () => transport.request<Record<string, string>>('/api/v1/playlists'),
 
-    getByName: (name: string) =>
-      transport.request<MediaMetaDataPlaylist>(`/api/v1/playlists/${encodeURIComponent(name)}`),
+    getById: (id: string) =>
+      transport.request<MediaMetaDataPlaylist>(`/api/v1/playlists/${encodeURIComponent(id)}`),
 
-    delete: (name: string) =>
-      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(name)}`, {
+    delete: (id: string) =>
+      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       }),
 
-    addItem: (playlistName: string, item: MediaMetaData) =>
-      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(playlistName)}/items`, {
+    addItem: (id: string, item: MediaMetaData) =>
+      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(id)}/items`, {
         method: 'POST',
         body: JSON.stringify(item),
       }),
 
-    removeItem: (playlistName: string, rawUri: string) =>
-      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(playlistName)}/items`, {
+    createPlaylist: (title: string, item: MediaMetaData) =>
+      transport.request<MediaMetaDataPlaylist>(
+        `/api/v1/playlists/items?title=${encodeURIComponent(title)}`,
+        {
+          method: 'POST',
+          body: JSON.stringify(item),
+        }
+      ),
+
+    removeItem: (id: string, rawUri: string) =>
+      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(id)}/items`, {
         method: 'DELETE',
         params: {
           rawUri,

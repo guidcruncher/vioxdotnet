@@ -39,7 +39,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
     {
         ArgumentNullException.ThrowIfNull(playlist);
 
-        var safeName = GetSafeFilename(playlist.Title);
+        var safeName = GetSafeFilename(playlist.Id);
         var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}");
 
         _logger.LogInformation("Saving playlist {PlaylistTitle} to {FilePath}", playlist.Title, filePath);
@@ -48,43 +48,53 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
         await File.WriteAllTextAsync(filePath, json, cancellationToken);
     }
 
-    public async Task<MediaMetaDataPlaylist?> LoadPlaylistAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<MediaMetaDataPlaylist?> LoadPlaylistAsync(string id, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        var safeName = GetSafeFilename(name);
+        var safeName = GetSafeFilename(id);
         var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}");
 
         if (!File.Exists(filePath))
         {
-            _logger.LogWarning("Playlist file not found for name {PlaylistName} at {FilePath}", name, filePath);
+            _logger.LogWarning("Playlist file not found for name {PlaylistName} at {FilePath}", id, filePath);
             return null;
         }
 
-        _logger.LogInformation("Loading playlist {PlaylistName} from {FilePath}", name, filePath);
+        _logger.LogInformation("Loading playlist {PlaylistName} from {FilePath}", id, filePath);
         var json = await File.ReadAllTextAsync(filePath, cancellationToken);
 
         return JsonSerializer.Deserialize<MediaMetaDataPlaylist>(json, _jsonOptions);
     }
 
-    public Task<IEnumerable<string>> GetPlaylistNamesAsync(CancellationToken cancellationToken = default)
+    public async Task<Dictionary<string, string>> GetPlaylistNamesAsync(CancellationToken cancellationToken = default)
     {
         if (!Directory.Exists(_options.StorageDirectory))
         {
-            return Task.FromResult(Enumerable.Empty<string>());
+            return new Dictionary<string, string>();
         }
 
         var files = Directory.GetFiles(_options.StorageDirectory, $"*{fileExtension}");
-        var names = files.Select(Path.GetFileNameWithoutExtension).Where(n => n != null).Cast<string>();
+        Dictionary<string, string> res = new();
 
-        return Task.FromResult(names);
+        foreach (string f in files)
+        {
+            string id = Path.GetFileNameWithoutExtension(f);
+            MediaMetaDataPlaylist? pl = await LoadPlaylistAsync(id, cancellationToken);
+            if (pl is not null)
+            {
+                res.Add(pl.Id, pl.Title);
+            }
+        }
+
+        return res;
     }
 
-    public Task<bool> DeletePlaylistAsync(string name, CancellationToken cancellationToken = default)
+    public Task<bool> DeletePlaylistAsync(string id, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        var safeName = GetSafeFilename(name);
+        var safeName = GetSafeFilename(id);
         var filePath = Path.Combine(_options.StorageDirectory, $"{safeName}");
 
         if (!File.Exists(filePath))
@@ -92,15 +102,15 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
             return Task.FromResult(false);
         }
 
-        _logger.LogInformation("Deleting playlist {PlaylistName} at {FilePath}", name, filePath);
+        _logger.LogInformation("Deleting playlist {PlaylistName} at {FilePath}", id, filePath);
         File.Delete(filePath);
         return Task.FromResult(true);
     }
 
-    private string GetSafeFilename(string title)
+    private string GetSafeFilename(string id)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
-        var filename = string.Concat(title.Select(c => invalidChars.Contains(c) ? '_' : c));
+        var filename = string.Concat(id.Select(c => invalidChars.Contains(c) ? '_' : c));
         return $"{filename}{fileExtension}";
     }
 

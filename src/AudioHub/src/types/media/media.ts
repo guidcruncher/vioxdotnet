@@ -25,6 +25,8 @@ export interface MediaMetaData {
 }
 
 export interface MediaMetaDataPlaylist {
+  id: string
+
   title?: string
 
   imageUrl?: string
