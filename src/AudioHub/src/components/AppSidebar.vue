@@ -193,6 +193,22 @@ const closeMobileMenu = () => {
     <div class="space-y-2">
       <nav class="space-y-1">
         <router-link
+          to="/playlists"
+          @click="closeMobileMenu"
+          active-class="bg-slate-800 text-white font-medium"
+          class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
+          :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
+          :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Playlists' : ''"
+        >
+          <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M4 19h2v-5H4v5zm4 0h2V5H8v14zm4 0h2v-8h-2v8zm4 0h2V9h-2v10zm4 0h2v-11h-2v11z"
+            />
+          </svg>
+          <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">Playlists</span>
+        </router-link>
+
+        <router-link
           to="/equalizer"
           @click="closeMobileMenu"
           active-class="bg-slate-800 text-white font-medium"

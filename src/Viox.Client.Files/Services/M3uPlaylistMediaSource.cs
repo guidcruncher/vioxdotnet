@@ -24,7 +24,7 @@ public class M3uPlaylistMediaSource : IMediaSource
     {
         ["Title"] = "Playlist",
         ["Icon"] = "",
-        ["Url"] = "/playlists"
+        ["Url"] = "/library/playlists"
     };
 
     public M3uPlaylistMediaSource(
