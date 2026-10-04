@@ -14,9 +14,11 @@ using Viox.Client.Files.Configuration;
 using Viox.Core.Models;
 using Viox.Core.Services;
 using Viox.Core.Utilities;
+using Viox.Core.Playlists;
 
 public class FileScanner(
     ILogger<FileScanner> logger,
+    IPlaylistIndexService indexer,
     IFavoritesService favourites,
     IOptions<MediaScannerOptions> options) : IFileScanner
 {
@@ -79,6 +81,7 @@ public class FileScanner(
                         Artist = "",
                         ImageUrl = "/file.png"
                     };
+metadata.InPlaylist = indexer.ContainsUri(metadata.RawUri);
                     metadata.Favourite = favourites.Exists(metadata.RawUri);
                     results.Add(metadata);
                 }

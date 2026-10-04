@@ -79,8 +79,11 @@ public static class VioxCoreServiceCollectionExtension
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
         services.Configure<PlaylistOptions>(configuration.GetSection(PlaylistOptions.SectionName));
+
         services.AddSingleton<IPlaylistRepository, FileSystemPlaylistRepository>();
         services.AddSingleton<IPlaylistService, PlaylistService>();
+        services.AddSingleton<IPlaylistIndexService, PlaylistIndexService>();
+
         return services;
     }
 
