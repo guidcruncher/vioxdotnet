@@ -1,5 +1,6 @@
 using Viox.Client.Podverse.Models;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 
 namespace Viox.Client.Podverse.Services;
@@ -10,7 +11,7 @@ public sealed class PodverseEpisodeConverter : MediaMetaDataConverterBase, IMedi
     public string Source { get => "podverse"; }
     public string Type { get => "episode"; }
 
-    public PodverseEpisodeConverter() : base()
+    public PodverseEpisodeConverter(IPlaylistIndexService indexer, IFavoritesService favourites) : base(indexer, favourites)
     {
     }
 

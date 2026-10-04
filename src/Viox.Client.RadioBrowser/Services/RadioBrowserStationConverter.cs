@@ -1,5 +1,6 @@
 using Viox.Client.RadioBrowser.Models;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 
 namespace Viox.Client.RadioBrowser.Services;
@@ -11,7 +12,7 @@ public sealed class RadioBrowserStationConverter : MediaMetaDataConverterBase, I
     public string Type { get => "station"; }
 
 
-    public RadioBrowserStationConverter() : base()
+    public RadioBrowserStationConverter(IPlaylistIndexService indexer, IFavoritesService favourites) : base(indexer, favourites)
     {
     }
 
@@ -31,7 +32,6 @@ public sealed class RadioBrowserStationConverter : MediaMetaDataConverterBase, I
             Url = station.UrlResolved ?? station.Url ?? string.Empty,
             ImageUrl = station.Favicon ?? string.Empty
         };
-        metaData.Favourite = _favourites.Exists(metaData.RawUri);
         return Decorate(metaData);
     }
 

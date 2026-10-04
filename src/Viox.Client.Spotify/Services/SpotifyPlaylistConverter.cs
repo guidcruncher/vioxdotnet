@@ -1,5 +1,6 @@
 using Viox.Client.Spotify.Models;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 
 namespace Viox.Client.Spotify.Services;
@@ -10,7 +11,7 @@ public sealed class SpotifyPlaylistConverter : MediaMetaDataConverterBase, IMedi
     public string Type => "playlist";
 
 
-    public SpotifyPlaylistConverter() : base()
+    public SpotifyPlaylistConverter(IPlaylistIndexService indexer, IFavoritesService favourites) : base(indexer, favourites)
     {
     }
 
@@ -33,7 +34,6 @@ public sealed class SpotifyPlaylistConverter : MediaMetaDataConverterBase, IMedi
             Url = playlist.Href ?? string.Empty,
             ImageUrl = SpotifyConverterHelpers.GetSpotifyImageUrl(playlist.Images)
         };
-        metaData.Favourite = _favourites.Exists(metaData.RawUri);
         return Decorate(metaData);
     }
 }

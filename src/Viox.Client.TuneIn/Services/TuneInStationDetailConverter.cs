@@ -1,5 +1,6 @@
 using Viox.Client.TuneIn.Models;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 
 namespace Viox.Client.TuneIn.Services;
@@ -11,7 +12,7 @@ public sealed class TuneInStationDetailConverter : MediaMetaDataConverterBase, I
     public string Type { get => "station"; }
 
 
-    public TuneInStationDetailConverter() : base()
+    public TuneInStationDetailConverter(IPlaylistIndexService indexer, IFavoritesService favourites) : base(indexer, favourites)
     {
     }
 
@@ -31,7 +32,6 @@ public sealed class TuneInStationDetailConverter : MediaMetaDataConverterBase, I
             Url = station.Audio.Url ?? string.Empty,
             ImageUrl = station.Station.Logo ?? string.Empty
         };
-        metaData.Favourite = _favourites.Exists(metaData.RawUri);
         return Decorate(metaData);
     }
 

@@ -1,3 +1,4 @@
+using Viox.Core.Playlists;
 using Viox.Client.Youtube.Models;
 using Viox.Core.Models;
 using Viox.Core.Services;

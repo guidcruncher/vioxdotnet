@@ -1,5 +1,6 @@
 using Viox.Client.Spotify.Models;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 
 namespace Viox.Client.Spotify.Services;
@@ -10,7 +11,7 @@ public sealed class SpotifyEpisodeConverter : MediaMetaDataConverterBase, IMedia
     public string Type => "episode";
 
 
-    public SpotifyEpisodeConverter() : base()
+    public SpotifyEpisodeConverter(IPlaylistIndexService indexer, IFavoritesService favourites) : base(indexer, favourites)
     {
     }
 
@@ -35,7 +36,6 @@ public sealed class SpotifyEpisodeConverter : MediaMetaDataConverterBase, IMedia
             Duration = (episode.DurationMs / 1000),
             ReleaseDate = SpotifyConverterHelpers.ParseSpotifyDate(episode.ReleaseDate, episode.ReleaseDatePrecision)
         };
-        metaData.Favourite = _favourites.Exists(metaData.RawUri);
         return Decorate(metaData);
     }
 }
