@@ -49,8 +49,8 @@ const pageTitle = computed<string>(() => {
   return ''
 })
 
-async function addToPlaylistFunc(data: any) {
-  playlistItem.value = data.item
+async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
+  playlistItem.value = item
   addToPlaylist.value = true
 }
 
@@ -250,5 +250,5 @@ onMounted(async () => {
       No media found matching query.
     </div>
   </div>
-  <AddToPlaylistModal v-model:IsOpen="addToPlaylist" :item="playlistItem" />
+  <AddToPlaylistModal v-model:isOpen="addToPlaylist" :item="playlistItem" />
 </template>
