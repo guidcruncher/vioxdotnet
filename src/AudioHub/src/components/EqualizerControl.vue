@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
-import type { EqualizerBand } from '@/types/api'
+import type { EqualizerBand } from '@/types'
 
 // Initialize API client and state
 const api = useApiClient()
@@ -26,7 +26,7 @@ async function fetchBands(): Promise<void> {
   isLoading.value = true
   errorMessage.value = null
   try {
-    bands.value = await api.equalizer.getEqualizerBands()
+    bands.value = await api.equalizer.getBands()
   } catch (err) {
     errorMessage.value = 'Failed to load equalizer settings.'
   } finally {
@@ -75,7 +75,7 @@ function handleBandInput(index: number, channel: 'left' | 'right', value: number
 
   const timer = setTimeout(async () => {
     try {
-      await api.equalizer.setEqualizerBand(index, targetValue)
+      await api.equalizer.setBand(index, targetValue)
     } catch (err) {
       errorMessage.value = `Failed to update band ${band.frequencyLabel}`
     } finally {
@@ -106,7 +106,7 @@ async function handlePresetChange(event: Event): Promise<void> {
   errorMessage.value = null
   try {
     const allPercentages = bands.value.map((b) => b.leftPercentage)
-    await api.equalizer.setEqualizerBands(allPercentages)
+    await api.equalizer.setBands(allPercentages)
   } catch (err) {
     errorMessage.value = 'Failed to apply equalizer preset.'
   } finally {
@@ -131,7 +131,7 @@ async function resetEqualizer(): Promise<void> {
   errorMessage.value = null
   try {
     const allPercentages = bands.value.map(() => 50)
-    await api.equalizer.setEqualizerBands(allPercentages)
+    await api.equalizer.setBands(allPercentages)
   } catch (err) {
     errorMessage.value = 'Failed to reset equalizer.'
   } finally {

@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useClientConfig } from '@/composables/useClientConfig'
 import { useApiClient } from '@/composables/useApiClient'
-import type { Sources } from '@/types/api'
+import type { Sources } from '@/types'
 
 const { config, isLoading, error, fetchConfig } = useClientConfig()
 const api = useApiClient()
@@ -206,32 +206,6 @@ const closeMobileMenu = () => {
             />
           </svg>
           <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">Equalizer</span>
-        </router-link>
-
-        <router-link
-          to="/snapcast"
-          @click="closeMobileMenu"
-          active-class="bg-slate-800 text-white font-medium"
-          class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
-          :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
-          :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Multi-Room' : ''"
-        >
-          <svg
-            class="w-4 h-4 text-indigo-400 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate"
-            >Multi-Room</span
-          >
         </router-link>
 
         <router-link

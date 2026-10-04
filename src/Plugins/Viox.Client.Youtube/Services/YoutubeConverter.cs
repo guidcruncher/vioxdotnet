@@ -1,20 +1,19 @@
+using Viox.Core.Playlists;
 using Viox.Client.Youtube.Models;
 using Viox.Core.Models;
 using Viox.Core.Services;
 
 namespace Viox.Client.Youtube.Services;
 
-public sealed class YoutubeConverter : IMediaMetaDataConverter<YoutubeTrack>
+public sealed class YoutubeConverter : MediaMetaDataConverterBase, IMediaMetaDataConverter<YoutubeTrack>
 {
 
     public string Source { get => "youtube"; }
     public string Type { get => "track"; }
 
-    private readonly IFavoritesService _favourites;
 
-    public YoutubeConverter(IFavoritesService favourites)
+    public YoutubeConverter(): base()
     {
-        _favourites = favourites;
     }
 
     public MediaMetaData Convert(object input)
@@ -36,7 +35,7 @@ public sealed class YoutubeConverter : IMediaMetaDataConverter<YoutubeTrack>
         };
 
         metaData.Favourite = _favourites.Exists(metaData.RawUri);
-        return metaData;
+        return Decorate(metaData);
     }
 
 }

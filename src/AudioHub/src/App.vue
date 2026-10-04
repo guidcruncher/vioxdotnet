@@ -6,7 +6,7 @@ import AppSidebar from '@/components/AppSidebar.vue'
 import PlayerFooter from '@/components/PlayerFooter.vue'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useApiClient } from '@/composables/useApiClient'
-import type { SpotifyResponse, SpotifyUserProfile } from './types/api'
+import type { SpotifyResponse, SpotifyUserProfile } from '@/types'
 
 const api = useApiClient()
 const store = usePlaybackStore()
@@ -40,7 +40,7 @@ onMounted(async () => {
 
   if (isDevelopment === 'false') {
     try {
-      const profile: SpotifyResponse<SpotifyUserProfile> = await api.spotify.getProfile()
+      const profile: SpotifyResponse<SpotifyUserProfile> = await api.auth.me()
 
       if (!profile || !profile.isSuccess) {
         window.location.href = '/api/v1/auth/login'

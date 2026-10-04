@@ -2,7 +2,7 @@
 import { watch, ref, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { MediaMetaData } from '../types/api'
+import type { MediaMetaData } from '@/types'
 import { useRoute, useRouter } from 'vue-router'
 import MediaCard from '@/components/MediaCard.vue'
 import CountryCard from '@/components/CountryCard.vue'
@@ -16,6 +16,8 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 const countries = ref<Record<string, string> | null>(null)
 const stations = ref<MediaMetaData[]>([])
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -51,6 +53,15 @@ async function loadStationsForCountry(countryCode: string) {
 async function playItem(station: MediaMetaData) {
   if (station.rawUri) {
     await store.playUri(station.rawUri)
+  }
+}
+
+async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
+  if (state) {
+    playlistItem.value = item
+    addToPlaylist.value = true
+  } else {
+    await api.playlists.removeItem(item.rawUri)
   }
 }
 
@@ -136,6 +147,7 @@ watch(
                 :key="s.rawUri || index"
                 v-model:item="stations[index]"
                 @play="playItem"
+                @playlist="addToPlaylistFunc"
               />
             </MediaCardGrid>
 
@@ -158,4 +170,5 @@ watch(
       </div>
     </div>
   </div>
+  <AddToPlaylistModal v-model:isOpen="addToPlaylist" :item="playlistItem" />
 </template>

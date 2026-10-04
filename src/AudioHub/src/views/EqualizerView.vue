@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { MediaMetaData } from '@/types/api'
+import type { MediaMetaData } from '@/types'
 
 const store = usePlaybackStore()
 

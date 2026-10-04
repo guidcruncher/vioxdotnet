@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MediaMetaData } from '../types/api'
+import type { MediaMetaData } from '@/types'
 
 interface Props {
   defaultImage?: string

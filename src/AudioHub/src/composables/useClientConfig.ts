@@ -1,5 +1,5 @@
 import { ref, readonly, type Ref, type DeepReadonly } from 'vue'
-import type { ClientConfig } from '@/types/api'
+import type { ClientConfiguration } from '@/types'
 import { useApiClient } from '@/composables/useApiClient'
 
 export interface UseClientConfigOptions {
@@ -11,11 +11,11 @@ export interface UseClientConfigOptions {
 }
 
 export interface UseClientConfigReturn {
-  config: DeepReadonly<Ref<ClientConfig | null>>
+  config: DeepReadonly<Ref<ClientConfiguration | null>>
   isLoading: DeepReadonly<Ref<boolean>>
   error: DeepReadonly<Ref<Error | null>>
-  fetchConfig: () => Promise<ClientConfig | null>
-  updateConfig: (newConfig: ClientConfig) => Promise<boolean>
+  fetchConfig: () => Promise<ClientConfiguration | null>
+  updateConfig: (newConfig: ClientConfiguration) => Promise<boolean>
 }
 
 export function useClientConfig(options: UseClientConfigOptions = {}): UseClientConfigReturn {
@@ -23,11 +23,11 @@ export function useClientConfig(options: UseClientConfigOptions = {}): UseClient
 
   const apiClient = useApiClient()
 
-  const config = ref<ClientConfig | null>(null)
+  const config = ref<ClientConfiguration | null>(null)
   const isLoading = ref<boolean>(false)
   const error = ref<Error | null>(null)
 
-  const fetchConfig = async (): Promise<ClientConfig | null> => {
+  const fetchConfig = async (): Promise<ClientConfiguration | null> => {
     isLoading.value = true
     error.value = null
 
@@ -44,7 +44,7 @@ export function useClientConfig(options: UseClientConfigOptions = {}): UseClient
     }
   }
 
-  const updateConfig = async (newConfig: ClientConfig): Promise<boolean> => {
+  const updateConfig = async (newConfig: ClientConfiguration): Promise<boolean> => {
     isLoading.value = true
     error.value = null
 

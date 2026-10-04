@@ -3,7 +3,6 @@ namespace Viox.Client.Files.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
-
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,10 +11,14 @@ using Microsoft.Extensions.Options;
 
 using Viox.Client.Files.Configuration;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
+using Viox.Core.Services;
 using Viox.Core.Utilities;
 
 public class FileScanner(
     ILogger<FileScanner> logger,
+    IPlaylistIndexService indexer,
+    IFavoritesService favourites,
     IOptions<MediaScannerOptions> options) : IFileScanner
 {
     private readonly MediaScannerOptions _options = options.Value;
@@ -77,6 +80,8 @@ public class FileScanner(
                         Artist = "",
                         ImageUrl = "/file.png"
                     };
+                    metadata.InPlaylist = indexer.ContainsUri(metadata.RawUri);
+                    metadata.Favourite = favourites.Exists(metadata.RawUri);
                     results.Add(metadata);
                 }
             }

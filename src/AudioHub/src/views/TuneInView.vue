@@ -3,7 +3,7 @@ import { watch, onMounted, computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import type { MediaMetaData } from '@/types/api'
+import type { MediaMetaData } from '@/types'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaCard from '@/components/MediaCard.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
@@ -15,6 +15,8 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 const viewMode = ref<'grid' | 'list'>('grid')
 
 const { data: outlines, loading, execute } = api.createApiState<MediaMetaData[]>()
@@ -31,6 +33,15 @@ const outlineList = computed<MediaMetaData[]>({
     outlines.value = val
   },
 })
+
+async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
+  if (state) {
+    playlistItem.value = item
+    addToPlaylist.value = true
+  } else {
+    await api.playlists.removeItem(item.rawUri)
+  }
+}
 
 function toggleViewMode(mode: 'grid' | 'list') {
   viewMode.value = mode
@@ -132,7 +143,12 @@ onMounted(() => {
         <!-- Icon Grid View -->
         <MediaCardGrid v-if="viewMode === 'grid'">
           <template v-if="outlines" v-for="(item, index) in outlines" :key="item.rawUri || index">
-            <MediaCard v-model:item="outlines[index]" @view="viewItem" @play="playItem" />
+            <MediaCard
+              v-model:item="outlines[index]"
+              @view="viewItem"
+              @play="playItem"
+              @playlist="addToPlaylistFunc"
+            />
           </template>
         </MediaCardGrid>
 
@@ -151,4 +167,5 @@ onMounted(() => {
       No media found matching query.
     </div>
   </div>
+  <AddToPlaylistModal v-model:isOpen="addToPlaylist" :item="playlistItem" />
 </template>

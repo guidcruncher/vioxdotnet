@@ -13,4 +13,9 @@ public class PlaylistOptions
     /// Gets or sets the directory path where playlists are stored.
     /// </summary>
     public string StorageDirectory { get; set; } = "/data/playlists";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the index should automatically populate on startup.
+    /// </summary>
+    public bool AutoInitializeOnStartup { get; set; } = true;
 }

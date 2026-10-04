@@ -11,20 +11,21 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AddToPlaylistModal: typeof import('./components/AddToPlaylistModal.vue')['default']
     AlbumView: typeof import('./views/AlbumView.vue')['default']
+    AppButton: typeof import('./components/AppButton.vue')['default']
     AppHeader: typeof import('./components/AppHeader.vue')['default']
     AppSidebar: typeof import('./components/AppSidebar.vue')['default']
     ClientConfigView: typeof import('./views/ClientConfigView.vue')['default']
     CountryCard: typeof import('./components/CountryCard.vue')['default']
+    Dialog: typeof import('./components/Dialog.vue')['default']
     EqualizerControl: typeof import('./components/EqualizerControl.vue')['default']
     EqualizerView: typeof import('./views/EqualizerView.vue')['default']
     FavouritesList: typeof import('./components/FavouritesList.vue')['default']
     LibraryView: typeof import('./views/LibraryView.vue')['default']
-    LibrespotView: typeof import('./views/LibrespotView.vue')['default']
     MediaCard: typeof import('./components/MediaCard.vue')['default']
     MediaCardGrid: typeof import('./components/MediaCardGrid.vue')['default']
     MediaTrackList: typeof import('./components/MediaTrackList.vue')['default']
-    MpdView: typeof import('./views/MpdView.vue')['default']
     NowPlayingView: typeof import('./views/NowPlayingView.vue')['default']
     PlayerFooter: typeof import('./components/PlayerFooter.vue')['default']
     PlaylistsView: typeof import('./views/PlaylistsView.vue')['default']
@@ -37,7 +38,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SearchView: typeof import('./views/SearchView.vue')['default']
     ShowView: typeof import('./views/ShowView.vue')['default']
-    SnapcastView: typeof import('./views/SnapcastView.vue')['default']
     TuneInView: typeof import('./views/TuneInView.vue')['default']
   }
 }

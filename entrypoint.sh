@@ -13,7 +13,7 @@ mkdir -p /tmp /run/mpd /var/lib/mpd /music/cache /data /data/cache /data/playlis
 # Copy default golibrespot config ONLY if a persistent config does not already exist
 if [ ! -f /data/golibrespot/config.yml ] && [ -f /etc/golibrespot/config.yml ]; then
     echo "Initializing default Golibrespot configuration..."
-    cp /etc/golibrespot/config.yml /data/golibrespot/config.yml
+    envsubst < /etc/golibrespot/config.yml > /data/golibrespot/config.yml
 fi
 
 # 2. FIFO Pipe Cleanup & Initialization
@@ -46,18 +46,23 @@ trap cleanup SIGTERM SIGINT
 # 4. Start Services
 
 echo "Starting Snapserver..."
+envsubst < /etc/snapserver.conf.template > /etc/snapserver.conf
 snapserver --config /etc/snapserver.conf &
 SNAPSERVER_PID=$!
 
 echo "Starting go-librespot..."
 go-librespot --config_dir /data/golibrespot/ &
 LIBRESPOT_PID=$!
+sleep 1
+curl -X POST "http://127.0.0.1:3678/player/volume" \
+     -H "Content-Type: application/json" \
+     -d "{\"volume\": ${GOLIBRESPOT_INPUT_VOLUME}}"
 
 echo "Starting Snapclient (Targeting ALSA 'hardware' device)..."
 # Critical: Use -s hardware to prevent audio loopback through alsaequal/snapfifo
 snapclient --player alsa \
     -s "hardware" \
-    --hostID "viox-net" \
+    --hostID "${DEVICE_NAME}" \
     --sampleformat "44100:16:*" \
     --latency 30 \
     tcp://127.0.0.1:1704 &
@@ -65,12 +70,13 @@ SNAPCLIENT_PID=$!
 
 echo "Starting MPD..."
 # Run MPD in no-daemon mode so we capture its PID cleanly for health tracking
+envsubst < /etc/mpd.conf.template > /etc/mpd.conf
 mpd --no-daemon &
 MPD_PID=$!
 
 # Wait briefly for MPD socket initialization before triggering mpc
 sleep 1
-mpc volume 80 2>/dev/null || true
+mpc volume $MPD_INPUT_VOLUME 2>/dev/null || true
 mpc update 2>/dev/null || true
 
 echo "Starting .NET 10 Web API..."

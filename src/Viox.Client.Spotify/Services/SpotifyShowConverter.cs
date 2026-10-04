@@ -1,19 +1,18 @@
 using Viox.Client.Spotify.Models;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 
 namespace Viox.Client.Spotify.Services;
 
-public sealed class SpotifyShowConverter : IMediaMetaDataConverter<SpotifyShow>
+public sealed class SpotifyShowConverter : MediaMetaDataConverterBase, IMediaMetaDataConverter<SpotifyShow>
 {
     public string Source => "spotify";
     public string Type => "show";
 
-    private readonly IFavoritesService _favourites;
 
-    public SpotifyShowConverter(IFavoritesService favourites)
+    public SpotifyShowConverter(IPlaylistIndexService indexer, IFavoritesService favourites) : base(indexer, favourites)
     {
-        _favourites = favourites;
     }
 
     public MediaMetaData Convert(object input)
@@ -35,7 +34,6 @@ public sealed class SpotifyShowConverter : IMediaMetaDataConverter<SpotifyShow>
             Url = show.Href ?? string.Empty,
             ImageUrl = SpotifyConverterHelpers.GetSpotifyImageUrl(show.Images)
         };
-        metaData.Favourite = _favourites.Exists(metaData.RawUri);
-        return metaData;
+        return Decorate(metaData);
     }
 }
