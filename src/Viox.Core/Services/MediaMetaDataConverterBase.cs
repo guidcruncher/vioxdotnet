@@ -1,26 +1,30 @@
-using Viox.Core.Playlists;
-using Viox.Core.Models;
-
 namespace Viox.Core.Services;
 
-public class MediaMetaDataConverterBase {
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Viox.Core.Models;
+using Viox.Core.Playlists;
 
-private readonly IPlaylistIndexService _indexer;
-private readonly IFavoritesService _favourites;
+public class MediaMetaDataConverterBase
+{
+    private readonly IPlaylistIndexService _indexer;
+    private readonly IFavoritesService _favourites;
 
     public MediaMetaDataConverterBase(IPlaylistIndexService indexer, IFavoritesService favourites)
     {
-        _favourites = favourites;
-        _indexer= indexer;
-     }
+_indexer=indexer;
+_favourites=favourites;
+    }
 
-public MediaMetaData Decorate(MediaMetaData item) 
-{  
-MediaMetaData  metadata = item;
+    public virtual MediaMetaData Decorate(MediaMetaData item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
 
-metadata.InPlaylist = _indexer.ContainsUri(item.RawUri);
-metaData.Favourite = _favourites.Exists(item.RawUri);
-return metadata;
-}
+        MediaMetaData metadata = item;
 
+        metadata.InPlaylist = _indexer.ContainsUri(item.RawUri);
+        metadata.Favourite = _favourites.Exists(item.RawUri);
+
+        return metadata;
+    }
 }

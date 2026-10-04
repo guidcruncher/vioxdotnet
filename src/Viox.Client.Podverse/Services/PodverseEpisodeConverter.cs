@@ -4,17 +4,14 @@ using Viox.Core.Services;
 
 namespace Viox.Client.Podverse.Services;
 
-public sealed class PodverseEpisodeConverter : IMediaMetaDataConverter<PodcastEpisode>
+public sealed class PodverseEpisodeConverter : MediaMetaDataConverterBase, IMediaMetaDataConverter<PodcastEpisode>
 {
 
     public string Source { get => "podverse"; }
     public string Type { get => "episode"; }
 
-    private readonly IFavoritesService _favourites;
-
-    public PodverseEpisodeConverter(IFavoritesService favourites)
+    public PodverseEpisodeConverter(): base()
     {
-        _favourites = favourites;
     }
 
     public MediaMetaData Convert(object input)
@@ -36,8 +33,8 @@ public sealed class PodverseEpisodeConverter : IMediaMetaDataConverter<PodcastEp
             Duration = episode.DurationSeconds ?? 0,
             ReleaseDate = episode.PublishedDate
         };
-        metaData.Favourite = _favourites.Exists(metaData.RawUri);
-        return metaData;
+
+        return Decorate(metaData);
     }
 
 }

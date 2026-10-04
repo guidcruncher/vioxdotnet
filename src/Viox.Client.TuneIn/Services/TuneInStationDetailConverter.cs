@@ -4,17 +4,15 @@ using Viox.Core.Services;
 
 namespace Viox.Client.TuneIn.Services;
 
-public sealed class TuneInStationDetailConverter : IMediaMetaDataConverter<StationDetail>
+public sealed class TuneInStationDetailConverter : MediaMetaDataConverterBase, IMediaMetaDataConverter<StationDetail>
 {
 
     public string Source { get => "tunein"; }
     public string Type { get => "station"; }
 
-    private readonly IFavoritesService _favourites;
 
-    public TuneInStationDetailConverter(IFavoritesService favourites)
+    public TuneInStationDetailConverter(): base() 
     {
-        _favourites = favourites;
     }
 
     public MediaMetaData Convert(object input)
@@ -34,7 +32,7 @@ public sealed class TuneInStationDetailConverter : IMediaMetaDataConverter<Stati
             ImageUrl = station.Station.Logo ?? string.Empty
         };
         metaData.Favourite = _favourites.Exists(metaData.RawUri);
-        return metaData;
+        return Decorate(metaData);
     }
 
 }

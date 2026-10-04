@@ -4,16 +4,14 @@ using Viox.Core.Services;
 
 namespace Viox.Client.Spotify.Services;
 
-public sealed class SpotifyEpisodeConverter : IMediaMetaDataConverter<SpotifyEpisode>
+public sealed class SpotifyEpisodeConverter : MediaMetaDataConverterBase, IMediaMetaDataConverter<SpotifyEpisode>
 {
     public string Source => "spotify";
     public string Type => "episode";
 
-    private readonly IFavoritesService _favourites;
 
-    public SpotifyEpisodeConverter(IFavoritesService favourites)
+    public SpotifyEpisodeConverter():base()
     {
-        _favourites = favourites;
     }
 
     public MediaMetaData Convert(object input)
@@ -38,6 +36,6 @@ public sealed class SpotifyEpisodeConverter : IMediaMetaDataConverter<SpotifyEpi
             ReleaseDate = SpotifyConverterHelpers.ParseSpotifyDate(episode.ReleaseDate, episode.ReleaseDatePrecision)
         };
         metaData.Favourite = _favourites.Exists(metaData.RawUri);
-        return metaData;
+        return Decorate(metaData);
     }
 }

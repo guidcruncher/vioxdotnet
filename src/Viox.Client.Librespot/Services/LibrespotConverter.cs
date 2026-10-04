@@ -4,17 +4,14 @@ using Viox.Core.Services;
 
 namespace Viox.Client.Librespot.Services;
 
-public sealed class LibrespotConverter : IMediaMetaDataConverter<ApiTrack>
+public sealed class LibrespotConverter : MediaMetaDataConverterBase, IMediaMetaDataConverter<ApiTrack>
 {
 
     public string Source { get => "librespot"; }
     public string Type { get => ""; }
 
-    private readonly IFavoritesService _favourites;
-
-    public LibrespotConverter(IFavoritesService favourites)
+    public LibrespotConverter():base()
     {
-        _favourites = favourites;
     }
 
     public MediaMetaData Convert(object input)
@@ -36,7 +33,7 @@ public sealed class LibrespotConverter : IMediaMetaDataConverter<ApiTrack>
         };
 
         metaData.Favourite = _favourites.Exists(metaData.RawUri);
-        return metaData;
+        return Decorate(metaData);
     }
 
 }
