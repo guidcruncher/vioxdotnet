@@ -16,6 +16,8 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 const countries = ref<Record<string, string> | null>(null)
 const stations = ref<MediaMetaData[]>([])
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -52,6 +54,11 @@ async function playItem(station: MediaMetaData) {
   if (station.rawUri) {
     await store.playUri(station.rawUri)
   }
+}
+
+async function addToPlaylistFunc(data: any) {
+  playlistItem.value = data.item
+  addToPlaylist.value = true
 }
 
 function viewItem(countryCode: string) {
@@ -136,6 +143,7 @@ watch(
                 :key="s.rawUri || index"
                 v-model:item="stations[index]"
                 @play="playItem"
+                @playlist="addToPlaylistFunc"
               />
             </MediaCardGrid>
 
@@ -158,4 +166,5 @@ watch(
       </div>
     </div>
   </div>
+  <AddToPlaylistModal v-model:IsOpen="addToPlaylist" :item="playlistItem" />
 </template>

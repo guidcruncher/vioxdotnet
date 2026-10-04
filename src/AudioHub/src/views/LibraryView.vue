@@ -15,6 +15,8 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 const sources = ref<Record<string, string>>({})
 const sourceProps = ref<Record<string, Record<string, string>>>({})
 
@@ -46,6 +48,11 @@ const pageTitle = computed<string>(() => {
 
   return ''
 })
+
+async function addToPlaylistFunc(data: any) {
+  playlistItem.value = data.item
+  addToPlaylist.value = true
+}
 
 function getCleanQueryParams(query: typeof route.query): Record<string, string> {
   const cleanParams: Record<string, string> = {}
@@ -219,7 +226,12 @@ onMounted(async () => {
         <!-- Icon Grid View -->
         <MediaCardGrid v-if="viewMode === 'grid'">
           <template v-if="items" v-for="(item, index) in items" :key="item.rawUri || index">
-            <MediaCard v-model:item="items[index]" @view="viewItem" @play="playItem" />
+            <MediaCard
+              v-model:item="items[index]"
+              @view="viewItem"
+              @play="playItem"
+              @playlist="addToPlaylistFunc"
+            />
           </template>
         </MediaCardGrid>
 
@@ -238,4 +250,5 @@ onMounted(async () => {
       No media found matching query.
     </div>
   </div>
+  <AddToPlaylistModal v-model:IsOpen="addToPlaylist" :item="playlistItem" />
 </template>

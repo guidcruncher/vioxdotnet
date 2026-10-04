@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AddToPlaylistModal: typeof import('./components/AddToPlaylistModal.vue')['default']
     AlbumView: typeof import('./views/AlbumView.vue')['default']
     AppButton: typeof import('./components/AppButton.vue')['default']
     AppHeader: typeof import('./components/AppHeader.vue')['default']

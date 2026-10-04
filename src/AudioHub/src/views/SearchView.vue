@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
@@ -10,6 +10,8 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 // State typed as a dictionary where keys are sources and values are paged results
 const {
   data: searchResults,
@@ -21,6 +23,11 @@ const hasResults = computed(() => {
   if (!searchResults.value) return false
   return Object.values(searchResults.value).some((list) => list?.items && list.items.length > 0)
 })
+
+async function addToPlaylistFunc(data: any) {
+  playlistItem.value = data.item
+  addToPlaylist.value = true
+}
 
 async function viewItem(item: MediaMetaData) {
   if (!item.uri) return
@@ -95,6 +102,7 @@ onMounted(() => {
               <MediaCard
                 v-model:item="sourceResults.items[index]"
                 @view="viewItem"
+                @playlist="addToPlaylistFunc"
                 @play="playItem"
               />
             </template>
@@ -108,4 +116,5 @@ onMounted(() => {
       No media found matching query.
     </div>
   </div>
+  <AddToPlaylistModal v-model:IsOpen="addToPlaylist" :item="playlistItem" />
 </template>

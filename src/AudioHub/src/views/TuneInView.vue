@@ -15,6 +15,8 @@ const route = useRoute()
 const api = useApiClient()
 const store = usePlaybackStore()
 
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 const viewMode = ref<'grid' | 'list'>('grid')
 
 const { data: outlines, loading, execute } = api.createApiState<MediaMetaData[]>()
@@ -31,6 +33,11 @@ const outlineList = computed<MediaMetaData[]>({
     outlines.value = val
   },
 })
+
+async function addToPlaylistFunc(data: any) {
+  playlistItem.value = data.item
+  addToPlaylist.value = true
+}
 
 function toggleViewMode(mode: 'grid' | 'list') {
   viewMode.value = mode
@@ -132,7 +139,12 @@ onMounted(() => {
         <!-- Icon Grid View -->
         <MediaCardGrid v-if="viewMode === 'grid'">
           <template v-if="outlines" v-for="(item, index) in outlines" :key="item.rawUri || index">
-            <MediaCard v-model:item="outlines[index]" @view="viewItem" @play="playItem" />
+            <MediaCard
+              v-model:item="outlines[index]"
+              @view="viewItem"
+              @play="playItem"
+              @playlist="addToPlaylistFunc"
+            />
           </template>
         </MediaCardGrid>
 
@@ -151,4 +163,5 @@ onMounted(() => {
       No media found matching query.
     </div>
   </div>
+  <AddToPlaylistModal v-model:IsOpen="addToPlaylist" :item="playlistItem" />
 </template>
