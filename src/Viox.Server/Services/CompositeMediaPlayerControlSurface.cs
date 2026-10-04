@@ -18,20 +18,21 @@ using Viox.Server.Abstraction;
 using Viox.Server.Configuration;
 
 /// <summary>
-/// Control surface implementation managing routing based on playback URI or active player status.
+/// Control surface implementation managing routing based on playback URI or active player status, integrated with playback queue management via event handlers.
 /// </summary>
 public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurface
 {
     private readonly IEnumerable<IMediaPlayerAdapter> _adapters;
     private readonly IOptions<MediaPlayerOptions> _options;
     private readonly ILogger<CompositeMediaPlayerControlSurface> _logger;
-    private string? _lastActivePlayerName;
     private readonly ICurrentMediaService _currentMedia;
     private readonly MediaSourceResolverService _mediaResolver;
     private readonly AudioCacheManager _cacheManager;
     private readonly IMediaEventService _eventService;
+    private readonly IPlaybackQueueService _queueService;
 
-    private string lastState = string.Empty;
+    private string? _lastActivePlayerName;
+    private string _lastState = string.Empty;
 
     public CompositeMediaPlayerControlSurface(
         AudioCacheManager cacheManager,
@@ -40,6 +41,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         MediaSourceResolverService mediaResolver,
         IOptions<MediaPlayerOptions> options,
         IMediaEventService eventService,
+        IPlaybackQueueService queueService,
         ILogger<CompositeMediaPlayerControlSurface> logger)
     {
         _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
@@ -48,7 +50,11 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         _currentMedia = currentMedia ?? throw new ArgumentNullException(nameof(currentMedia));
         _adapters = adapters ?? throw new ArgumentNullException(nameof(adapters));
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        _queueService.TrackPlayRequested += OnQueueTrackPlayRequestedAsync;
+        _queueService.PlaybackStopRequested += OnQueuePlaybackStopRequestedAsync;
     }
 
     public async Task PlayAsync(string uri, CancellationToken cancellationToken = default)
@@ -143,19 +149,19 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             }
 
             string currentState = JsonSerializer.Serialize(state, options);
-            if (currentState != lastState)
+            if (currentState != _lastState)
             {
                 await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
-                lastState = currentState;
+                _lastState = currentState;
             }
         }
         else
         {
             state.Playing = false;
-            if (!string.IsNullOrEmpty(lastState))
+            if (!string.IsNullOrEmpty(_lastState))
             {
                 await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
-                lastState = string.Empty;
+                _lastState = string.Empty;
             }
         }
 
@@ -192,6 +198,13 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
 
     public async Task NextAsync(CancellationToken cancellationToken = default)
     {
+        if (await _queueService.PlayNextAsync(cancellationToken))
+        {
+            _logger.LogInformation("Successfully advanced to next track via PlaybackQueueService.");
+            return;
+        }
+
+        _logger.LogInformation("Queue navigation unhandled or queue empty; delegating NextAsync directly to player adapter.");
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.NextAsync(cancellationToken);
         await _eventService.PublishMediaActionAsync("next", GetCurrentTrack(), cancellationToken);
@@ -199,6 +212,13 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
 
     public async Task PreviousAsync(CancellationToken cancellationToken = default)
     {
+        if (await _queueService.PlayPreviousAsync(cancellationToken))
+        {
+            _logger.LogInformation("Successfully reverted to previous track via PlaybackQueueService.");
+            return;
+        }
+
+        _logger.LogInformation("Queue navigation unhandled or queue empty; delegating PreviousAsync directly to player adapter.");
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.PreviousAsync(cancellationToken);
         await _eventService.PublishMediaActionAsync("previous", GetCurrentTrack(), cancellationToken);
@@ -229,6 +249,27 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             }
         }
         return null;
+    }
+
+    private async Task OnQueueTrackPlayRequestedAsync(MediaMetaData item, CancellationToken cancellationToken)
+    {
+        string playUri = !string.IsNullOrWhiteSpace(item.RawUri) ? item.RawUri : item.Url;
+
+        if (!string.IsNullOrWhiteSpace(playUri))
+        {
+            _logger.LogInformation("Executing queued play request for track '{Title}' ({Uri}).", item.Title, playUri);
+            await PlayAsync(playUri, cancellationToken);
+        }
+        else
+        {
+            _logger.LogWarning("Unable to play queued track '{Title}': both RawUri and Url are empty.", item.Title);
+        }
+    }
+
+    private async Task OnQueuePlaybackStopRequestedAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Executing queue stop request.");
+        await StopAsync(cancellationToken);
     }
 
     private async Task<IMediaPlayerAdapter> ResolveTargetAdapterAsync(CancellationToken cancellationToken)
