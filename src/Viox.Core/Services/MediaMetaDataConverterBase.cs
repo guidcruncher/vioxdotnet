@@ -1,7 +1,5 @@
 namespace Viox.Core.Services;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Viox.Core.Models;
 using Viox.Core.Playlists;
 
@@ -12,8 +10,8 @@ public class MediaMetaDataConverterBase
 
     public MediaMetaDataConverterBase(IPlaylistIndexService indexer, IFavoritesService favourites)
     {
-_indexer=indexer;
-_favourites=favourites;
+        _indexer = indexer;
+        _favourites = favourites;
     }
 
     public virtual MediaMetaData Decorate(MediaMetaData item)

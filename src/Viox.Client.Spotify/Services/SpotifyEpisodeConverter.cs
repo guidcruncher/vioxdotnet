@@ -10,7 +10,7 @@ public sealed class SpotifyEpisodeConverter : MediaMetaDataConverterBase, IMedia
     public string Type => "episode";
 
 
-    public SpotifyEpisodeConverter():base()
+    public SpotifyEpisodeConverter() : base()
     {
     }
 

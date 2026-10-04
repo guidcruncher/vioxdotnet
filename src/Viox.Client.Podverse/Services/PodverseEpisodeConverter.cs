@@ -10,7 +10,7 @@ public sealed class PodverseEpisodeConverter : MediaMetaDataConverterBase, IMedi
     public string Source { get => "podverse"; }
     public string Type { get => "episode"; }
 
-    public PodverseEpisodeConverter(): base()
+    public PodverseEpisodeConverter() : base()
     {
     }
 

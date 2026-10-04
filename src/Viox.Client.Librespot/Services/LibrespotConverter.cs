@@ -10,7 +10,7 @@ public sealed class LibrespotConverter : MediaMetaDataConverterBase, IMediaMetaD
     public string Source { get => "librespot"; }
     public string Type { get => ""; }
 
-    public LibrespotConverter():base()
+    public LibrespotConverter() : base()
     {
     }
 

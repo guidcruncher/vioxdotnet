@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Viox.Core.Models;
 using Viox.Core.Configuration;
+using Viox.Core.Models;
 
 namespace Viox.Core.Playlists;
 

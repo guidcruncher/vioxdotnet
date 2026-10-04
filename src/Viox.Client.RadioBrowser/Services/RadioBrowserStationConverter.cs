@@ -11,7 +11,7 @@ public sealed class RadioBrowserStationConverter : MediaMetaDataConverterBase, I
     public string Type { get => "station"; }
 
 
-    public RadioBrowserStationConverter():base()
+    public RadioBrowserStationConverter() : base()
     {
     }
 

@@ -10,7 +10,7 @@ public sealed class SpotifyTrackConverter : MediaMetaDataConverterBase, IMediaMe
     public string Type => "track";
 
 
-    public SpotifyTrackConverter(): base()
+    public SpotifyTrackConverter() : base()
     {
     }
 

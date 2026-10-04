@@ -10,7 +10,7 @@ public sealed class SpotifyShowConverter : MediaMetaDataConverterBase, IMediaMet
     public string Type => "show";
 
 
-    public SpotifyShowConverter() : base() 
+    public SpotifyShowConverter() : base()
     {
     }
 

@@ -11,7 +11,7 @@ public sealed class TuneInStationDetailConverter : MediaMetaDataConverterBase, I
     public string Type { get => "station"; }
 
 
-    public TuneInStationDetailConverter(): base() 
+    public TuneInStationDetailConverter() : base()
     {
     }
 
