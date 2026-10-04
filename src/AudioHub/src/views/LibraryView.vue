@@ -50,8 +50,12 @@ const pageTitle = computed<string>(() => {
 })
 
 async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
-  playlistItem.value = item
-  addToPlaylist.value = true
+  if (state) {
+    playlistItem.value = item
+    addToPlaylist.value = true
+  } else {
+    await api.playlists.removeItem(item.rawUri)
+  }
 }
 
 function getCleanQueryParams(query: typeof route.query): Record<string, string> {

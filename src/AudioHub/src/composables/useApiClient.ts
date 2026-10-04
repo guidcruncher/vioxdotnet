@@ -158,8 +158,8 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
         }
       ),
 
-    removeItem: (id: string, rawUri: string) =>
-      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(id)}/items`, {
+    removeItem: (rawUri: string) =>
+      transport.request<void>(`/api/v1/playlists/${encodeURIComponent(rawUri)}/items`, {
         method: 'DELETE',
         params: {
           rawUri,

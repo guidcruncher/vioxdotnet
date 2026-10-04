@@ -35,8 +35,12 @@ const outlineList = computed<MediaMetaData[]>({
 })
 
 async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
-  playlistItem.value = item
-  addToPlaylist.value = true
+  if (state) {
+    playlistItem.value = item
+    addToPlaylist.value = true
+  } else {
+    await api.playlists.removeItem(item.rawUri)
+  }
 }
 
 function toggleViewMode(mode: 'grid' | 'list') {

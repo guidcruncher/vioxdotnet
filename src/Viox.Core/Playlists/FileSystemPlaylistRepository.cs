@@ -18,7 +18,7 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
     private readonly ILogger<FileSystemPlaylistRepository> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    private readonly string fileExtension = ".playlist.json";
+    private readonly string fileExtension = ".json";
 
     public FileSystemPlaylistRepository(
         IOptions<PlaylistOptions> options,
@@ -71,10 +71,12 @@ public class FileSystemPlaylistRepository : IPlaylistRepository
     {
         if (!Directory.Exists(_options.StorageDirectory))
         {
+            _logger.LogWarning("Storage directory not found '{folder}'", _options.StorageDirectory);
             return new Dictionary<string, string>();
         }
 
         var files = Directory.GetFiles(_options.StorageDirectory, $"*{fileExtension}");
+        _logger.LogInformation("Found {files} count in folder '{folder}' filter '{filter}'", files.Count(), _options.StorageDirectory, $"*{fileExtension}");
         Dictionary<string, string> res = new();
 
         foreach (string f in files)

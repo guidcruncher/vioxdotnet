@@ -83,6 +83,7 @@ public static class VioxCoreServiceCollectionExtension
         services.AddSingleton<IPlaylistRepository, FileSystemPlaylistRepository>();
         services.AddSingleton<IPlaylistService, PlaylistService>();
         services.AddSingleton<IPlaylistIndexService, PlaylistIndexService>();
+        services.AddHostedService<PlaylistIndexInitializationService>();
 
         return services;
     }

@@ -181,6 +181,11 @@ public class PlaylistIndexService : IPlaylistIndexService, IDisposable
 
     public bool ContainsUri(string rawUri)
     {
+        if (_uriToPlaylistIdsMap.Count() == 0)
+        {
+            _logger.LogWarning("Playlist index is empty");
+        }
+
         if (string.IsNullOrWhiteSpace(rawUri))
         {
             return false;

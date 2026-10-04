@@ -148,12 +148,12 @@ public class PlaylistsController : ControllerBase
     /// <param name="rawUri">The raw URI of the media item to remove.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>No content on success.</returns>
-    [HttpDelete("{id}/items")]
+    [HttpDelete("{rawUri}/items")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RemoveItemFromPlaylistAsync(string id, [FromQuery] string rawUri, CancellationToken cancellationToken)
+    public async Task<IActionResult> RemoveItemFromPlaylistAsync(string rawUri, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Removing item with URI {RawUri} from playlist: {id}", rawUri, id);
-        await _playlistService.RemoveItemFromPlaylistAsync(id, rawUri, cancellationToken);
+        _logger.LogInformation("Removing item with URI {RawUri}", rawUri);
+        await _playlistService.RemoveItemFromPlaylistAsync(rawUri, cancellationToken);
 
         return NoContent();
     }

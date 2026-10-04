@@ -57,25 +57,34 @@ public class PlaylistService : IPlaylistService
         _logger.LogInformation("Added item {ItemTitle} to playlist {id}", item.Title, id);
     }
 
-    public async Task RemoveItemFromPlaylistAsync(string id, string rawUri, CancellationToken cancellationToken = default)
+    public async Task RemoveItemFromPlaylistAsync(string rawUri, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(rawUri);
+        int removedCount = 0;
+        Dictionary<string, string> playlists = await GetPlaylistNamesAsync(cancellationToken);
 
-        var playlist = await _repository.LoadPlaylistAsync(id, cancellationToken);
-        if (playlist is null)
+        foreach (string key in playlists.Keys)
         {
-            return;
+            var playlist = await _repository.LoadPlaylistAsync(key, cancellationToken);
+            if (playlist is null)
+            {
+                continue;
+            }
+
+            var listRemovedCount = playlist.Items.RemoveAll(i => i.RawUri.Equals(rawUri, StringComparison.OrdinalIgnoreCase));
+            if (listRemovedCount > 0)
+            {
+                await _repository.SavePlaylistAsync(playlist, cancellationToken);
+                removedCount += listRemovedCount;
+                _indexService.IndexPlaylist(playlist);
+                _logger.LogInformation("Removed {Count} items matching {RawUri} from playlist {id}", removedCount, rawUri, key);
+            }
         }
 
-        var removedCount = playlist.Items.RemoveAll(i => i.RawUri.Equals(rawUri, StringComparison.OrdinalIgnoreCase));
         if (removedCount > 0)
         {
-            await _repository.SavePlaylistAsync(playlist, cancellationToken);
-            _indexService.IndexPlaylist(playlist);
-
-            _logger.LogInformation("Removed {Count} items matching {RawUri} from playlist {id}", removedCount, rawUri, id);
         }
+
     }
 
     public async Task<MediaMetaDataPlaylist?> LoadPlaylistAsync(string id, CancellationToken cancellationToken = default)

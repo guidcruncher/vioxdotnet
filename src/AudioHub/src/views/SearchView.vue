@@ -25,8 +25,12 @@ const hasResults = computed(() => {
 })
 
 async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
-  playlistItem.value = item
-  addToPlaylist.value = true
+  if (state) {
+    playlistItem.value = item
+    addToPlaylist.value = true
+  } else {
+    await api.playlists.removeItem(item.rawUri)
+  }
 }
 
 async function viewItem(item: MediaMetaData) {

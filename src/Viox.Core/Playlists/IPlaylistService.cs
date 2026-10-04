@@ -7,7 +7,7 @@ public interface IPlaylistService
 {
     Task AddItemToPlaylistAsync(string id, MediaMetaData item, CancellationToken cancellationToken = default);
 
-    Task RemoveItemFromPlaylistAsync(string id, string rawUri, CancellationToken cancellationToken = default);
+    Task RemoveItemFromPlaylistAsync(string rawUri, CancellationToken cancellationToken = default);
 
     Task<string> CreatePlaylistAsync(string title, MediaMetaData item, CancellationToken cancellationToken);
 
