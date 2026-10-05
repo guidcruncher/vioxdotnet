@@ -201,9 +201,7 @@ const closeMobileMenu = () => {
           :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Playlists' : ''"
         >
           <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M4 19h2v-5H4v5zm4 0h2V5H8v14zm4 0h2v-8h-2v8zm4 0h2V9h-2v10zm4 0h2v-11h-2v11z"
-            />
+            <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2zm15-1v6l5-3-5-3z"></path>
           </svg>
           <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">Playlists</span>
         </router-link>

@@ -20,7 +20,6 @@ export interface PlaybackState {
   isLive?: boolean
 }
 
-
 export enum PlaybackRepeatMode {
   Off = 0,
   Track = 1,

@@ -3,8 +3,7 @@ import type { MediaMetaData, QueueStatusResponse, PlaybackRepeatMode } from '@/t
 
 export function createQueueModule(transport: ReturnType<typeof useApiTransport>) {
   return {
-    getStatus: () =>
-      transport.request<QueueStatusResponse>('/api/v1/queue'),
+    getStatus: () => transport.request<QueueStatusResponse>('/api/v1/queue'),
 
     clear: () =>
       transport.request<void>('/api/v1/queue', {

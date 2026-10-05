@@ -22,8 +22,8 @@ public class M3uPlaylistMediaSource : IMediaSource
 
     public Dictionary<string, string> Props { get; } = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["Title"] = "Playlist",
-        ["Icon"] = "",
+        ["Title"] = "M3U Playlist",
+        ["Icon"] = "/m3uplaylist.png",
         ["Url"] = "/library/playlists"
     };
 
