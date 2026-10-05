@@ -1,5 +1,6 @@
 import { useApiTransport } from './useApiTransport'
 
+import { createQueueModule } from './modules/queue'
 import { createCoreModule } from './modules/core'
 import { createConfigModule } from './modules/config'
 import { createMediaModule } from './modules/media'
@@ -22,6 +23,7 @@ export function useApiClient(baseUrl: string = apiBaseUrl) {
     createApiState: transport.createApiState,
 
     core: createCoreModule(transport),
+    queue: createQueueModule(transport),
     config: createConfigModule(transport),
     media: createMediaModule(transport),
     playlists: createPlaylistsModule(transport),

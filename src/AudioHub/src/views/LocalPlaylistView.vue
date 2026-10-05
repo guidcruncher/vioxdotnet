@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, watch, ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import type { MediaMetaData, MediaMetaDataPlaylist } from '@/types'
 import { useRoute, useRouter } from 'vue-router'
 import MediaCard from '@/components/MediaCard.vue'
-import CountryCard from '@/components/CountryCard.vue'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
 
@@ -34,20 +33,45 @@ function toggleViewMode(mode: 'grid' | 'list') {
   localStorage.setItem(STORAGE_KEY, mode)
 }
 
-async function fetchPlaylists() {
-  const res = await api.playlists.getAll()
-  if (res) {
-    playlists.value = res
+async function loadPlaylistById(id: string) {
+  if (!id) return
+  loading.value = true
+  try {
+    const result = await api.playlists.getById(id)
+    if (result) {
+      playlist.value = result
+    }
+  } finally {
+    loading.value = false
   }
 }
 
-async function loadPlaylist(event: Event) {
+async function fetchPlaylists() {
+  loading.value = true
+  try {
+    const res = await api.playlists.getAll()
+    if (res && Object.keys(res).length > 0) {
+      playlists.value = res
+
+      // Prefer route param/query ID, fallback to first available playlist key
+      const routeId = (route.params.id as string) || (route.query.id as string)
+      const targetId = routeId && res[routeId] ? routeId : Object.keys(res)[0]
+
+      if (targetId) {
+        selectedPlaylistId.value = targetId
+        await loadPlaylistById(targetId)
+      }
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+function handlePlaylistSelect(event: Event) {
   const target = event.target as HTMLSelectElement
   const id = target.value
-  const result = await api.playlists.getById(id)
-  if (result) {
-    playlist.value = result
-  }
+  selectedPlaylistId.value = id
+  loadPlaylistById(id)
 }
 
 async function playItem(station: MediaMetaData) {
@@ -56,9 +80,16 @@ async function playItem(station: MediaMetaData) {
   }
 }
 
-async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {}
-
-function viewItem(id: string) {}
+// Re-fetch playlist if navigating between route params on the same component instance
+watch(
+  () => route.params.id,
+  async (newId) => {
+    if (newId && typeof newId === 'string') {
+      selectedPlaylistId.value = newId
+      await loadPlaylistById(newId)
+    }
+  }
+)
 
 onMounted(() => {
   fetchPlaylists()
@@ -115,12 +146,12 @@ onMounted(() => {
         </label>
         <div class="relative w-full sm:w-72">
           <select
-            @change="loadPlaylist"
+            @change="handlePlaylistSelect"
             id="playlist-select"
             v-model="selectedPlaylistId"
             class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 transition appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option v-for="(value, key, index) in playlists" :key="key" :value="key">
+            <option v-for="(value, key) in playlists" :key="key" :value="key">
               {{ value }}
             </option>
           </select>
@@ -138,31 +169,28 @@ onMounted(() => {
 
       <!-- Loading State -->
       <div v-if="loading" class="text-slate-400 animate-pulse py-8 text-center sm:text-left">
-        Searching media providers...
+        Loading playlists...
       </div>
 
       <!-- Content Display -->
-      <div v-else class="space-y-8">
+      <div v-else-if="playlist && playlist.items" class="space-y-8">
         <div class="space-y-3">
-          <!-- Station View Switcher -->
-          <template v-if="playlist && playlist.items">
-            <!-- Grid View -->
-            <MediaCardGrid v-if="viewMode === 'grid'">
-              <MediaCard
-                v-for="(s, index) in playlist.items"
-                :key="s.rawUri || index"
-                v-model:item="playlist.items[index]"
-                @play="playItem"
-              />
-            </MediaCardGrid>
-
-            <!-- List View -->
-            <MediaTrackList
-              v-else-if="viewMode === 'list'"
-              v-model="playlist.items"
+          <!-- Grid View -->
+          <MediaCardGrid v-if="viewMode === 'grid'">
+            <MediaCard
+              v-for="(s, index) in playlist.items"
+              :key="s.rawUri || index"
+              v-model:item="playlist.items[index]"
               @play="playItem"
             />
-          </template>
+          </MediaCardGrid>
+
+          <!-- List View -->
+          <MediaTrackList
+            v-else-if="viewMode === 'list'"
+            v-model="playlist.items"
+            @play="playItem"
+          />
         </div>
       </div>
     </div>
