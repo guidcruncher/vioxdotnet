@@ -204,10 +204,25 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             return;
         }
 
-        _logger.LogInformation("Queue navigation unhandled or queue empty; delegating NextAsync directly to player adapter.");
-        IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
-        await adapter.NextAsync(cancellationToken);
-        await _eventService.PublishMediaActionAsync("next", GetCurrentTrack(), cancellationToken);
+        if (_queueService.Queue.Count > 0)
+        {
+            _logger.LogInformation("Reached end of managed queue. Stopping playback cleanly.");
+            await StopAsync(cancellationToken);
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Queue empty; delegating NextAsync directly to active player adapter.");
+            IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
+            await adapter.NextAsync(cancellationToken);
+            await _eventService.PublishMediaActionAsync("next", GetCurrentTrack(), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Adapter NextAsync failed or unsupported. Stopping playback gracefully.");
+            await StopAsync(cancellationToken);
+        }
     }
 
     public async Task PreviousAsync(CancellationToken cancellationToken = default)
@@ -218,10 +233,32 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             return;
         }
 
-        _logger.LogInformation("Queue navigation unhandled or queue empty; delegating PreviousAsync directly to player adapter.");
-        IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
-        await adapter.PreviousAsync(cancellationToken);
-        await _eventService.PublishMediaActionAsync("previous", GetCurrentTrack(), cancellationToken);
+        if (_queueService.Queue.Count > 0)
+        {
+            _logger.LogInformation("At start of managed queue. Rewinding current track.");
+            try
+            {
+                IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
+                await adapter.SeekAsync(TimeSpan.Zero, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Adapter seek failed during rewind at queue boundary.");
+            }
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Queue empty; delegating PreviousAsync directly to active player adapter.");
+            IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
+            await adapter.PreviousAsync(cancellationToken);
+            await _eventService.PublishMediaActionAsync("previous", GetCurrentTrack(), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Adapter PreviousAsync failed or unsupported.");
+        }
     }
 
     public async Task SetVolumeAsync(int volumePercent, CancellationToken cancellationToken = default)

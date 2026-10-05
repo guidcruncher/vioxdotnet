@@ -12,6 +12,7 @@ namespace Viox.Api.Controllers;
 [ApiController]
 [Route("api/v1/playlists")]
 [Produces("application/json")]
+[Tags("Playlists")]
 public class PlaylistsController : ControllerBase
 {
     private readonly IPlaylistService _playlistService;

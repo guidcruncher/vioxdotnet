@@ -18,6 +18,7 @@ using Viox.Core.Models;
 /// </summary>
 [ApiController]
 [Route("api/v1/media/playlists")]
+[Tags("File Playlists")]
 public class FilePlaylistsController : ControllerBase
 {
     private readonly IM3uPlaylistProvider _playlistProvider;
