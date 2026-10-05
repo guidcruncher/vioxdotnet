@@ -22,6 +22,6 @@ public class PluginModule : IPluginModule
             configuration.GetSection(MediaScannerOptions.SectionName));
         services.AddTransient<IFileScanner, FileScanner>();
         services.AddKeyedSingleton<IMediaSource, FileMediaSource>("file");
-        services.AddKeyedSingleton<IMediaSource,M3uPlaylistMediaSource>("fileplaylist");
+        services.AddKeyedSingleton<IMediaSource, M3uPlaylistMediaSource>("fileplaylist");
     }
 }
