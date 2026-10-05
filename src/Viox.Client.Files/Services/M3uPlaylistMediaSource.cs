@@ -17,8 +17,8 @@ public class M3uPlaylistMediaSource : IMediaSource
     private readonly ILogger<M3uPlaylistMediaSource> _logger;
     private readonly IM3uPlaylistProvider _client;
 
-    public string Source { get => "playlist"; }
-    public string Title => "Playlist";
+    public string Source { get => "fileplaylist"; }
+    public string Title => "M3U Playlist";
 
     public Dictionary<string, string> Props { get; } = new(StringComparer.OrdinalIgnoreCase)
     {

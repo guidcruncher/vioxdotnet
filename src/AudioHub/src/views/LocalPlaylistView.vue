@@ -108,7 +108,7 @@ onMounted(() => {
       </div>
 
       <div
-        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-800/40 border border-slate-800 p-4 rounded-xl"
+        class="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-800/40 border border-slate-800 p-4 rounded-xl"
       >
         <label for="playlist-select" class="text-sm font-medium text-slate-300">
           Select Playlist
