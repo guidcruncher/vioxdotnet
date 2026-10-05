@@ -39,6 +39,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SearchView: typeof import('./views/SearchView.vue')['default']
     ShowView: typeof import('./views/ShowView.vue')['default']
+    ThreeDotMenu: typeof import('./components/ThreeDotMenu.vue')['default']
     TuneInView: typeof import('./views/TuneInView.vue')['default']
   }
 }
