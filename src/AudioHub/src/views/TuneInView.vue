@@ -158,6 +158,7 @@ onMounted(() => {
           v-model="outlineList"
           @play="playItem"
           @view="viewItem"
+          @playlist="addToPlaylistFunc"
         />
       </div>
     </div>

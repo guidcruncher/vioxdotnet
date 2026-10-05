@@ -187,6 +187,8 @@ onMounted(() => {
 
           <!-- List View -->
           <MediaTrackList
+            :showFavorite="true"
+            :showPlaylist="false"
             v-else-if="viewMode === 'list'"
             v-model="playlist.items"
             @play="playItem"

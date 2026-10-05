@@ -152,7 +152,12 @@ watch(
             </MediaCardGrid>
 
             <!-- List View -->
-            <MediaTrackList v-else-if="viewMode === 'list'" v-model="stations" @play="playItem" />
+            <MediaTrackList
+              v-else-if="viewMode === 'list'"
+              v-model="stations"
+              @play="playItem"
+              @playlist="addToPlaylistFunc"
+            />
           </template>
 
           <!-- Country List View (No 'id' query parameter) -->
