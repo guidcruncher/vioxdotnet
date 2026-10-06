@@ -18,7 +18,7 @@ async function playItem(item: MediaMetaData) {
     <div class="relative z-10 flex-1">
       <FavouritesList @play="playItem" />
 
-      <PlaybackQueueKanager />
+      <PlaybackQueueManager />
     </div>
   </div>
 </template>

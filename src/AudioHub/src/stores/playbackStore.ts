@@ -106,7 +106,8 @@ export const usePlaybackStore = defineStore('playback', () => {
   }
 
   async function playUri(uri: string) {
-    await api.media.play({ uri })
+      await api.queue.enqueue({uri})
+//    await api.media.play({ uri })
   }
 
   return {
