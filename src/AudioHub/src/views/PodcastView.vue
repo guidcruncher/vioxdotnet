@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import type { MediaMetaData } from '@/types'
+import MediaTrackList from '@/components/MediaTrackList.vue'
 
 const route = useRoute()
 const api = useApiClient()
@@ -33,32 +34,9 @@ async function loadPodcastData(id: string) {
   }
 }
 
-// Adaptive duration formatter: MM:SS or HH:MM:SS
-function convertSeconds(totalSeconds?: number): string {
-  if (!totalSeconds || totalSeconds <= 0) {
-    return '0:00'
-  }
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = Math.floor(totalSeconds % 60)
-  const pad = (num: number): string => num.toString().padStart(2, '0')
-
-  if (hours > 0) {
-    return `${hours}:${pad(minutes)}:${pad(seconds)}`
-  }
-  return `${minutes}:${pad(seconds)}`
-}
-
 async function playEpisode(episode: MediaMetaData) {
   if (episode.rawUri) {
     await playbackStore.playUri(episode.rawUri)
-  }
-}
-
-async function refresh() {
-  const podcastId = route.params.id as string
-  if (podcastId) {
-    loadPodcastData(podcastId)
   }
 }
 
@@ -149,61 +127,7 @@ watch(
         </section>
 
         <!-- Episode List Section -->
-        <section class="space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h2 class="text-lg sm:text-xl font-semibold text-slate-200">Episodes</h2>
-            <span class="text-xs sm:text-sm text-slate-400 font-medium">
-              {{ episodes.length }} {{ episodes.length === 1 ? 'episode' : 'episodes' }}
-            </span>
-          </div>
-
-          <div v-if="episodes.length === 0" class="text-slate-500 py-12 text-center text-sm">
-            No episodes found for this podcast.
-          </div>
-
-          <div v-else class="space-y-2">
-            <div
-              v-for="(episode, index) in episodes"
-              :key="episode.rawUri || index"
-              class="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800/60 transition group gap-4"
-            >
-              <!-- Play Button & Episode Title/Description -->
-              <div class="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                <button
-                  @click="playEpisode(episode)"
-                  class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600/90 hover:bg-indigo-500 text-white flex items-center justify-center shadow hover:scale-105 transition shrink-0"
-                  title="Play Episode"
-                >
-                  <svg
-                    class="w-4 h-4 sm:w-5 sm:h-5 fill-current translate-x-0.5"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </button>
-
-                <div class="min-w-0 flex-1 space-y-0.5">
-                  <h3
-                    class="font-medium text-xs sm:text-sm text-slate-100 truncate group-hover:text-indigo-300 transition"
-                  >
-                    {{ episode.title || 'Untitled Episode' }}
-                  </h3>
-                  <p
-                    v-if="episode.album"
-                    class="text-xs text-slate-400 line-clamp-2 sm:line-clamp-1"
-                  >
-                    {{ episode.album }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Episode Duration -->
-              <div class="shrink-0 text-xs font-mono text-slate-400 pl-2">
-                <span>{{ convertSeconds(episode.duration) }}</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        <MediaTrackList v-model="episodes" @play="playEpisode" />
       </template>
     </div>
   </div>

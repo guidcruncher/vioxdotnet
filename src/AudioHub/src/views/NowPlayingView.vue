@@ -17,6 +17,8 @@ async function playItem(item: MediaMetaData) {
     <!-- Foreground content sitting above the darkened background layer -->
     <div class="relative z-10 flex-1">
       <FavouritesList @play="playItem" />
+
+      <PlaybackQueueKanager />
     </div>
   </div>
 </template>

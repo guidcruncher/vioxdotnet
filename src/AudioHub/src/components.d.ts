@@ -29,6 +29,7 @@ declare module 'vue' {
     MediaCardGrid: typeof import('./components/MediaCardGrid.vue')['default']
     MediaTrackList: typeof import('./components/MediaTrackList.vue')['default']
     NowPlayingView: typeof import('./views/NowPlayingView.vue')['default']
+    PlaybackQueueKanager: typeof import('./components/PlaybackQueueKanager.vue')['default']
     PlayerFooter: typeof import('./components/PlayerFooter.vue')['default']
     PlaylistView: typeof import('./views/PlaylistView.vue')['default']
     PodcastView: typeof import('./views/PodcastView.vue')['default']

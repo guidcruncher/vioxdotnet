@@ -57,7 +57,7 @@ function handleImageError(event: Event) {
 }
 
 /* -----------------------------
-   DURATION FORMATTER
+   DURATION & DATE FORMATTERS
 ----------------------------- */
 function convertSeconds(totalSeconds?: number): string {
   if (!totalSeconds || totalSeconds <= 0) return '0:00'
@@ -66,6 +66,18 @@ function convertSeconds(totalSeconds?: number): string {
   const seconds = Math.floor(totalSeconds % 60)
   const pad = (n: number) => n.toString().padStart(2, '0')
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`
+}
+
+function formatDate(dateValue?: string | Date | number): string | null {
+  if (!dateValue) return null
+  const date = new Date(dateValue)
+  if (isNaN(date.getTime())) return String(dateValue)
+  return date.toLocaleDateString(undefined, {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 /* -----------------------------
@@ -208,7 +220,7 @@ async function togglePlaylist(track: MediaMetaData) {
             />
           </div>
 
-          <!-- Title + Artist -->
+          <!-- Title + Artist + Release Date -->
           <div class="min-w-0 flex-1 space-y-0.5">
             <h3
               class="font-medium text-xs sm:text-sm text-slate-100 truncate group-hover:text-indigo-300 transition"
@@ -216,13 +228,26 @@ async function togglePlaylist(track: MediaMetaData) {
             >
               {{ track.title || 'Untitled Track' }}
             </h3>
-            <p
-              v-if="track.artist || track.album"
-              class="text-xs text-slate-400 truncate"
-              :title="track.artist || track.album"
+            <div
+              v-if="track.artist || track.album || track.releaseDate"
+              class="text-xs text-slate-400 flex items-center gap-1.5 min-w-0"
+              :title="
+                [track.artist || track.album, formatDate(track.releaseDate)]
+                  .filter(Boolean)
+                  .join(' • ')
+              "
             >
-              {{ track.artist || track.album }}
-            </p>
+              <span v-if="track.artist || track.album" class="truncate min-w-0">
+                {{ track.artist || track.album }}
+              </span>
+              <span
+                v-if="(track.artist || track.album) && track.releaseDate"
+                class="text-slate-600 shrink-0"
+              >&bull;</span>
+              <span v-if="track.releaseDate" class="text-slate-400 shrink-0 whitespace-nowrap">
+                {{ formatDate(track.releaseDate) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -267,14 +292,12 @@ async function togglePlaylist(track: MediaMetaData) {
           >
             <svg v-if="track.favourite" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22
-8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
               />
             </svg>
             <svg v-else class="w-3.5 h-3.5 stroke-current stroke-2" viewBox="0 0 24 24">
               <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22
-8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
               />
             </svg>
           </button>
