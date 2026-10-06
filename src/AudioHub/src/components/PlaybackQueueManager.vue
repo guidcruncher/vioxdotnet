@@ -1,12 +1,14 @@
-TL;DR: The component below is a standalone Vue 3 Single File Component (PlaybackQueueManager.vue).
-It directly consumes the useApiClient composable's queue module to manage playback state, skip
-tracks, remove items, clear the queue, and toggle shuffle/repeat modes. It features a responsive
-dark-mode Tailwind CSS layout with strict TypeScript typing and error handling.
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import type { EventPayload, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import { useServerEvents } from '@/composables/useServerEvents'
+
+const sse = useServerEvents({
+  autoReconnect: true,
+  immediate: true,
+})
 
 const apiClient = useApiClient()
 const queueApi = apiClient.queue
@@ -20,6 +22,17 @@ const repeatMode = ref<PlaybackRepeatMode>(PlaybackRepeatMode.Off)
 const isLoading = ref<boolean>(false)
 const isActionPending = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
+
+const trackEventTypes = ['play', 'pause', 'previous', 'next', 'trackchanged']
+trackEventTypes.forEach((eventType) => {
+  sse.on(eventType, async (payload: EventPayload) => {
+    try {
+      await fetchStatus()
+    } catch (err) {
+      console.error(`Failed to parse ${eventType} event message:`, err)
+    }
+  })
+})
 
 const totalDuration = computed<number>(() => {
   return queue.value.reduce((acc, item) => acc + (item.duration || 0), 0)

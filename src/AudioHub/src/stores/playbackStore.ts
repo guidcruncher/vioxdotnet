@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { MediaMetaData, PlaybackState } from '@/types'
+import type { MediaMetaData, PlaybackState, EventPayload } from '@/types'
 import { useApiClient } from '@/composables/useApiClient'
-import { useServerEvents, type EventPayload } from '@/composables/useServerEvents'
+import { useServerEvents } from '@/composables/useServerEvents'
 
 export interface ExtendedPlaybackState extends Omit<PlaybackState, 'track'> {
   track: MediaMetaData | null
@@ -106,8 +106,8 @@ export const usePlaybackStore = defineStore('playback', () => {
   }
 
   async function playUri(uri: string) {
-      await api.queue.enqueue({uri})
-//    await api.media.play({ uri })
+    await api.queue.enqueue({ uri })
+    //    await api.media.play({ uri })
   }
 
   return {
