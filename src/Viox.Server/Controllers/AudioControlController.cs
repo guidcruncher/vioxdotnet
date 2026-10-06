@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 
 using Viox.Core.Models;
@@ -11,6 +12,7 @@ namespace Viox.Server.Controllers;
 [ApiController]
 [Route("api/v1/audiocontrol")]
 [Produces("application/json")]
+[Tags("Audio Control")]
 public sealed class AudioControlController : ControllerBase
 {
     private readonly IAlsaEqualizerService _equalizerService;

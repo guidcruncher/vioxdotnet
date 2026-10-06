@@ -10,6 +10,7 @@ namespace Viox.Server.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1/favourites")]
+[Tags("Favorites")]
 public class FavoritesController : ControllerBase
 {
     private readonly IFavoritesService _favoritesService;

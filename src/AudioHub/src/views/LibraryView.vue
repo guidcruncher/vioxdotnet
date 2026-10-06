@@ -245,6 +245,7 @@ onMounted(async () => {
           v-model="itemList"
           @play="playItem"
           @view="viewItem"
+          @playlist="addToPlaylistFunc"
         />
       </div>
     </div>

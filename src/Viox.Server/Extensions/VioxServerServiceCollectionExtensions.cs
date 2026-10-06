@@ -76,6 +76,7 @@ public static class VioxServerServiceCollectionExtensions
         });
 
         // 4. Unified Media Player Control Surface
+        services.AddPlaybackQueue(configuration);
         services.Configure<MediaPlayerOptions>(configuration.GetSection(MediaPlayerOptions.SectionName));
         services.AddSingleton<IMediaPlayerAdapter, LibrespotMediaPlayerAdapter>();
         services.AddSingleton<IMediaPlayerAdapter, MpdMediaPlayerAdapter>();
@@ -106,6 +107,19 @@ public static class VioxServerServiceCollectionExtensions
                 return Task.CompletedTask;
             });
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddPlaybackQueue(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.Configure<PlaybackQueueOptions>(configuration.GetSection(PlaybackQueueOptions.SectionName));
+        services.AddSingleton<IPlaybackQueueService, PlaybackQueueService>();
 
         return services;
     }

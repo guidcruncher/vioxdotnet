@@ -19,3 +19,17 @@ export interface PlaybackState {
 
   isLive?: boolean
 }
+
+export enum PlaybackRepeatMode {
+  Off = 0,
+  Track = 1,
+  Queue = 2,
+}
+
+export interface QueueStatusResponse {
+  items: MediaMetaData[]
+  currentIndex: number
+  currentItem: MediaMetaData | null
+  isShuffleEnabled: boolean
+  repeatMode: PlaybackRepeatMode
+}

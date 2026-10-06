@@ -63,11 +63,20 @@ export function useApiTransport(baseUrl: string = '', debug: boolean = true) {
       throw new Error(errorMessage || `HTTP Error: ${response.status}`)
     }
 
-    if (response.status === 204) {
+    if (response.status === 204 || response.status === 205) {
       return {} as T
     }
 
-    return response.json()
+    const text = await response.text()
+    if (!text) {
+      return {} as T
+    }
+
+    try {
+      return JSON.parse(text) as T
+    } catch {
+      throw new Error(`Expected JSON from ${targetUrl}, got: ${text.slice(0, 200)}`)
+    }
   }
 
   function createApiState<T>() {

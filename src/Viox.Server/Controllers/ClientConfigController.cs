@@ -7,6 +7,7 @@ namespace Viox.Server.Controllers;
 
 [ApiController]
 [Route("api/v1/client/config")]
+[Tags("Client Configuration")]
 public class ClientConfigController : ControllerBase
 {
     private readonly IClientOptionsStore _clientOptionsStore;

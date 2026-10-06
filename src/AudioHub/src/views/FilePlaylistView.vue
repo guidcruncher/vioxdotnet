@@ -11,6 +11,8 @@ const playlistsMap = ref<Record<string, MediaMetaData[]>>({})
 const selectedPlaylistName = ref<string>('')
 const isLoading = ref<boolean>(true)
 const errorMessage = ref<string | null>(null)
+const addToPlaylist = ref<boolean>(false)
+const playlistItem = ref<MediaMetaData>()
 
 // Computed list of available playlist names for the dropdown
 const playlistNames = computed<string[]>(() => Object.keys(playlistsMap.value))
@@ -29,6 +31,15 @@ const tracks = computed<MediaMetaData[]>({
     }
   },
 })
+
+async function addToPlaylistFunc(state: boolean, item: MediaMetaData) {
+  if (state) {
+    playlistItem.value = item
+    addToPlaylist.value = true
+  } else {
+    await api.playlists.removeItem(item.rawUri)
+  }
+}
 
 async function fetchPlaylists() {
   isLoading.value = true
@@ -132,7 +143,14 @@ onMounted(() => {
       </div>
 
       <!-- Reusable MediaTrackList Component -->
-      <MediaTrackList v-else v-model="tracks" @play="handlePlayTrack" @view="handleViewTrack" />
+      <MediaTrackList
+        v-else
+        v-model="tracks"
+        @play="handlePlayTrack"
+        @view="handleViewTrack"
+        @playlist="addToPlaylistFunc"
+      />
     </div>
   </div>
+  <AddToPlaylistModal v-model:isOpen="addToPlaylist" :item="playlistItem" />
 </template>

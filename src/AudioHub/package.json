@@ -11,19 +11,19 @@
     "clean": "rm -rf ./wwwroot ./node_modules"
   },
   "dependencies": {
-    "pinia": "^2.1.7",
+    "pinia": "^4.0.3",
     "vue": "^3.4.0",
-    "vue-router": "^4.2.5"
+    "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "prettier": "^3.9.7",
-    "tailwindcss": "^3.4.1",
-    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
     "autoprefixer": "^10.4.17",
-    "typescript": "^5.3.3",
-    "vite": "^5.1.0",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^6.0.3",
     "unplugin-vue-components": "^32.0.0",
-    "vue-tsc": "^3.2.7"
+    "vite": "^8.3.3",
+    "vue-tsc": "^3.3.12"
   },
   "allowScripts": {
     "esbuild@0.21.5": true,

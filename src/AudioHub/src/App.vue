@@ -64,7 +64,7 @@ onMounted(async () => {
 
     <!-- Core Shell Layout Body -->
     <div class="flex-1 flex overflow-hidden relative">
-      <!-- Sidebar Container (AppSidebar manages its own internal backdrop & expanded/collapsed widths) -->
+      <!-- Sidebar Container -->
       <aside class="flex shrink-0 z-40">
         <AppSidebar :is-mobile-open="isSidebarOpen" @close-sidebar="closeSidebar" />
       </aside>
@@ -76,10 +76,10 @@ onMounted(async () => {
       >
         <div class="max-w-7xl mx-auto w-full h-full">
           <div class="content-container"></div>
+
+          <!-- CLEAN ROUTER VIEW (no transition) -->
           <router-view v-slot="{ Component }">
-            <transition name="fade" mode="out-in">
-              <component :is="Component" />
-            </transition>
+            <component :is="Component" :key="$route.fullPath" />
           </router-view>
         </div>
       </main>
@@ -91,6 +91,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* Transition removed — styles kept for reference but unused */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;
