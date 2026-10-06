@@ -23,7 +23,7 @@ const isLoading = ref<boolean>(false)
 const isActionPending = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
 
-const trackEventTypes = ['play', 'pause', 'previous', 'next', 'trackchanged']
+const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
 trackEventTypes.forEach((eventType) => {
   sse.on(eventType, async (payload: EventPayload) => {
     try {

@@ -59,7 +59,7 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   })
 
-  const trackEventTypes = ['play', 'pause', 'previous', 'next', 'trackchanged']
+  const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
   trackEventTypes.forEach((eventType) => {
     sse.on(eventType, (payload: EventPayload) => {
       try {
