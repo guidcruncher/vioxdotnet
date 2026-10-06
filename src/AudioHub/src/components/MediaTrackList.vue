@@ -243,7 +243,8 @@ async function togglePlaylist(track: MediaMetaData) {
               <span
                 v-if="(track.artist || track.album) && track.releaseDate"
                 class="text-slate-600 shrink-0"
-              >&bull;</span>
+                >&bull;</span
+              >
               <span v-if="track.releaseDate" class="text-slate-400 shrink-0 whitespace-nowrap">
                 {{ formatDate(track.releaseDate) }}
               </span>
