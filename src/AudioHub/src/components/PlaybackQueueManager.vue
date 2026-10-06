@@ -6,7 +6,7 @@ dark-mode Tailwind CSS layout with strict TypeScript typing and error handling.
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { MediaMetaData, QueueStatusResponse } from '@/types'
+import type { PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
 
 const apiClient = useApiClient()
 const queueApi = apiClient.queue

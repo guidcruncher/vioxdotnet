@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 using Viox.Core.Models;
+using Viox.Core.Services;
 using Viox.Server.Abstraction;
 using Viox.Server.Models;
 
@@ -24,13 +25,16 @@ public sealed class PlaybackQueueController : ControllerBase
 {
     private readonly IPlaybackQueueService _queueService;
     private readonly ILogger<PlaybackQueueController> _logger;
+    private readonly MediaSourceResolverService _resolver;
 
     public PlaybackQueueController(
         IPlaybackQueueService queueService,
+        MediaSourceResolverService resolver,
         ILogger<PlaybackQueueController> logger)
     {
         _queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
     }
 
     /// <summary>
@@ -72,15 +76,22 @@ public sealed class PlaybackQueueController : ControllerBase
     [HttpPost("enqueue")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Enqueue([FromBody] MediaMetaData item, CancellationToken cancellationToken)
+    public async Task<IActionResult> Enqueue([FromBody] PlayRequest item, CancellationToken cancellationToken)
     {
         if (item is null)
         {
             return BadRequest("Media metadata item cannot be null.");
         }
 
-        await _queueService.EnqueueAsync(item, cancellationToken);
-        _logger.LogInformation("Enqueued track '{Title}' via API.", item.Title);
+        MediaMetaData? metaData = await _resolver.ResolveMetaData(MediaUriParser.ParseMediaUriValue(item.Uri), cancellationToken);
+
+        if (metaData is null)
+        {
+            return NotFound();
+        }
+
+        await _queueService.EnqueueAsync(metaData, cancellationToken);
+        _logger.LogInformation("Enqueued track '{Title}' via API.", item.Uri);
         return Ok();
     }
 
@@ -94,14 +105,30 @@ public sealed class PlaybackQueueController : ControllerBase
     [HttpPost("enqueue-batch")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> EnqueueBatch([FromBody] IEnumerable<MediaMetaData> items, CancellationToken cancellationToken)
+    public async Task<IActionResult> EnqueueBatch([FromBody] IEnumerable<PlayRequest> items, CancellationToken cancellationToken)
     {
         if (items is null)
         {
             return BadRequest("Media metadata items collection cannot be null.");
         }
 
-        await _queueService.EnqueueRangeAsync(items, cancellationToken);
+        List<MediaMetaData> res = new();
+
+        foreach (PlayRequest req in items)
+        {
+            MediaMetaData? metaData = await _resolver.ResolveMetaData(MediaUriParser.ParseMediaUriValue(req.Uri), cancellationToken);
+            if (metaData is not null)
+            {
+                res.Add(metaData);
+            }
+        }
+
+        if (res.Count() == 0)
+        {
+            return NotFound();
+        }
+
+        await _queueService.EnqueueRangeAsync(res, cancellationToken);
         _logger.LogInformation("Enqueued batch of tracks via API.");
         return Ok();
     }

@@ -1,5 +1,5 @@
 import type { useApiTransport } from '../useApiTransport'
-import type { MediaMetaData, QueueStatusResponse, PlaybackRepeatMode } from '@/types'
+import type { PlayRequest, MediaMetaData, QueueStatusResponse, PlaybackRepeatMode } from '@/types'
 
 export function createQueueModule(transport: ReturnType<typeof useApiTransport>) {
   return {
@@ -10,13 +10,13 @@ export function createQueueModule(transport: ReturnType<typeof useApiTransport>)
         method: 'DELETE',
       }),
 
-    enqueue: (item: MediaMetaData) =>
+    enqueue: (item: PlayRequest) =>
       transport.request<void>('/api/v1/queue/enqueue', {
         method: 'POST',
         body: JSON.stringify(item),
       }),
 
-    enqueueBatch: (items: MediaMetaData[]) =>
+    enqueueBatch: (items: PlayRequest[]) =>
       transport.request<void>('/api/v1/queue/enqueue-batch', {
         method: 'POST',
         body: JSON.stringify(items),
