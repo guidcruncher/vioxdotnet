@@ -261,11 +261,8 @@ async function togglePlaylist(track: MediaMetaData) {
             "
             title="Toggle Playlist"
           >
-            <Minus
-              v-if="track.inPlaylist"
-              class="w-3.5 h-3.5 stroke-current stroke-2"
-            />             
-            <Plus  v-else class="w-3.5 h-3.5 stroke-current stroke-2" />
+            <Minus v-if="track.inPlaylist" class="w-3.5 h-3.5 stroke-current stroke-2" />
+            <Plus v-else class="w-3.5 h-3.5 stroke-current stroke-2" />
           </button>
 
           <!-- Favourite Button -->

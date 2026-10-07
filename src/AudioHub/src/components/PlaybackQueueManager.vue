@@ -4,7 +4,7 @@ import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
 import type { EventPayload, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
-import { RotateCcw, RotateCw, Play, Trash} from '@lucide/vue'
+import { RotateCcw, RotateCw, Play, Trash } from '@lucide/vue'
 
 const sse = useServerEvents({
   autoReconnect: true,
@@ -218,10 +218,7 @@ onMounted(() => {
             class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
             title="Refresh Queue"
           >
-            <RotateCcw
-              class="w-5 h-5"
-              :class="{ 'animate-spin': isLoading }"
-              />
+            <RotateCcw class="w-5 h-5" :class="{ 'animate-spin': isLoading }" />
           </button>
 
           <button

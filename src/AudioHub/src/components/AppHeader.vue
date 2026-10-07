@@ -38,7 +38,7 @@ function handleToggleSidebar() {
         class="md:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
         aria-label="Toggle navigation drawer"
       >
-          <TextAlignJustify class="w-5 h-5" />
+        <TextAlignJustify class="w-5 h-5" />
       </button>
 
       <div class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-indigo-600 flex items-center justify-center">
@@ -64,14 +64,11 @@ function handleToggleSidebar() {
           placeholder="Search media..."
           class="w-full bg-slate-800/90 border border-slate-700/60 rounded-full py-1.5 sm:py-2 pl-9 sm:pl-10 pr-4 text-xs sm:text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
         />
-        <Search 
-          class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 sm:top-3"
-          />
+        <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 sm:top-3" />
       </form>
     </div>
 
     <!-- Actions / Auth Button -->
-    <div class="flex items-center shrink-0">
-    </div>
+    <div class="flex items-center shrink-0"></div>
   </header>
 </template>

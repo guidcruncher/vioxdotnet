@@ -95,39 +95,7 @@ watch(
         <h2 class="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">Radio Stations</h2>
 
         <!-- View Mode Toggle Button (Shown when viewing stations) -->
-        <div
-          v-if="route.query.id && !loading && stations.length > 0"
-          class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700/60"
-        >
-          <button
-            @click="toggleViewMode('grid')"
-            :class="[
-              'p-1.5 rounded-md transition text-slate-400 hover:text-slate-100',
-              viewMode === 'grid' ? 'bg-slate-700 text-indigo-400 font-semibold shadow-sm' : '',
-            ]"
-            title="Grid View"
-            aria-label="Switch to grid view"
-          >
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path
-                d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"
-              />
-            </svg>
-          </button>
-          <button
-            @click="toggleViewMode('list')"
-            :class="[
-              'p-1.5 rounded-md transition text-slate-400 hover:text-slate-100',
-              viewMode === 'list' ? 'bg-slate-700 text-indigo-400 font-semibold shadow-sm' : '',
-            ]"
-            title="List View"
-            aria-label="Switch to list view"
-          >
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z" />
-            </svg>
-          </button>
-        </div>
+        <ViewSelector v-model="viewMode" v-if="route.query.id && !loading && stations.length > 0" />
       </div>
 
       <!-- Loading State -->

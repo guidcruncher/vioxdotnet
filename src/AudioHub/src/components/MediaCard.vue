@@ -222,11 +222,10 @@ const isPlaylistSupported = computed(() => {
         <!-- Minus Icon (When in playlist) -->
         <Minus
           v-if="isInPlaylist"
-          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300" />
+          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300"
+        />
         <!-- Plus Icon (When not in playlist) -->
-        <Plus
-          v-else
-          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300" />
+        <Plus v-else class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300" />
       </button>
       <!-- Pretty Type Label -->
       <p class="text-[10px] sm:text-xs text-slate-400 text-center flex-1 select-none">

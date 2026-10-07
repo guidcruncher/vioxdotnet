@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import {ChevronLeft } from '@lucide/vue'
-  
+import { ChevronLeft } from '@lucide/vue'
+
 const router = useRouter()
 
 function goBack() {

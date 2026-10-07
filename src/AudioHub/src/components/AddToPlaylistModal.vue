@@ -1,4 +1,4 @@
- <template>
+<template>
   <Teleport to="body">
     <transition
       enter-active-class="transition duration-300 ease-out"
@@ -44,8 +44,7 @@
                   @click="handleClose"
                 >
                   <span class="sr-only">Close dialog</span>
-                  <X
-                    class="w-5 h-5" />
+                  <X class="w-5 h-5" />
                 </button>
               </div>
             </div>
