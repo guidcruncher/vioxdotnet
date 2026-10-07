@@ -7,6 +7,7 @@ import type { MediaMetaData } from '@/types'
 
 import MediaTrackList from '@/components/MediaTrackList.vue'
 import PreviousPageButton from '@/components/PreviousPageButton.vue'
+import { Play } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApiClient()
@@ -142,9 +143,7 @@ watch(
                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg hover:scale-105 active:scale-95 transition shrink-0"
                 title="Play Album"
               >
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+                <Play class="w-5 h-5" />
               </button>
 
               &nbsp;<PreviousPageButton />

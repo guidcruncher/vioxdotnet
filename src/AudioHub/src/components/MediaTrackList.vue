@@ -191,7 +191,7 @@ async function togglePlaylist(track: MediaMetaData) {
             class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600/90 hover:bg-indigo-500 text-white flex items-center justify-center shadow hover:scale-105 transition shrink-0 active:scale-95"
             title="Play Track"
           >
-            <Play class="w-4 h-4 sm:w-5 sm:h-5 fill-current translate-x-0.5" />
+            <Play class="w-4 h-4 sm:w-5 sm:h-5 translate-x-0.5" />
           </button>
 
           <button

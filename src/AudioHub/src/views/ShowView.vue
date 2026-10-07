@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import type { MediaMetaData } from '@/types'
+import { Play } from '@lucide/vue'
 
 import MediaTrackList from '@/components/MediaTrackList.vue'
 import PreviousPageButton from '@/components/PreviousPageButton.vue'

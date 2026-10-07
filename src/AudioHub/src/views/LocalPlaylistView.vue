@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import MediaCard from '@/components/MediaCard.vue'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
-import { Grid3x3, Rows3 } from '@lucide/vue'
+import { Play, Grid3x3, Rows3 } from '@lucide/vue'
 
 const STORAGE_KEY = 'library_view_mode'
 
@@ -33,6 +33,8 @@ function toggleViewMode(mode: 'grid' | 'list') {
   viewMode.value = mode
   localStorage.setItem(STORAGE_KEY, mode)
 }
+
+async function playAll() {}
 
 async function loadPlaylistById(id: string) {
   if (!id) return
@@ -133,6 +135,15 @@ onMounted(() => {
               />
             </svg>
           </div>
+        </div>
+        <div>
+          <button
+            @click="playAll()"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg hover:scale-105 active:scale-95 transition shrink-0"
+            title="Play Album"
+          >
+            <Play class="w-5 h-5" />
+          </button>
         </div>
       </div>
 
