@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useApiClient } from '@/composables/useApiClient'
 import type { GetVolumeResponse, SetVolumeRequest, VolumeState } from '@/types'
+import { Play, Pause } from '@lucide/vue'
 
 const store = usePlaybackStore()
 const api = useApiClient()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { Ellipsis } from '@lucide/vue'
 
 export interface MenuItem {
   id: string
@@ -52,11 +53,7 @@ onBeforeUnmount(() => {
       <span class="sr-only">Open menu</span>
 
       <!-- 3-dot icon -->
-      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-        <circle cx="4" cy="10" r="1.5" />
-        <circle cx="10" cy="10" r="1.5" />
-        <circle cx="16" cy="10" r="1.5" />
-      </svg>
+      <Ellipsis class="h-5 w-5" />
     </button>
 
     <!-- Dropdown -->

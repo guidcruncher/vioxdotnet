@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import type { MediaMetaData } from '@/types'
+import { Plus, Minus } from '@lucide/vue'
 
 interface Props {
   defaultimage?: string
@@ -219,21 +220,13 @@ const isPlaylistSupported = computed(() => {
         ]"
       >
         <!-- Minus Icon (When in playlist) -->
-        <svg
+        <Minus
           v-if="isInPlaylist"
-          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300"
-          viewBox="0 0 24 24"
-        >
-          <path d="M5 12h14" />
-        </svg>
+          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300" />
         <!-- Plus Icon (When not in playlist) -->
-        <svg
+        <Plus
           v-else
-          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300"
-          viewBox="0 0 24 24"
-        >
-          <path d="M12 5v14m-7-7h14" />
-        </svg>
+          class="w-3.5 h-3.5 stroke-current stroke-2 transition-all duration-300" />
       </button>
       <!-- Pretty Type Label -->
       <p class="text-[10px] sm:text-xs text-slate-400 text-center flex-1 select-none">
