@@ -57,7 +57,7 @@ function handleToggleSidebar() {
       <h1
         class="hidden md:inline text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent"
       >
-        Viox Control Center
+        AudioHub
       </h1>
     </div>
 

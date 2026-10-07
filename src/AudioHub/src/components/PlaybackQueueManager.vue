@@ -123,7 +123,6 @@ async function handleRemoveItem(index: number): Promise<void> {
 
 async function handleClear(): Promise<void> {
   if (isActionPending.value || queue.value.length === 0) return
-  if (!confirm('Are you sure you want to clear the playback queue?')) return
 
   isActionPending.value = true
   try {

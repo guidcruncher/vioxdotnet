@@ -11,6 +11,7 @@
     "clean": "rm -rf ./wwwroot ./node_modules"
   },
   "dependencies": {
+    "@lucide/vue": "^1.52.0",
     "pinia": "^4.0.3",
     "vue": "^3.4.0",
     "vue-router": "^5.3.1"
