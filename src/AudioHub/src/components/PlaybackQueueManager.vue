@@ -4,7 +4,17 @@ import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
 import type { EventPayload, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
-import { RotateCcw, RotateCw, Play, Trash } from '@lucide/vue'
+import {
+  Volume2,
+  Repeat,
+  SkipForward,
+  SkipBack,
+  Shuffle,
+  RotateCcw,
+  RotateCw,
+  Play,
+  Trash,
+} from '@lucide/vue'
 
 const sse = useServerEvents({
   autoReconnect: true,
@@ -289,7 +299,7 @@ onMounted(() => {
                     d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"
                   />
                 </svg>
-                <span class="text-xs">No Track Cover</span>
+                <span class="text-xs">No Track</span>
               </div>
             </div>
 
@@ -329,14 +339,7 @@ onMounted(() => {
                 "
                 :title="isShuffleEnabled ? 'Disable Shuffle' : 'Enable Shuffle'"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v8a2 2 0 01-2 2h-2m-4-4l3 3m0 0l-3 3m3-3H3m13-8l3 3m0 0l-3 3m3-3H9"
-                  />
-                </svg>
+                <Shuffle class="w-5 h-5" />
               </button>
 
               <!-- Previous Button -->
@@ -347,9 +350,7 @@ onMounted(() => {
                 class="p-3 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30"
                 title="Previous Track"
               >
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-                </svg>
+                <SkipBack class="w-6 h-6" />
               </button>
 
               <!-- Next Button -->
@@ -360,9 +361,7 @@ onMounted(() => {
                 class="p-3 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30"
                 title="Next Track"
               >
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
-                </svg>
+                <SkipForward class="w-6 h-6" />
               </button>
 
               <!-- Repeat Mode Button -->
@@ -378,14 +377,7 @@ onMounted(() => {
                 "
                 :title="getRepeatModeLabel()"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
+                <Repeat class="w-5 h-5" />
                 <span
                   v-if="repeatMode === PlaybackRepeatMode.Track"
                   class="absolute -top-1 -right-1 bg-indigo-500 text-slate-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center"
@@ -450,11 +442,7 @@ onMounted(() => {
                     v-if="idx === currentIndex"
                     class="inline-block text-indigo-400 animate-pulse"
                   >
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path
-                        d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
-                      />
-                    </svg>
+                    <Volume2 class="w-4 h-4" />
                   </span>
                   <span v-else>{{ idx + 1 }}</span>
                 </div>

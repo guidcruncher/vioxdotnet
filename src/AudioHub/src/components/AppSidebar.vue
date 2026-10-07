@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useClientConfig } from '@/composables/useClientConfig'
 import { useApiClient } from '@/composables/useApiClient'
 import type { Sources } from '@/types'
-import { Home, Settings, AudioLines, ListMusic, ArrowRightFromLine } from '@lucide/vue'
+import { Home, Settings, AudioLines, ListMusic, ArrowLeftFromLine } from '@lucide/vue'
 
 const { config, isLoading, error, fetchConfig } = useClientConfig()
 const api = useApiClient()
@@ -134,7 +134,7 @@ const closeMobileMenu = () => {
         :class="{ 'mx-auto': (isCollapsed && !isMobile) || (!isMobileOpen && isMobile) }"
         :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
       >
-        <ArrowRightFromLine
+        <ArrowLeftFromLine
           class="w-5 h-5 transition-transform duration-300"
           :class="{ 'rotate-180': (isCollapsed && !isMobile) || (!isMobileOpen && isMobile) }"
         />
