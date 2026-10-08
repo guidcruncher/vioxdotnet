@@ -8,6 +8,7 @@ import MediaCard from '@/components/MediaCard.vue'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
 import { Play, Grid3x3, Rows3 } from '@lucide/vue'
+import { playAllTracks } from '@/utilities'
 
 const STORAGE_KEY = 'library_view_mode'
 
@@ -39,12 +40,7 @@ async function playAll() {
     return
   }
 
-  await api.queue.clear()
-  const batch = []
-  for (const item of playlist.value.items) {
-    batch.push({ uri: item.rawUri })
-  }
-  await api.queue.enqueueBatch(batch)
+  await playAllTracks(playlist.value.items)
 }
 
 async function loadPlaylistById(id: string) {

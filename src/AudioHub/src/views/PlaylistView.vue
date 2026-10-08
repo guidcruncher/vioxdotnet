@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import type { MediaMetaData } from '@/types'
-
+import { playAllTracks } from '@/utilities'
 import MediaTrackList from '@/components/MediaTrackList.vue'
 import PreviousPageButton from '@/components/PreviousPageButton.vue'
 import { Play } from '@lucide/vue'
@@ -43,24 +43,12 @@ async function playTrack(track: MediaMetaData) {
   }
 }
 
-async function playAllOld() {
-  const playlistId = route.params.id as string
-  if (playlistId) {
-    await playbackStore.playUri(`spotify:playlist:${playlistId}`)
-  }
-}
-
 async function playAll() {
   if (!tracks.value) {
     return
   }
 
-  await api.queue.clear()
-  const batch = []
-  for (const item of tracks.value) {
-    batch.push({ uri: item.rawUri })
-  }
-  await api.queue.enqueueBatch(batch)
+  await playAllTracks(tracks.value)
 }
 
 async function refresh() {
