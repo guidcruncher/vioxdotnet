@@ -178,12 +178,6 @@ async function togglePlaylist(track: MediaMetaData) {
       >
         <!-- LEFT SIDE -->
         <div class="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-          <span
-            class="text-xs font-mono text-slate-500 w-5 text-right hidden sm:inline-block shrink-0"
-          >
-            {{ index + 1 }}
-          </span>
-
           <!-- Play / View Button -->
           <button
             v-if="isPlayable(track)"
