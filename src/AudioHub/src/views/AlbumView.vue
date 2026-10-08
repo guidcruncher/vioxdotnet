@@ -43,11 +43,24 @@ async function playTrack(track: MediaMetaData) {
   }
 }
 
-async function playAll() {
+async function playAllOld() {
   const albumId = route.params.id as string
   if (albumId) {
     await playbackStore.playUri(`spotify:album:${albumId}`)
   }
+}
+
+async function playAll() {
+  if (!tracks.value) {
+    return
+  }
+
+  await api.queue.clear()
+  const batch = []
+  for (const item of tracks.value) {
+    batch.push({ uri: item.rawUri })
+  }
+  await api.queue.enqueueBatch(batch)
 }
 
 async function refresh() {

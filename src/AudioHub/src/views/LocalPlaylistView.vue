@@ -34,7 +34,18 @@ function toggleViewMode(mode: 'grid' | 'list') {
   localStorage.setItem(STORAGE_KEY, mode)
 }
 
-async function playAll() {}
+async function playAll() {
+  if (!playlist.value || !playlist.value.items) {
+    return
+  }
+
+  await api.queue.clear()
+  const batch = []
+  for (const item of playlist.value.items) {
+    batch.push({ uri: item.rawUri })
+  }
+  await api.queue.enqueueBatch(batch)
+}
 
 async function loadPlaylistById(id: string) {
   if (!id) return
