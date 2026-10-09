@@ -322,6 +322,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     {
         _logger.LogInformation("Executing queue stop request.");
         await StopAsync(cancellationToken);
+	_currentMedia.SetCurrentMedia(null);
     }
 
     private async Task<IMediaPlayerAdapter> ResolveTargetAdapterAsync(CancellationToken cancellationToken)
