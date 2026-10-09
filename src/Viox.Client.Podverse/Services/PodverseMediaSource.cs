@@ -89,7 +89,7 @@ public class PodverseMediaSource : IMediaSource
 
                 PodcastEpisode? episode = episodes
                     .OfType<PodcastEpisode>()
-                    .FirstOrDefault(ep => ep.Guid is not null && ep.Guid == mediaUri.SecondaryId);
+                    .FirstOrDefault(ep => ep.Uri is not null && ep.Uri == mediaUri.ToString());
 
                 if (episode is null)
                 {
