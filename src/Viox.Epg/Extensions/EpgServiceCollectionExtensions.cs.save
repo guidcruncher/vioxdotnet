@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Viox.Epg.Configuration;
 using Viox.Epg.Data;
 using Viox.Epg.Services;
-using Viox.Core.Scheduler;
+using Viox.Core.Schsx
+	
+wduler;
 
 public static class EpgServiceCollectionExtensions
 {

@@ -17,7 +17,7 @@ public class EpgScheduledTask : IScheduledTask
     private readonly ILogger<EpgScheduledTask> _logger;
 
     public string Name => "EPG Import Task";
-    public string Schedule => "0 4 * * *"; // Daily at 04:00 AM UTC
+    public string Schedule => "0 0 5 * * *"; // Daily at 04:00 AM UTC
     public bool RunOnStartup => _options.RunOnStartup;
 
     public EpgScheduledTask(
