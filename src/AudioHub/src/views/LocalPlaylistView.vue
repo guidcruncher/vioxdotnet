@@ -7,6 +7,8 @@ import { useRoute, useRouter } from 'vue-router'
 import MediaCard from '@/components/MediaCard.vue'
 import MediaCardGrid from '@/components/MediaCardGrid.vue'
 import MediaTrackList from '@/components/MediaTrackList.vue'
+import { Play, Grid3x3, Rows3 } from '@lucide/vue'
+import { playAllTracks } from '@/utilities'
 
 const STORAGE_KEY = 'library_view_mode'
 
@@ -31,6 +33,14 @@ onMounted(() => {
 function toggleViewMode(mode: 'grid' | 'list') {
   viewMode.value = mode
   localStorage.setItem(STORAGE_KEY, mode)
+}
+
+async function playAll() {
+  if (!playlist.value || !playlist.value.items) {
+    return
+  }
+
+  await playAllTracks(playlist.value.items)
 }
 
 async function loadPlaylistById(id: string) {
@@ -103,39 +113,7 @@ onMounted(() => {
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">Playlists</h2>
 
-        <div
-          v-if="!loading"
-          class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700/60"
-        >
-          <button
-            @click="toggleViewMode('grid')"
-            :class="[
-              'p-1.5 rounded-md transition text-slate-400 hover:text-slate-100',
-              viewMode === 'grid' ? 'bg-slate-700 text-indigo-400 font-semibold shadow-sm' : '',
-            ]"
-            title="Grid View"
-            aria-label="Switch to grid view"
-          >
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path
-                d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"
-              />
-            </svg>
-          </button>
-          <button
-            @click="toggleViewMode('list')"
-            :class="[
-              'p-1.5 rounded-md transition text-slate-400 hover:text-slate-100',
-              viewMode === 'list' ? 'bg-slate-700 text-indigo-400 font-semibold shadow-sm' : '',
-            ]"
-            title="List View"
-            aria-label="Switch to list view"
-          >
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z" />
-            </svg>
-          </button>
-        </div>
+        <ViewSelector v-model="viewMode" v-if="!loading" />
       </div>
 
       <div
@@ -164,6 +142,15 @@ onMounted(() => {
               />
             </svg>
           </div>
+        </div>
+        <div>
+          <button
+            @click="playAll()"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg hover:scale-105 active:scale-95 transition shrink-0"
+            title="Play Album"
+          >
+            <Play class="w-5 h-5" />
+          </button>
         </div>
       </div>
 

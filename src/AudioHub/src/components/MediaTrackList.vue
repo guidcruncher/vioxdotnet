@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import type { MediaMetaData } from '@/types'
 import { useApiClient } from '@/composables/useApiClient'
+import { Heart, Play, Eye, Plus, Minus } from '@lucide/vue'
 
 interface Props {
   defaultImage?: string
@@ -177,12 +178,6 @@ async function togglePlaylist(track: MediaMetaData) {
       >
         <!-- LEFT SIDE -->
         <div class="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-          <span
-            class="text-xs font-mono text-slate-500 w-5 text-right hidden sm:inline-block shrink-0"
-          >
-            {{ index + 1 }}
-          </span>
-
           <!-- Play / View Button -->
           <button
             v-if="isPlayable(track)"
@@ -190,9 +185,7 @@ async function togglePlaylist(track: MediaMetaData) {
             class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600/90 hover:bg-indigo-500 text-white flex items-center justify-center shadow hover:scale-105 transition shrink-0 active:scale-95"
             title="Play Track"
           >
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 fill-current translate-x-0.5" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            <Play class="w-4 h-4 sm:w-5 sm:h-5 translate-x-0.5" />
           </button>
 
           <button
@@ -201,11 +194,7 @@ async function togglePlaylist(track: MediaMetaData) {
             class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-200 flex items-center justify-center shadow hover:scale-105 transition shrink-0 border border-slate-600/50 active:scale-95"
             title="View Details"
           >
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 fill-current" viewBox="0 0 24 24">
-              <path
-                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-              />
-            </svg>
+            <Eye class="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           <!-- Thumbnail -->
@@ -266,16 +255,8 @@ async function togglePlaylist(track: MediaMetaData) {
             "
             title="Toggle Playlist"
           >
-            <svg
-              v-if="track.inPlaylist"
-              class="w-3.5 h-3.5 stroke-current stroke-2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M5 12h14" />
-            </svg>
-            <svg v-else class="w-3.5 h-3.5 stroke-current stroke-2" viewBox="0 0 24 24">
-              <path d="M12 5v14m-7-7h14" />
-            </svg>
+            <Minus v-if="track.inPlaylist" class="w-3.5 h-3.5 stroke-current stroke-2" />
+            <Plus v-else class="w-3.5 h-3.5 stroke-current stroke-2" />
           </button>
 
           <!-- Favourite Button -->
@@ -291,16 +272,8 @@ async function togglePlaylist(track: MediaMetaData) {
             "
             title="Toggle Favourite"
           >
-            <svg v-if="track.favourite" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              />
-            </svg>
-            <svg v-else class="w-3.5 h-3.5 stroke-current stroke-2" viewBox="0 0 24 24">
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              />
-            </svg>
+            <Heart v-if="track.favourite" class="w-3.5 h-3.5 fill-current" />
+            <Heart v-else class="w-3.5 h-3.5 stroke-current stroke-2" />
           </button>
 
           <!-- Duration -->

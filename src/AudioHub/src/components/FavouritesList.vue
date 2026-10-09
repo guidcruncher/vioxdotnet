@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import type { MediaMetaData } from '@/types'
 import { useRoute, useRouter } from 'vue-router'
+import { Heart, ArrowLeft, ArrowRight } from '@lucide/vue'
 
 const emit = defineEmits<{
   (e: 'play', item: MediaMetaData): void
@@ -86,11 +87,7 @@ onMounted(() => {
     <!-- Header Controls -->
     <div class="flex items-center justify-between mb-2.5 px-0.5">
       <div class="flex items-center space-x-1.5">
-        <svg class="w-3.5 h-3.5 text-rose-500 fill-current" viewBox="0 0 24 24">
-          <path
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-          />
-        </svg>
+        <Heart class="w-3.5 h-3.5 text-rose-500 fill-current" />
         <h2 class="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">Your Favourites</h2>
       </div>
 
@@ -102,14 +99,7 @@ onMounted(() => {
           aria-label="Scroll left"
           class="p-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white transition active:scale-95 focus:outline-none"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ArrowLeft class="w-3.5 h-3.5" />
         </button>
 
         <button
@@ -118,14 +108,7 @@ onMounted(() => {
           aria-label="Scroll right"
           class="p-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white transition active:scale-95 focus:outline-none"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <ArrowRight class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

@@ -8,6 +8,7 @@ using Viox.Client.Podverse.Configuration;
 using Viox.Client.Podverse.Models;
 using Viox.Core.Models;
 using Viox.Core.Services;
+using Viox.Core.Utilities;
 
 namespace Viox.Client.Podverse.Services;
 
@@ -153,9 +154,17 @@ public class PodcastEpisodeParser
                 durationSeconds = 0;
             }
 
+
+            var uri = $"podverse:episode:{id}:{item.Element("guid")?.Value.ToXxHash64Hex()}";
+
+            if (item.Element("guid")?.Value is null)
+            {
+                uri = $"podverse:episode:{id}:{audioUrl.ToXxHash64Hex()}";
+            }
+
             var episode = new PodcastEpisode
             {
-                Uri = $"podverse:episode:{id}:{item.Element("guid")?.Value}",
+                Uri = uri,
                 PodcastId = id,
                 Title = title,
                 Description = string.IsNullOrEmpty(description) ? string.Empty : _sanitizer.StripHtml(description),

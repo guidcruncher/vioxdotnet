@@ -3,6 +3,18 @@ import { ref, computed, onMounted } from 'vue'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useApiClient } from '@/composables/useApiClient'
 import type { GetVolumeResponse, SetVolumeRequest, VolumeState } from '@/types'
+import {
+  Volume2,
+  Repeat,
+  SkipForward,
+  SkipBack,
+  Shuffle,
+  RotateCcw,
+  RotateCw,
+  Play,
+  Trash,
+  Pause,
+} from '@lucide/vue'
 
 const store = usePlaybackStore()
 const api = useApiClient()
@@ -108,9 +120,7 @@ onMounted(async () => {
           class="text-slate-400 hover:text-white transition p-2 sm:p-1.5 active:scale-95 focus:outline-none"
           title="Previous Track"
         >
-          <svg class="w-5 h-5 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-          </svg>
+          <SkipBack class="w-5 h-5 sm:w-5 sm:h-5" />
         </button>
 
         <button
@@ -118,17 +128,8 @@ onMounted(async () => {
           class="bg-white text-slate-900 p-2.5 sm:p-3 rounded-full hover:scale-105 active:scale-95 transition shadow-lg shadow-white/10 flex items-center justify-center focus:outline-none"
           title="Play / Pause"
         >
-          <svg
-            v-if="!store.state.playing"
-            id="playIcon"
-            class="w-5 h-5 fill-current"
-            viewBox="0 0 24 24"
-          >
-            <path d="M8 5v14l11-7z" />
-          </svg>
-          <svg v-else id="pauseIcon" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-          </svg>
+          <Play v-if="!store.state.playing" id="playIcon" class="w-5 h-5 fill-current" />
+          <Pause v-else id="pauseIcon" class="w-5 h-5 fill-current" />
         </button>
 
         <button
@@ -136,9 +137,7 @@ onMounted(async () => {
           class="text-slate-400 hover:text-white transition p-2 sm:p-1.5 active:scale-95 focus:outline-none"
           title="Next Track"
         >
-          <svg class="w-5 h-5 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
-          </svg>
+          <SkipForward class="w-5 h-5 sm:w-5 sm:h-5" />
         </button>
       </div>
 
@@ -163,19 +162,7 @@ onMounted(async () => {
 
     <!-- Volume Control Section (Hidden on narrow mobile `< sm`) -->
     <div class="hidden sm:flex items-center justify-end space-x-3 sm:w-1/4">
-      <svg
-        class="w-4 h-4 text-slate-400 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-        />
-      </svg>
+      <Volume2 class="w-4 h-4 text-slate-400 shrink-0" />
       <input
         type="range"
         min="0"

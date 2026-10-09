@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 
 using Viox.Core.Models;
 using Viox.Core.Services;
+using Viox.Epg.Services;
 using Viox.Server.Abstraction;
 using Viox.Server.Configuration;
 
@@ -30,6 +31,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     private readonly AudioCacheManager _cacheManager;
     private readonly IMediaEventService _eventService;
     private readonly IPlaybackQueueService _queueService;
+    private readonly EpgQueryService _epgService;
 
     private string? _lastActivePlayerName;
     private string _lastState = string.Empty;
@@ -42,8 +44,10 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         IOptions<MediaPlayerOptions> options,
         IMediaEventService eventService,
         IPlaybackQueueService queueService,
+    EpgQueryService epgService,
         ILogger<CompositeMediaPlayerControlSurface> logger)
     {
+        _epgService = epgService ?? throw new ArgumentNullException(nameof(epgService));
         _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
         _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         _mediaResolver = mediaResolver ?? throw new ArgumentNullException(nameof(mediaResolver));
@@ -146,6 +150,17 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
                 double? position = await activePlayer.GetPlaybackPositionAsync(cancellationToken);
                 state.Position = position ?? 0;
                 state.IsLive = state.Track.Duration is not null;
+
+                if (state.Track.Uri?.Type == "station")
+                {
+                    var epg = await _epgService.GetNowPlayingByChannelAsync(state.Track.Title, cancellationToken);
+                    if (epg is not null)
+                    {
+                        state.Track.Album = epg.Title ?? "";
+                        state.Track.Artist = epg.SubTitle ?? "";
+                    }
+                }
+
             }
 
             string currentState = JsonSerializer.Serialize(state, options);

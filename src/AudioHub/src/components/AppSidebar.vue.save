@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useClientConfig } from '@/composables/useClientConfig'
 import { useApiClient } from '@/composables/useApiClient'
 import type { Sources } from '@/types'
-import { Home, Settings, AudioLines, ListMusic, ArrowLeftFromLine } from '@lucide/vue'
+import { Home, ArrowRightFromLine, ListPlus,  } from '@lucide/vue'
 
 const { config, isLoading, error, fetchConfig } = useClientConfig()
 const api = useApiClient()
@@ -134,7 +134,7 @@ const closeMobileMenu = () => {
         :class="{ 'mx-auto': (isCollapsed && !isMobile) || (!isMobileOpen && isMobile) }"
         :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
       >
-        <ArrowLeftFromLine
+        <ArrowRightFromLine
           class="w-5 h-5 transition-transform duration-300"
           :class="{ 'rotate-180': (isCollapsed && !isMobile) || (!isMobileOpen && isMobile) }"
         />
@@ -189,7 +189,7 @@ const closeMobileMenu = () => {
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
           :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Playlists' : ''"
         >
-          <ListMusic class="w-4 h-4 text-emerald-400 shrink-0" />
+          <ListPlus class="w-4 h-4 text-emerald-400 shrink-0" />
           <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">Playlists</span>
         </router-link>
 
@@ -201,7 +201,11 @@ const closeMobileMenu = () => {
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
           :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Librespot Controls' : ''"
         >
-          <AudioLines class="w-4 h-4 text-emerald-400 shrink-0" />
+          <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M4 19h2v-5H4v5zm4 0h2V5H8v14zm4 0h2v-8h-2v8zm4 0h2V9h-2v10zm4 0h2v-11h-2v11z"
+            />
+          </svg>
           <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate">Equalizer</span>
         </router-link>
 
@@ -213,7 +217,11 @@ const closeMobileMenu = () => {
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
           :title="!isMobileOpen && (isCollapsed || isMobile) ? 'Librespot Controls' : ''"
         >
-          <Settings class="w-4 h-4 text-emerald-400 shrink-0" />
+          <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm7.43-2.53l1.86-1.08a.5.5 0 00.18-.68l-1.86-3.23a.5.5 0 00-.63-.22l-2.07.83a7.35 7.35 0 00-1.8-1.04l-.32-2.2A.5.5 0 0014.3 5h-3.72a.5.5 0 00-.49.43l-.32 2.2a7.35 7.35 0 00-1.8 1.04l-2.07-.83a.5.5 0 00-.63.22L3.41 11.2a.5.5 0 00.18.68l1.86 1.08c-.06.35-.1.7-.1 1.04s.04.69.1 1.04l-1.86 1.08a.5.5 0 00-.18.68l1.86 3.23a.5.5 0 00.63.22l2.07-.83c.56.42 1.17.77 1.8 1.04l.32 2.2a.5.5 0 00.49.43h3.72a.5.5 0 00.49-.43l.32-2.2c.63-.27 1.24-.62 1.8-1.04l2.07.83a.5.5 0 00.63-.22l1.86-3.23a.5.5 0 00-.18-.68l-1.86-1.08c.06-.35.1-.7.1-1.04s-.04-.69-.1-1.04z"
+            />
+          </svg>
           <span v-if="isMobileOpen || (!isCollapsed && !isMobile)" class="truncate"
             >Configuration</span
           >

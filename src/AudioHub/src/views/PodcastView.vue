@@ -5,6 +5,7 @@ import { useApiClient } from '@/composables/useApiClient'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import type { MediaMetaData } from '@/types'
 import MediaTrackList from '@/components/MediaTrackList.vue'
+import { Play } from '@lucide/vue'
 
 const route = useRoute()
 const api = useApiClient()

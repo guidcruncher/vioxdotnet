@@ -10,6 +10,7 @@
     <Project Path="src/Viox.Server/Viox.Server.csproj" />
     <Project Path="src/Viox.Snapcast/Viox.Snapcast.csproj" />
     <Project Path="src/Viox.Client.Files/Viox.Client.Files.csproj" />
+    <Project Path="src/Viox.Epg/Viox.Epg.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Viox.Tests.Core/Viox.Tests.Core.csproj" />

@@ -42,5 +42,6 @@ declare module 'vue' {
     ShowView: typeof import('./views/ShowView.vue')['default']
     ThreeDotMenu: typeof import('./components/ThreeDotMenu.vue')['default']
     TuneInView: typeof import('./views/TuneInView.vue')['default']
+    ViewSelector: typeof import('./components/ViewSelector.vue')['default']
   }
 }

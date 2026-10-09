@@ -18,6 +18,7 @@
    <ProjectReference Include="..\Viox.Client.Podverse\Viox.Client.Podverse.csproj" />
    <ProjectReference Include="..\Viox.Client.TuneIn\Viox.Client.TuneIn.csproj" />
    <ProjectReference Include="..\Viox.Core\Viox.Core.csproj" />
+   <ProjectReference Include="..\Viox.Epg\Viox.Epg.csproj" />
    <ProjectReference Include="..\Viox.Client.Spotify\Viox.Client.Spotify.csproj" />
    <ProjectReference Include="..\Viox.Client.RadioBrowser\Viox.Client.RadioBrowser.csproj" />
    <ProjectReference Include="..\Viox.Client.Librespot\Viox.Client.Librespot.csproj" />
