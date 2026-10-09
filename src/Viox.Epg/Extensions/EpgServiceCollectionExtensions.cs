@@ -17,7 +17,7 @@ public static class EpgServiceCollectionExtensions
         services.AddHttpClient<EpgDownloader>();
         services.AddTransient<XmltvParser>();
         services.AddTransient<EpgImportService>();
-	services.AddTransient<EpqQueryService>();
+	services.AddTransient<EpgQueryService>();
 
         return services;
     }
