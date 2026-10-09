@@ -72,11 +72,14 @@ public class XmltvParser
 
     private static async Task<ProgrammeRecord?> ParseProgrammeAsync(XmlReader reader)
     {
+        var rawStart = reader.GetAttribute("start") ?? string.Empty;
+        var rawStop = reader.GetAttribute("stop") ?? string.Empty;
+
         var programme = new ProgrammeRecord
         {
             ChannelId = reader.GetAttribute("channel") ?? string.Empty,
-            Start = reader.GetAttribute("start") ?? string.Empty,
-            Stop = reader.GetAttribute("stop") ?? string.Empty
+            Start = EpgTimeHelper.ToEpoch(rawStart),
+            Stop = EpgTimeHelper.ToEpoch(rawStop)
         };
 
         using var subReader = reader.ReadSubtree();
@@ -115,3 +118,4 @@ public class XmltvParser
         return programme;
     }
 }
+

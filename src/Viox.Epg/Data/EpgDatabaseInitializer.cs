@@ -31,8 +31,8 @@ public class EpgDatabaseInitializer
             CREATE TABLE IF NOT EXISTS Programmes (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ChannelId TEXT NOT NULL,
-                Start TEXT NOT NULL,
-                Stop TEXT NOT NULL,
+                Start INTEGER NOT NULL,
+                Stop INTEGER NOT NULL,
                 Title TEXT,
                 SubTitle TEXT,
                 Description TEXT,
