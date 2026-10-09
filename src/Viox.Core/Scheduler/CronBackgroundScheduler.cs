@@ -12,7 +12,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-
 public class CronBackgroundSchedulerService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -49,7 +48,8 @@ public class CronBackgroundSchedulerService : BackgroundService
                 {
                     var cronExpression = CronExpression.Parse(task.Schedule, CronFormat.IncludeSeconds);
                     _scheduledTasks.Add(new SchedulerTaskRegistration(task, cronExpression));
-                    _logger.LogInformation("Discovered scheduled task: {TaskName} with schedule {Schedule}", task.Name, task.Schedule);
+                    _logger.LogInformation("Discovered scheduled task: {TaskName} with schedule {Schedule} (RunOnStartup: {RunOnStartup})",
+                        task.Name, task.Schedule, task.RunOnStartup);
                 }
                 catch (Exception ex)
                 {
@@ -69,6 +69,16 @@ public class CronBackgroundSchedulerService : BackgroundService
         }
 
         _logger.LogInformation("Cron background task scheduler started.");
+
+        // Handle RunOnStartup tasks
+        foreach (var taskRegistration in _scheduledTasks)
+        {
+            if (taskRegistration.Task.RunOnStartup)
+            {
+                _logger.LogInformation("Triggering startup execution for task: {TaskName}", taskRegistration.Task.Name);
+                _ = ExecuteTaskSafelyAsync(taskRegistration.Task, stoppingToken);
+            }
+        }
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -94,9 +104,16 @@ public class CronBackgroundSchedulerService : BackgroundService
 
     private async Task ExecuteTaskSafelyAsync(IScheduledTask task, CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        // Concurrency guard: Check if task is already running
+        if (!taskRegistrationState.GetOrAdd(task.Name, _ => new SemaphoreSlim(1, 1)).Wait(0))
+        {
+            _logger.LogWarning("Task {TaskName} is already running. Skipping this execution cycle to avoid overlap.", task.Name);
+            return;
+        }
+
         try
         {
+            using var scope = _serviceProvider.CreateScope();
             _logger.LogInformation("Starting execution of task: {TaskName}", task.Name);
             await task.ExecuteAsync(cancellationToken);
             _logger.LogInformation("Successfully completed execution of task: {TaskName}", task.Name);
@@ -105,8 +122,13 @@ public class CronBackgroundSchedulerService : BackgroundService
         {
             _logger.LogError(ex, "An unhandled exception occurred while executing task: {TaskName}", task.Name);
         }
+        finally
+        {
+            taskRegistrationState[task.Name].Release();
+        }
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> taskRegistrationState = new();
     private sealed record SchedulerTaskRegistration(IScheduledTask Task, CronExpression CronExpression);
 }
 

@@ -7,6 +7,7 @@ public interface IScheduledTask
 {
     string Name { get; }
     string Schedule { get; }
+    bool RunOnStartup { get; }
     Task ExecuteAsync(CancellationToken cancellationToken);
 }
 

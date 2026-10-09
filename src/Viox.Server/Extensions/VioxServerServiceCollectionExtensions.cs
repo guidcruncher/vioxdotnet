@@ -87,13 +87,13 @@ public static class VioxServerServiceCollectionExtensions
         // 5. Podcast Downloader
         services.Configure<PodcastDownloadOptions>(configuration.GetSection(PodcastDownloadOptions.SectionName));
         services.AddTransient<IPodcastProvider, FavoritesPodcastProvider>();
-        services.AddHostedService<PodcastDownloaderBackgroundService>();
 
         // 6. EPG Services
         services.AddVioxEpg(configuration);
 
         // 7. Scheduler
         services.AddVioxScheduler(configuration);
+        services.AddVioxSchedulerTasksFromEntryAssembly();
 
         // 8. API and OpenAPI Setup with JSON Options
         services.AddControllers()
