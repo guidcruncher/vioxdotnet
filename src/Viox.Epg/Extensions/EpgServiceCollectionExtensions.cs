@@ -1,4 +1,4 @@
-namespace Viox.Epg.DependencyInjection;
+namespace Viox.Epg.Extensions;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
