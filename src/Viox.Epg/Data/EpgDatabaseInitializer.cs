@@ -46,6 +46,11 @@ public class EpgDatabaseInitializer
                 Category TEXT NOT NULL,
                 FOREIGN KEY(ProgrammeId) REFERENCES Programmes(Id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS EpgMetadata (
+                Key TEXT PRIMARY KEY,
+                Value TEXT NOT NULL
+            );
         ";
         command.ExecuteNonQuery();
     }

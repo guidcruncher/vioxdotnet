@@ -16,6 +16,8 @@ public class EpgImportService
     private readonly EpgOptions _options;
     private readonly ILogger<EpgImportService> _logger;
 
+    private const string LastSuccessfulImportKey = "LastSuccessfulImportUtc";
+
     public EpgImportService(
         EpgDatabaseInitializer dbInitializer,
         EpgDownloader downloader,
@@ -28,6 +30,26 @@ public class EpgImportService
         _parser = parser;
         _options = options.Value;
         _logger = logger;
+    }
+
+    public async Task<bool> HasRunTodayAsync(CancellationToken cancellationToken = default)
+    {
+        _dbInitializer.Initialize();
+
+        using var connection = new SqliteConnection(_options.SqliteConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Value FROM EpgMetadata WHERE Key = @Key;";
+        command.Parameters.AddWithValue("@Key", LastSuccessfulImportKey);
+
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        if (result is string valueStr && DateTime.TryParse(valueStr, out var lastRunUtc))
+        {
+            return lastRunUtc.Date == DateTime.UtcNow.Date;
+        }
+
+        return false;
     }
 
     public async Task ImportAsync(CancellationToken cancellationToken = default)
@@ -53,6 +75,8 @@ public class EpgImportService
                 async programme => await InsertProgrammeAsync(connection, transaction, programme),
                 cancellationToken);
 
+            await SaveMetadataAsync(connection, transaction, LastSuccessfulImportKey, DateTime.UtcNow.ToString("O"));
+
             await transaction.CommitAsync(cancellationToken);
             _logger.LogInformation("EPG import completed successfully.");
         }
@@ -62,6 +86,22 @@ public class EpgImportService
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    private static async Task SaveMetadataAsync(SqliteConnection connection, SqliteTransaction transaction, string key, string value)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = @"
+            INSERT INTO EpgMetadata (Key, Value)
+            VALUES (@Key, @Value)
+            ON CONFLICT(Key) DO UPDATE SET
+                Value = excluded.Value;
+        ";
+        command.Parameters.AddWithValue("@Key", key);
+        command.Parameters.AddWithValue("@Value", value);
+
+        await command.ExecuteNonQueryAsync();
     }
 
     private static async Task InsertChannelAsync(SqliteConnection connection, SqliteTransaction transaction, ChannelRecord channel)
