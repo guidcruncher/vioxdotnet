@@ -56,6 +56,13 @@ public class EpgQueryService
         return results;
     }
 
+    private string getChannelId(string title)
+    {
+        string id = ($"{title.ToLower().Replace(" ", ".").Trim()}.uk").Replace(".uk.uk", ".uk");
+        _logger.LogInformation("Epg Id {id}", id);
+        return id;
+    }
+
     public async Task<CurrentProgrammeRecord?> GetNowPlayingByChannelAsync(string channelId, CancellationToken cancellationToken = default)
     {
         var currentEpoch = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -78,12 +85,12 @@ public class EpgQueryService
                 p.IconUrl AS ProgrammeIcon
             FROM Programmes p
             JOIN Channels c ON p.ChannelId = c.Id
-            WHERE c.Id = @ChannelId
+            WHERE c.Id LIKE @ChannelId
               AND @CurrentEpoch >= p.Start
               AND @CurrentEpoch < p.Stop
             LIMIT 1;
         ";
-        command.Parameters.AddWithValue("@ChannelId", channelId);
+        command.Parameters.AddWithValue("@ChannelId", getChannelId(channelId));
         command.Parameters.AddWithValue("@CurrentEpoch", currentEpoch);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

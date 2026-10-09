@@ -46,8 +46,8 @@ public class CronBackgroundSchedulerService : BackgroundService
             {
                 try
                 {
-		    var cronStr = task.Schedule.Replace("\0", string.Empty);
-		    _logger.LogWarning("Task Cron '{cronStr}'", cronStr);
+                    var cronStr = task.Schedule.Replace("\0", string.Empty);
+                    _logger.LogWarning("Task Cron '{cronStr}'", cronStr);
                     var cronExpression = CronExpression.Parse(cronStr, CronFormat.IncludeSeconds);
                     _scheduledTasks.Add(new SchedulerTaskRegistration(task, cronExpression));
                     _logger.LogInformation("Discovered scheduled task: {TaskName} with schedule {Schedule} (RunOnStartup: {RunOnStartup})",

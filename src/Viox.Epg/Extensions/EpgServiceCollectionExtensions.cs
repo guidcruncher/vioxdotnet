@@ -3,10 +3,10 @@ namespace Viox.Epg.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Viox.Core.Scheduler;
 using Viox.Epg.Configuration;
 using Viox.Epg.Data;
 using Viox.Epg.Services;
-using Viox.Core.Scheduler;
 
 public static class EpgServiceCollectionExtensions
 {
@@ -18,8 +18,8 @@ public static class EpgServiceCollectionExtensions
         services.AddHttpClient<EpgDownloader>();
         services.AddTransient<XmltvParser>();
         services.AddTransient<EpgImportService>();
-	services.AddTransient<EpgQueryService>();
-	services.AddTransient<IScheduledTask, EpgScheduledTask>();
+        services.AddTransient<EpgQueryService>();
+        services.AddTransient<IScheduledTask, EpgScheduledTask>();
 
         return services;
     }
