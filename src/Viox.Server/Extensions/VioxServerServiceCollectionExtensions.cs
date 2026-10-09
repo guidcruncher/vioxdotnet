@@ -92,7 +92,10 @@ public static class VioxServerServiceCollectionExtensions
         // 6. EPG Services
         services.AddVioxEpg(configuration);
 
-        // 7. API and OpenAPI Setup with JSON Options
+        // 7. Scheduler
+        services.AddVioxScheduler(configuration);
+
+        // 8. API and OpenAPI Setup with JSON Options
         services.AddControllers()
             .AddJsonOptions(options =>
             {
