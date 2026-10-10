@@ -27,7 +27,7 @@ public sealed class AudioControlController : ControllerBase
     IMediaPlayerControlSurface mediaControl,
         ILogger<AudioControlController> logger)
     {
-        ArgumentNullException.ThrowIfNull(_mediaControl);
+        ArgumentNullException.ThrowIfNull(mediaControl);
         ArgumentNullException.ThrowIfNull(equalizerService);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(presetLoader);
