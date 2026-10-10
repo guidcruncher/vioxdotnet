@@ -7,11 +7,6 @@ export const router = createRouter({
   routes: [
     {
       path: '/',
-      component: CleanLayout,
-      children: [{ path: 'clock', component: () => import('@/views/DigitalClockView.vue') }],
-    },
-    {
-      path: '/',
       component: AppLayout,
       children: [
         { path: '', component: () => import('@/views/NowPlayingView.vue') },
@@ -28,6 +23,11 @@ export const router = createRouter({
         { path: 'config', component: () => import('@/views/ClientConfigView.vue') },
         { path: 'equalizer', component: () => import('@/views/EqualizerView.vue') },
       ],
+    },
+    {
+      path: '/',
+      component: CleanLayout,
+      children: [{ path: 'clock', component: () => import('@/views/DigitalClockView.vue') }],
     },
   ],
   scrollBehavior(to, from, savedPosition) {
