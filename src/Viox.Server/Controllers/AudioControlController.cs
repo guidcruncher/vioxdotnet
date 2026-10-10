@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 using Viox.Core.Models;
 using Viox.Core.Services;
+using Viox.Server.Abstraction;
 
 namespace Viox.Server.Controllers;
 
@@ -18,17 +19,21 @@ public sealed class AudioControlController : ControllerBase
     private readonly IAlsaEqualizerService _equalizerService;
     private readonly ILogger<AudioControlController> _logger;
     private readonly IEqPresetLoader _presetLoader;
+    private readonly IMediaPlayerControlSurface _mediaControl;
 
     public AudioControlController(
         IEqPresetLoader presetLoader,
         IAlsaEqualizerService equalizerService,
+    IMediaPlayerControlSurface mediaControl,
         ILogger<AudioControlController> logger)
     {
+        ArgumentNullException.ThrowIfNull(mediaControl);
         ArgumentNullException.ThrowIfNull(equalizerService);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(presetLoader);
 
         _presetLoader = presetLoader;
+        _mediaControl = mediaControl;
         _equalizerService = equalizerService;
         _logger = logger;
     }
@@ -72,6 +77,20 @@ public sealed class AudioControlController : ControllerBase
         _logger.LogInformation("HTTP PUT request received for equalizer band {BandIndex} to {Percentage}%.", bandIndex, request.Percentage);
         await _equalizerService.SetBandLevelAsync(bandIndex, request.Percentage, cancellationToken);
         return NoContent();
+    }
+
+    [HttpPut("preamp/{volume}")]
+    public async Task<IActionResult> SetAudioPreAmp([FromRoute] int volume, CancellationToken ct)
+    {
+        await _mediaControl.SetVolumeAsync(volume, ct);
+        return Ok();
+    }
+
+    [HttpGet("preamp")]
+    public async Task<IActionResult> GetAudioPreAmp(CancellationToken ct)
+    {
+        var volume = await _mediaControl.GetVolumeAsync(ct);
+        return Ok(new PreAmpVolume(volume));
     }
 
     /// <summary>
@@ -147,6 +166,8 @@ public sealed class AudioControlController : ControllerBase
     }
 
 }
+
+public sealed record PreAmpVolume(int volume);
 
 public sealed record SetLevelRequest(int Percentage);
 
