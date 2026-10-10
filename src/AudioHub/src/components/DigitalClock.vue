@@ -1,6 +1,3 @@
-TL:DR Converted the standalone HTML/JS digital clock into a modular Vue 3 Single File Component
-(SFC) where formatting preferences (24-hour mode, seconds visibility, timezone, and locale) are
-fully controlled via props.
 <template>
   <main
     class="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center justify-center flex-grow z-10"
@@ -16,7 +13,6 @@ fully controlled via props.
       <div
         class="absolute -bottom-24 -right-24 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"
       ></div>
-
       <!-- Date Display Header inside Card -->
       <div
         class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-800/80 pb-6 mb-8 gap-4"
@@ -34,7 +30,6 @@ fully controlled via props.
             </div>
           </div>
         </div>
-
         <!-- Timezone Badge -->
         <div
           class="flex items-center space-x-2 bg-slate-800/40 border border-slate-700/40 px-4 py-2 rounded-xl text-xs font-medium text-slate-300 backdrop-blur-sm"
@@ -43,7 +38,6 @@ fully controlled via props.
           <span>{{ resolvedTimezone }}</span>
         </div>
       </div>
-
       <!-- Main Clock Time Digits -->
       <div class="flex flex-col items-center justify-center my-6 sm:my-10">
         <div class="flex items-center justify-center space-x-2 sm:space-x-4">
@@ -62,11 +56,9 @@ fully controlled via props.
               >Hours</span
             >
           </div>
-
           <span class="font-mono text-4xl sm:text-7xl font-bold text-slate-600 pb-6 animate-pulse"
             >:</span
           >
-
           <!-- Minutes -->
           <div class="flex flex-col items-center">
             <div
@@ -82,7 +74,6 @@ fully controlled via props.
               >Minutes</span
             >
           </div>
-
           <!-- Seconds Container -->
           <div
             v-if="showSeconds"
@@ -106,7 +97,6 @@ fully controlled via props.
               >
             </div>
           </div>
-
           <!-- AM / PM Indicator -->
           <div v-if="!is24Hour" class="flex flex-col justify-center pl-2 sm:pl-4">
             <div
@@ -123,30 +113,25 @@ fully controlled via props.
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps({
-  is24Hour: {
-    type: Boolean,
-    default: false,
-  },
-  showSeconds: {
-    type: Boolean,
-    default: true,
-  },
-  timezone: {
-    type: String,
-    default: '',
-  },
-  locale: {
-    type: String,
-    default: 'en-US',
-  },
+interface Props {
+  is24Hour?: boolean
+  showSeconds?: boolean
+  timezone?: string
+  locale?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  is24Hour: false,
+  showSeconds: true,
+  timezone: '',
+  locale: 'en-US',
 })
 
-const currentTime = ref(new Date())
-let timer = null
+const currentTime = ref<Date>(new Date())
+let timer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   timer = setInterval(() => {
@@ -155,15 +140,17 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer)
+  if (timer) {
+    clearInterval(timer)
+  }
 })
 
-const resolvedTimezone = computed(() => {
+const resolvedTimezone = computed<string>(() => {
   if (props.timezone) return props.timezone.replace('_', ' ')
   return Intl.DateTimeFormat().resolvedOptions().timeZone.replace('_', ' ')
 })
 
-const dayName = computed(() => {
+const dayName = computed<string>(() => {
   try {
     return new Intl.DateTimeFormat(props.locale, {
       weekday: 'long',
@@ -174,7 +161,7 @@ const dayName = computed(() => {
   }
 })
 
-const fullDate = computed(() => {
+const fullDate = computed<string>(() => {
   try {
     return new Intl.DateTimeFormat(props.locale, {
       year: 'numeric',
@@ -191,7 +178,7 @@ const fullDate = computed(() => {
   }
 })
 
-const hours = computed(() => {
+const hours = computed<number>(() => {
   let h = currentTime.value.getHours()
   if (props.timezone) {
     try {
@@ -205,7 +192,6 @@ const hours = computed(() => {
       // Fallback to local
     }
   }
-
   if (!props.is24Hour) {
     h = h % 12
     h = h ? h : 12
@@ -213,7 +199,7 @@ const hours = computed(() => {
   return h
 })
 
-const minutes = computed(() => {
+const minutes = computed<number>(() => {
   let m = currentTime.value.getMinutes()
   if (props.timezone) {
     try {
@@ -229,7 +215,7 @@ const minutes = computed(() => {
   return m
 })
 
-const seconds = computed(() => {
+const seconds = computed<number>(() => {
   let s = currentTime.value.getSeconds()
   if (props.timezone) {
     try {
@@ -245,7 +231,7 @@ const seconds = computed(() => {
   return s
 })
 
-const ampm = computed(() => {
+const ampm = computed<string>(() => {
   let h = currentTime.value.getHours()
   if (props.timezone) {
     try {
@@ -262,9 +248,9 @@ const ampm = computed(() => {
   return h >= 12 ? 'PM' : 'AM'
 })
 
-const formattedHours = computed(() => String(hours.value).padStart(2, '0'))
-const formattedMinutes = computed(() => String(minutes.value).padStart(2, '0'))
-const formattedSeconds = computed(() => String(seconds.value).padStart(2, '0'))
+const formattedHours = computed<string>(() => String(hours.value).padStart(2, '0'))
+const formattedMinutes = computed<string>(() => String(minutes.value).padStart(2, '0'))
+const formattedSeconds = computed<string>(() => String(seconds.value).padStart(2, '0'))
 </script>
 
 <style scoped>
