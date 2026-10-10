@@ -1,9 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
+import CleanLayout from '@/layouts/CleanLayout.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/',
+      component: CleanLayout,
+      children: [{ path: 'clock', component: () => import('@/views/DigitalClockView.vue') }],
+    },
     {
       path: '/',
       component: AppLayout,
