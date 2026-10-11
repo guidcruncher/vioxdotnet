@@ -35,6 +35,11 @@ public static class SchedulerServiceCollectionExtensions
 
         foreach (var taskType in taskTypes)
         {
+            if (taskType.FullName == "Viox.Core.Scheduler.UserTask")
+            {
+                continue;
+            }
+
             services.AddTransient(typeof(IScheduledTask), taskType);
         }
 
