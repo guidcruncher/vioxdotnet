@@ -53,7 +53,7 @@ public sealed class ServerEventPublisher : IServerEventPublisher
             Timestamp: DateTime.UtcNow
         );
 
-        _logger.LogInformation(
+        _logger.LogTrace(
             "Broadcasting event '{EventType}' ({EventId}) to {Count} active subscriber(s).",
             payload.EventType,
             payload.EventId,
@@ -87,7 +87,7 @@ public sealed class ServerEventPublisher : IServerEventPublisher
         Channel<EventPayload> clientChannel = Channel.CreateBounded<EventPayload>(channelOptions);
         _subscribers.TryAdd(subscriberId, clientChannel);
 
-        _logger.LogInformation("Client connected: {SubscriberId}. Total active subscribers: {Count}", subscriberId, _subscribers.Count);
+        _logger.LogTrace("Client connected: {SubscriberId}. Total active subscribers: {Count}", subscriberId, _subscribers.Count);
 
         try
         {
@@ -101,7 +101,7 @@ public sealed class ServerEventPublisher : IServerEventPublisher
             // 3. Automatic cleanup on client disconnect or cancellation
             _subscribers.TryRemove(subscriberId, out _);
             clientChannel.Writer.TryComplete();
-            _logger.LogInformation("Client disconnected: {SubscriberId}. Remaining active subscribers: {Count}", subscriberId, _subscribers.Count);
+            _logger.LogTrace("Client disconnected: {SubscriberId}. Remaining active subscribers: {Count}", subscriberId, _subscribers.Count);
         }
     }
 }
