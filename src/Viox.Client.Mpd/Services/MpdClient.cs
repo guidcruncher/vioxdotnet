@@ -40,26 +40,23 @@ public sealed class MpdEventArgs : EventArgs
 /// <summary>
 /// A managed TCP client implementation for interacting with a Music Player Daemon (MPD) server.
 /// </summary>
-public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, IDisposable
+public sealed class MpdClient : BackgroundService, IMpdClient, IAsyncDisposable
 {
     private readonly MpdOptions _options;
     private readonly ILogger<MpdClient> _logger;
     private readonly IMediaEventService _mediaEventService;
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
+    private readonly SemaphoreSlim _idleLock = new(1, 1);
 
     private TcpClient? _tcpClient;
     private NetworkStream? _stream;
     private StreamReader? _reader;
     private StreamWriter? _writer;
 
-    // Background idle client fields
     private TcpClient? _idleTcpClient;
     private NetworkStream? _idleStream;
     private StreamReader? _idleReader;
     private StreamWriter? _idleWriter;
-    private CancellationTokenSource? _backgroundCts;
-    private Task? _idleTask;
-    private readonly SemaphoreSlim _idleLock = new(1, 1);
 
     private bool _disposed;
     private string? _lastKnownState;
@@ -76,7 +73,7 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
     /// <param name="logger">The logger instance.</param>
     /// <param name="mediaEventService">The media event service for publishing actions.</param>
     public MpdClient(
-        IOptions<MpdOptions> options,
+        IOptions<MpdOptions> options, 
         ILogger<MpdClient> logger,
         IMediaEventService mediaEventService)
     {
@@ -90,39 +87,42 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
     }
 
     /// <inheritdoc />
-    public Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Starting MPD background client service...");
-        _backgroundCts = new CancellationTokenSource();
+        _logger.LogInformation("MPD background client service background loop starting...");
 
-        // Fire-and-forget background connection loop so it doesn't block application startup
-        _ = RunBackgroundLifecycleAsync(_backgroundCts.Token);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public async Task StopClientAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Stopping MPD background client service...");
-        _backgroundCts?.Cancel();
-        await DisconnectAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task RunBackgroundLifecycleAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested && !_disposed)
+        while (!stoppingToken.IsCancellationRequested && !_disposed)
         {
             try
             {
-                await ConnectAsync(cancellationToken).ConfigureAwait(false);
-                break; // Connected successfully, exit retry loop
+                // Establish primary connection asynchronously in the background
+                await ConnectInternalAsync(stoppingToken).ConfigureAwait(false);
+                
+                // Start and run the idle loop on the background worker
+                await RunIdleLoopAsync(stoppingToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to connect to MPD server in background. Retrying in 5 seconds...");
+                _logger.LogWarning(ex, "MPD connection or idle loop failed. Reconnecting in 5 seconds...");
+                
+                await _connectionLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
                 try
                 {
-                    await Task.Delay(5000, cancellationToken).ConfigureAwait(false);
+                    CleanupCore();
+                    CleanupIdleCore();
+                }
+                finally
+                {
+                    _connectionLock.Release();
+                }
+
+                try
+                {
+                    await Task.Delay(5000, stoppingToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -132,25 +132,11 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
         }
     }
 
-    /// <inheritdoc />
-    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    private async Task ConnectInternalAsync(CancellationToken cancellationToken)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        if (_tcpClient is { Connected: true } && _stream is not null)
-        {
-            _logger.LogInformation("Connection already established to {Host}:{Port}", _options.Host, _options.Port);
-            return;
-        }
-
         await _connectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_tcpClient is { Connected: true } && _stream is not null)
-            {
-                return;
-            }
-
             CleanupCore();
 
             _logger.LogInformation("Connecting to MPD server at {Host}:{Port}...", _options.Host, _options.Port);
@@ -183,18 +169,128 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
             }
 
             await RefreshPlayerStateAsync(cancellationToken).ConfigureAwait(false);
-            StartIdleLoop();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to establish connection to MPD server at {Host}:{Port}", _options.Host, _options.Port);
-            CleanupCore();
-            throw;
         }
         finally
         {
             _connectionLock.Release();
         }
+    }
+
+    private async Task RunIdleLoopAsync(CancellationToken cancellationToken)
+    {
+        await _idleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            CleanupIdleCore();
+
+            _idleTcpClient = new TcpClient();
+            await _idleTcpClient.ConnectAsync(_options.Host, _options.Port, cancellationToken).ConfigureAwait(false);
+
+            _idleStream = _idleTcpClient.GetStream();
+            _idleReader = new StreamReader(_idleStream, Encoding.UTF8, leaveOpen: true);
+            _idleWriter = new StreamWriter(_idleStream, new UTF8Encoding(false), leaveOpen: true)
+            {
+                AutoFlush = true
+            };
+
+            string? greeting = await _idleReader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+            if (greeting is null || !greeting.StartsWith("OK MPD", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"Invalid greeting received on idle connection: {greeting}");
+            }
+
+            if (!string.IsNullOrEmpty(_options.Password))
+            {
+                await _idleWriter.WriteLineAsync($"password {_options.Password}".AsMemory(), cancellationToken).ConfigureAwait(false);
+                string? authResponse = await _idleReader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                if (authResponse is null || !authResponse.StartsWith("OK", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Idle connection authentication failed: {authResponse}");
+                }
+            }
+        }
+        finally
+        {
+            _idleLock.Release();
+        }
+
+        while (!cancellationToken.IsCancellationRequested && !_disposed)
+        {
+            await _idleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_idleWriter is null || _idleReader is null)
+                {
+                    break;
+                }
+
+                await _idleWriter.WriteLineAsync("idle".AsMemory(), cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _idleLock.Release();
+            }
+
+            while (!cancellationToken.IsCancellationRequested && !_disposed)
+            {
+                string? line;
+                await _idleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    if (_idleReader is null)
+                    {
+                        break;
+                    }
+                    line = await _idleReader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    _idleLock.Release();
+                }
+
+                if (line is null)
+                {
+                    throw new IOException("Idle connection closed prematurely by server.");
+                }
+
+                if (line.Equals("OK", StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                if (line.StartsWith("ACK", StringComparison.Ordinal))
+                {
+                    _logger.LogWarning("MPD Idle command returned error: {Error}", line);
+                    break;
+                }
+
+                int colonIndex = line.IndexOf(':');
+                if (colonIndex > 0)
+                {
+                    ReadOnlySpan<char> key = line.AsSpan(0, colonIndex).Trim();
+                    ReadOnlySpan<char> value = line.AsSpan(colonIndex + 1).Trim();
+                    if (key.Equals("changed", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string subsystem = value.ToString();
+                        _logger.LogDebug("MPD subsystem changed: {Subsystem}", subsystem);
+                        await OnSubsystemChangedAsync(subsystem, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (_tcpClient is { Connected: true } && _stream is not null)
+        {
+            return;
+        }
+
+        await ConnectInternalAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RefreshPlayerStateAsync(CancellationToken cancellationToken)
@@ -230,137 +326,6 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
         return null;
     }
 
-    private void StartIdleLoop()
-    {
-        _idleTask = RunIdleLoopAsync(_backgroundCts?.Token ?? CancellationToken.None);
-    }
-
-    private async Task RunIdleLoopAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested && !_disposed)
-        {
-            try
-            {
-                await _idleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    CleanupIdleCore();
-
-                    _idleTcpClient = new TcpClient();
-                    await _idleTcpClient.ConnectAsync(_options.Host, _options.Port, cancellationToken).ConfigureAwait(false);
-
-                    _idleStream = _idleTcpClient.GetStream();
-                    _idleReader = new StreamReader(_idleStream, Encoding.UTF8, leaveOpen: true);
-                    _idleWriter = new StreamWriter(_idleStream, new UTF8Encoding(false), leaveOpen: true)
-                    {
-                        AutoFlush = true
-                    };
-
-                    string? greeting = await _idleReader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                    if (greeting is null || !greeting.StartsWith("OK MPD", StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidOperationException($"Invalid greeting received on idle connection: {greeting}");
-                    }
-
-                    if (!string.IsNullOrEmpty(_options.Password))
-                    {
-                        await _idleWriter.WriteLineAsync($"password {_options.Password}".AsMemory(), cancellationToken).ConfigureAwait(false);
-                        string? authResponse = await _idleReader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                        if (authResponse is null || !authResponse.StartsWith("OK", StringComparison.Ordinal))
-                        {
-                            throw new InvalidOperationException($"Idle connection authentication failed: {authResponse}");
-                        }
-                    }
-                }
-                finally
-                {
-                    _idleLock.Release();
-                }
-
-                while (!cancellationToken.IsCancellationRequested && !_disposed)
-                {
-                    await _idleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        if (_idleWriter is null || _idleReader is null)
-                        {
-                            break;
-                        }
-
-                        await _idleWriter.WriteLineAsync("idle".AsMemory(), cancellationToken).ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        _idleLock.Release();
-                    }
-
-                    while (!cancellationToken.IsCancellationRequested && !_disposed)
-                    {
-                        string? line;
-                        await _idleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-                        try
-                        {
-                            if (_idleReader is null)
-                            {
-                                break;
-                            }
-                            line = await _idleReader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            _idleLock.Release();
-                        }
-
-                        if (line is null)
-                        {
-                            throw new IOException("Idle connection closed prematurely by server.");
-                        }
-
-                        if (line.Equals("OK", StringComparison.Ordinal))
-                        {
-                            break;
-                        }
-
-                        if (line.StartsWith("ACK", StringComparison.Ordinal))
-                        {
-                            _logger.LogWarning("MPD Idle command returned error: {Error}", line);
-                            break;
-                        }
-
-                        int colonIndex = line.IndexOf(':');
-                        if (colonIndex > 0)
-                        {
-                            ReadOnlySpan<char> key = line.AsSpan(0, colonIndex).Trim();
-                            ReadOnlySpan<char> value = line.AsSpan(colonIndex + 1).Trim();
-                            if (key.Equals("changed", StringComparison.OrdinalIgnoreCase))
-                            {
-                                string subsystem = value.ToString();
-                                _logger.LogDebug("MPD subsystem changed: {Subsystem}", subsystem);
-                                await OnSubsystemChangedAsync(subsystem, cancellationToken).ConfigureAwait(false);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error in background MPD idle loop. Reconnecting idle client in 3 seconds...");
-                try
-                {
-                    await Task.Delay(3000, cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
     private async Task OnSubsystemChangedAsync(string subsystem, CancellationToken cancellationToken)
     {
         SubsystemChanged?.Invoke(this, new MpdEventArgs(subsystem));
@@ -372,8 +337,8 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
                 string statusResponse = await SendCommandInternalAsync("status", cancellationToken).ConfigureAwait(false);
                 string? currentState = ExtractStatusValue(statusResponse, "state");
 
-                bool transitionedToStop =
-                    _lastKnownState is "play" or "pause" &&
+                bool transitionedToStop = 
+                    _lastKnownState is "play" or "pause" && 
                     currentState is "stop";
 
                 _lastKnownState = currentState;
@@ -584,20 +549,6 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
         try
         {
             _logger.LogInformation("Closing connection to MPD server...");
-
-            _backgroundCts?.Cancel();
-            if (_idleTask is not null)
-            {
-                try
-                {
-                    await _idleTask.ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Suppress during disconnect
-                }
-            }
-
             if (_tcpClient is { Connected: true })
             {
                 await SendCommandInternalAsync("close", cancellationToken).ConfigureAwait(false);
@@ -658,19 +609,18 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
     }
 
     /// <inheritdoc />
-    public void Dispose()
+    public override void Dispose()
     {
         if (_disposed)
         {
             return;
         }
 
-        _backgroundCts?.Cancel();
+        base.Dispose();
         CleanupCore();
         CleanupIdleCore();
         _connectionLock.Dispose();
         _idleLock.Dispose();
-        _backgroundCts?.Dispose();
         _disposed = true;
     }
 
@@ -687,7 +637,6 @@ public sealed class MpdClient : IMpdClient, IHostedService, IAsyncDisposable, ID
         CleanupIdleCore();
         _connectionLock.Dispose();
         _idleLock.Dispose();
-        _backgroundCts?.Dispose();
         _disposed = true;
     }
 
