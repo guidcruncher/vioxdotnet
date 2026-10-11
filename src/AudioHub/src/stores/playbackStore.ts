@@ -48,12 +48,10 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
-  sse.on('player-starting', async (payload: EventPayload) => {
-
-  })
+  sse.on('player-starting', async (payload: EventPayload) => {})
 
   sse.on('player-stopping', async (payload: EventPayload) => {
-    await api.queue.next();
+    await api.queue.next()
   })
 
   sse.on('status', (payload: EventPayload) => {
