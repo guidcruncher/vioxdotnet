@@ -99,7 +99,7 @@ public sealed class LibrespotEventState
                 CurrentContextUri = notPlaying.ContextUri;
                 CurrentTrackUri = notPlaying.Uri;
                 LastPlayOrigin = notPlaying.PlayOrigin;
-                Task.Run(async () => await _eventService.PublishMediaActionAsync("player-stopping", null)).GetAwaiter().GetResult();
+                Task.Run(async () => await _eventService.PublishMediaActionAsync("track_finished", null)).GetAwaiter().GetResult();
                 break;
             case PausedEvent paused:
                 IsPlaying = false;

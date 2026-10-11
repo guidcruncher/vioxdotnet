@@ -48,9 +48,9 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
-  sse.on('player-starting', async (payload: EventPayload) => {})
+  sse.on('track_starting', async (payload: EventPayload) => {})
 
-  sse.on('player-stopping', async (payload: EventPayload) => {
+  sse.on('track_finished', async (payload: EventPayload) => {
     await api.queue.next()
   })
 
