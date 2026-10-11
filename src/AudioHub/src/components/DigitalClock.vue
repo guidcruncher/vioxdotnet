@@ -5,6 +5,7 @@
     <!-- Glassmorphism Card -->
     <div
       class="w-full bg-slate-900/40 backdrop-blur-2xl border border-slate-700/40 rounded-3xl p-8 sm:p-12 glow-box relative overflow-hidden transition-all duration-500"
+      @click="goHome"
     >
       <!-- Ambient glowing blur elements behind card -->
       <div
@@ -115,6 +116,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 interface Props {
   is24Hour?: boolean
@@ -132,6 +136,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const currentTime = ref<Date>(new Date())
 let timer: ReturnType<typeof setInterval> | null = null
+
+const goHome = () => {
+  router.push({ path: '/' })
+}
 
 onMounted(() => {
   timer = setInterval(() => {
