@@ -1,4 +1,4 @@
-namespace Viox.Core.Models;
+namespace Viox.Core.Events;
 
 public sealed record EventPayload(
     string EventId,
@@ -6,4 +6,3 @@ public sealed record EventPayload(
     string Message,
     DateTime Timestamp
 );
-

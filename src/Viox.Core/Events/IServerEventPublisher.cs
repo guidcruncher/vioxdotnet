@@ -1,11 +1,9 @@
-using Viox.Core.Models;
-
-namespace Viox.Core.Services;
+namespace Viox.Core.Events;
 
 public interface IServerEventPublisher
 {
     int ActiveSubscriberCount { get; }
     ValueTask PublishAsync(string eventType, string message, CancellationToken cancellationToken = default);
-    ValueTask PublishAsync<T>(string EventType, T payload, CancellationToken cancellaionToken = default);
+    ValueTask PublishAsync(MediaEvent mediaEvent, CancellationToken cancellaionToken = default);
     IAsyncEnumerable<EventPayload> SubscribeAsync(CancellationToken cancellationToken);
 }

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Viox.Core.Events;
 using Viox.Core.Models;
 using Viox.Core.Services;
 using Viox.Epg.Services;
@@ -120,7 +121,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             }
         }
 
-        await _eventService.PublishMediaActionAsync("play", metaData, cancellationToken);
+        // await _eventService.PublishMediaActionAsync("play", metaData, cancellationToken);
         _lastActivePlayerName = targetAdapter.Name;
     }
 
@@ -187,28 +188,28 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.PauseAsync(cancellationToken);
-        await _eventService.PublishMediaActionAsync("pause", GetCurrentTrack(), cancellationToken);
+        // await _eventService.PublishMediaActionAsync("pause", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task ResumeAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.ResumeAsync(cancellationToken);
-        await _eventService.PublishMediaActionAsync("resume", GetCurrentTrack(), cancellationToken);
+        // await _eventService.PublishMediaActionAsync("resume", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.StopAsync(cancellationToken);
-        await _eventService.PublishMediaActionAsync("stop", GetCurrentTrack(), cancellationToken);
+        // await _eventService.PublishMediaActionAsync("stop", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task SeekAsync(TimeSpan position, CancellationToken cancellationToken = default)
     {
         IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
         await adapter.SeekAsync(position, cancellationToken);
-        await _eventService.PublishMediaActionAsync("seek", GetCurrentTrack(), cancellationToken);
+        // await _eventService.PublishMediaActionAsync("seek", GetCurrentTrack(), cancellationToken);
     }
 
     public async Task NextAsync(CancellationToken cancellationToken = default)
@@ -231,7 +232,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             _logger.LogInformation("Queue empty; delegating NextAsync directly to active player adapter.");
             IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
             await adapter.NextAsync(cancellationToken);
-            await _eventService.PublishMediaActionAsync("next", GetCurrentTrack(), cancellationToken);
+            // await _eventService.PublishMediaActionAsync("next", GetCurrentTrack(), cancellationToken);
         }
         catch (Exception ex)
         {
@@ -268,7 +269,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             _logger.LogInformation("Queue empty; delegating PreviousAsync directly to active player adapter.");
             IMediaPlayerAdapter adapter = await ResolveTargetAdapterAsync(cancellationToken);
             await adapter.PreviousAsync(cancellationToken);
-            await _eventService.PublishMediaActionAsync("previous", GetCurrentTrack(), cancellationToken);
+            // await _eventService.PublishMediaActionAsync("previous", GetCurrentTrack(), cancellationToken);
         }
         catch (Exception ex)
         {

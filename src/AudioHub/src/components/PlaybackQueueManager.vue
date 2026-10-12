@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { EventPayload, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import type { MediaEvent, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
 import {
   Volume2,
@@ -36,7 +36,7 @@ const errorMessage = ref<string | null>(null)
 
 const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
 trackEventTypes.forEach((eventType) => {
-  sse.on(eventType, async (payload: EventPayload) => {
+  sse.on(eventType, async (payload: MediaEvent) => {
     try {
       await fetchStatus()
     } catch (err) {

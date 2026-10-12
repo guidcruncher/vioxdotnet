@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Viox.Core.Configuration;
+using Viox.Core.Events;
 using Viox.Core.Playlists;
 using Viox.Core.Plugins;
 using Viox.Core.Services;

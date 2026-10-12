@@ -1,6 +1,6 @@
 import { onUnmounted, readonly } from 'vue'
 import { sseSingleton } from './sseSingleton'
-import type { EventHandler, UseServerEventsOptions } from '@/types'
+import type { MediaEvent, EventHandler, UseServerEventsOptions } from '@/types'
 
 export function useServerEvents(options: UseServerEventsOptions = {}) {
   const {

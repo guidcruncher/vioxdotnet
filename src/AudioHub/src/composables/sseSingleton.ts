@@ -1,6 +1,6 @@
 // sseSingleton.ts
 import { ref } from 'vue'
-import type { EventPayload, EventHandler } from '@/types'
+import type { MediaEvent, EventPayload, EventHandler } from '@/types'
 
 interface ListenerMap {
   [eventName: string]: Set<EventHandler>
@@ -41,13 +41,10 @@ class SSESingleton {
         this.error.value = null
 
         Object.keys(this.listeners).forEach((eventName) => {
-          if (eventName !== 'message') {
-            this.eventSource?.addEventListener(eventName, this.handleCustomEvent)
-          }
+          this.eventSource?.addEventListener(eventName, this.handleCustomEvent)
         })
       }
 
-      this.eventSource.onmessage = this.handleMessage
       this.eventSource.onerror = () => {
         this.isConnected.value = false
         this.scheduleReconnect(url, opts, reconnectCfg)
@@ -105,20 +102,16 @@ class SSESingleton {
     }
   }
 
-  private handleMessage = (event: MessageEvent) => {
+  private handleCustomEvent = (event: MessageEvent) => {
     const payload = this.processPayload(event.data)
     if (!payload) return
 
-    this.emit('message', payload)
-    if (payload.eventType && payload.eventType !== 'message') {
-      this.emit(payload.eventType, payload)
-    }
-  }
-
-  private handleCustomEvent = (event: MessageEvent) => {
-    const payload = this.processPayload(event.data)
-    if (payload) {
-      this.emit(event.type, payload)
+    if (payload.eventType) {
+      let data: EventPayload
+      try {
+        data = JSON.parse(payload.message)
+        this.emit(payload.eventType, data)
+      } catch {}
     }
   }
 
@@ -149,7 +142,8 @@ class SSESingleton {
 
     set.forEach((handler) => {
       try {
-        handler(payload)
+        let ev: MediaEvent = JSON.parse(payload.message)
+        handler(ev)
       } catch (err) {
         console.error(`Error in SSE listener '${eventName}':`, err)
       }
