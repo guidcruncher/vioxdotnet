@@ -25,6 +25,7 @@ mkfifo /tmp/mpd_socket.sock
 chmod 666 /tmp/snapfifo /tmp/mpd_socket.sock
 
 # 3. Graceful Termination Handler
+
 cleanup() {
     echo "Termination signal received. Gracefully shutting down audio services..."
 
