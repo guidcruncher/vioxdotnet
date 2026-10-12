@@ -69,32 +69,6 @@ export const usePlaybackStore = defineStore('playback', () => {
     applyStateUpdates(data)
   })
 
-  const trackEventTypes = [
-    'PlaybackStarted',
-    'PlaybackPaused',
-    'PlaybackStopped',
-    'TrackStarted',
-    'TrackChanged',
-    'TrackFinished',
-    'Seeked',
-    'VolumeChanged',
-    'QueueChanged',
-    'ShuffleChanged',
-    'RepeatChanged',
-  ]
-
-  trackEventTypes.forEach((eventType) => {
-    sse.on(eventType, (payload: MediaEvent) => {
-      try {
-        const playingState = eventType === 'play' ? true : eventType === 'pause' ? false : undefined
-
-        handleTrackEvent(payload.track, playingState)
-      } catch (err) {
-        console.error(`Failed to parse ${eventType} event message:`, err)
-      }
-    })
-  })
-
   async function syncState() {
     const res = await api.media.getPlaybackState()
     if (res) {
