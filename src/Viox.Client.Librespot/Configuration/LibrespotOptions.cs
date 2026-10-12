@@ -26,4 +26,7 @@ public sealed class LibrespotOptions
     /// Gets or sets a value indicating whether the WebSocket client should auto-reconnect on drop.
     /// </summary>
     public bool EnableWebSocketAutoReconnect { get; set; } = true;
+
+    public int ReconnectDelaySeconds { get; set; } = 5;
+
 }

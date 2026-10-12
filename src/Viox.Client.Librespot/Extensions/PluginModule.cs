@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using Viox.Client.Librespot.Configuration;
+using Viox.Client.Librespot.Events;
 using Viox.Client.Librespot.Services;
 using Viox.Core.Plugins;
 using Viox.Core.Services;
@@ -24,7 +25,10 @@ public class PluginModule : IPluginModule
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
         });
-        services.AddSingleton<ILibrespotWebSocketClient, LibrespotWebSocketClient>();
+
+        services.AddSingleton<ILibrespotEventService, LibrespotEventService>();
+        services.AddHostedService<LibrespotWebSocketWorker>();
+
         services.AddSingleton<LibrespotManager>();
 
     }
