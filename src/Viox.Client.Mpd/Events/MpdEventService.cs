@@ -12,7 +12,7 @@ namespace Viox.Client.Mpd.Events;
 public sealed class MpdEventService : BackgroundService, IMpdEventService
 {
     private readonly IMpdClientIdle _mpdClient;
-    private readonly ILogger<MpdEventListenerService> _logger;
+    private readonly ILogger<MpdEventService> _logger;
 
     // Previous state snapshot
     private PlaybackState _prevState = new()
@@ -39,9 +39,9 @@ public sealed class MpdEventService : BackgroundService, IMpdEventService
     public event EventHandler<MpdRepeatChangedEvent>? OnRepeatChangedReceived;
     public event EventHandler<PlaybackState>? OnPlaybackStatusUpdated;
 
-    public MpdEventListenerService(
+    public MpdEventService(
         IMpdClientIdle mpdClient,
-        ILogger<MpdEventListenerService> logger)
+        ILogger<MpdEventService> logger)
     {
         _mpdClient = mpdClient;
         _logger = logger;
@@ -155,7 +155,7 @@ public sealed class MpdEventService : BackgroundService, IMpdEventService
 
             if (delta > 3)
             {
-                RaiseEvent(new MpdSeekedEvent(newState.Position, newState.Duration), OnSeekedReceived);
+                RaiseEvent(new MpdSeekedEvent(newState.Position, newState.Track?.Duration ?? 0), OnSeekedReceived);
             }
         }
 

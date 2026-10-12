@@ -1,9 +1,10 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
+using Viox.Client.Librespot.Events;
+using Viox.Client.Mpd.Events;
+using Viox.Core.Events;
 using Viox.Core.Models;
+using Viox.Core.Services;
 
-namespace Viox.Core.Events;
+namespace Viox.Server.Services;
 
 /// <summary>
 /// Listens to events from both Librespot and MPD event services, 
@@ -94,8 +95,6 @@ public sealed class MediaEventListenerService : BackgroundService
         return base.StopAsync(cancellationToken);
     }
 
-#-- Librespot Event Handlers --#
-
     private void HandleLibrespotActive(object? sender, ActiveEvent e) =>
         PublishUnified(new MediaEvent(MediaEventType.DeviceStateChanged, "librespot", null, new { Active = true }, DateTimeOffset.UtcNow));
 
@@ -109,32 +108,32 @@ public sealed class MediaEventListenerService : BackgroundService
             Title = e.Name,
             Artist = string.Join(", ", e.ArtistNames),
             Album = e.AlbumName,
-            Uri = MediaUriParse.ParseMediaUriValue(e.Uri),
+            Uri = MediaUriParser.ParseMediaUriValue(e.Uri),
             ImageUrl = e.AlbumCoverUrl
         };
         PublishUnified(new MediaEvent(MediaEventType.TrackStarted, "librespot", track, e, DateTimeOffset.UtcNow));
     }
 
-    private void HandleLibrespotNotPlayingReceived(object? sender, NotPlaying e) =>
-        PublishUnified(new MediaEvent(MediaEventType.TrackFinished, "librespot", new MediaMetaData { Uri = MediaUriParse.ParseMediaUriValue(e.ContextUri) }, e, DateTimeOffset.UtcNow));
+    private void HandleLibrespotNotPlayingReceived(object? sender, NotPlayingEvent e) =>
+        PublishUnified(new MediaEvent(MediaEventType.TrackFinished, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.ContextUri) }, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotWillPlay(object? sender, WillPlayEvent e) =>
-        PublishUnified(new MediaEvent(MediaEventType.TrackStarted, "librespot", new MediaMetaData { Uri = MediaUriParse.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
+        PublishUnified(new MediaEvent(MediaEventType.TrackStarted, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotPlaying(object? sender, PlayingEvent e) =>
-        PublishUnified(new MediaEvent(MediaEventType.PlaybackStarted, "librespot", new MediaMetaData { Uri = MediaUriParse.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
+        PublishUnified(new MediaEvent(MediaEventType.PlaybackStarted, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotPaused(object? sender, PausedEvent e) =>
-        PublishUnified(new MediaEvent(MediaEventType.PlaybackPaused, "librespot", new MediaMetaData { Uri = MediaUriParse.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
+        PublishUnified(new MediaEvent(MediaEventType.PlaybackPaused, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotStopped(object? sender, StoppedEvent e) =>
         PublishUnified(new MediaEvent(MediaEventType.PlaybackStopped, "librespot", null, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotError(object? sender, PlaybackErrorEvent e) =>
-        PublishUnified(new MediaEvent(MediaEventType.PlaybackError, "librespot", new MediaMetaData { Uri = MediaUriParse.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
+        PublishUnified(new MediaEvent(MediaEventType.PlaybackError, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotSeek(object? sender, SeekEvent e) =>
-        PublishUnified(new MediaEvent(MediaEventType.Seeked, "librespot", new MediaMetaData { Uri = MediaUriParse.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
+        PublishUnified(new MediaEvent(MediaEventType.Seeked, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
 
     private void HandleLibrespotVolume(object? sender, VolumeEvent e) =>
         PublishUnified(new MediaEvent(MediaEventType.VolumeChanged, "librespot", null, e, DateTimeOffset.UtcNow));
@@ -147,8 +146,6 @@ public sealed class MediaEventListenerService : BackgroundService
 
     private void HandleLibrespotRepeatTrack(object? sender, RepeatTrackEvent e) =>
         PublishUnified(new MediaEvent(MediaEventType.RepeatChanged, "librespot", null, e, DateTimeOffset.UtcNow));
-
-#-- MPD Event Handlers --#
 
     private void HandleMpdTrackStarted(object? sender, MpdTrackStartedEvent e) =>
         PublishUnified(new MediaEvent(MediaEventType.TrackStarted, "mpd", e.Track, e, DateTimeOffset.UtcNow));
@@ -177,10 +174,9 @@ public sealed class MediaEventListenerService : BackgroundService
     /// <summary>
     /// Placeholder routing function for processing or forwarding unified media events.
     /// </summary>
-    private Task RouteUnifiedEventAsync(MediaEvent mediaEvent, CancellationToken ct = default)
+    private async Task RouteUnifiedEventAsync(MediaEvent mediaEvent, CancellationToken ct = default)
     {
         await _mediaEventService.PublishMediaEventAsync(mediaEvent, ct);
-        return Task.CompletedTask;
     }
 
     private void PublishUnified(MediaEvent mediaEvent)
