@@ -18,68 +18,51 @@ public sealed class LibrespotEventState
     private readonly IMediaEventService _eventService;
     private readonly ILogger<LibrespotEventState> _logger;
 
+    private readonly Timer _positionTimer;
     private const int MaxStoredEvents = 100;
 
     public bool IsActive { get; private set; }
-
     public bool IsPlaying { get; private set; }
-
     public MetadataEvent? CurrentTrack { get; private set; }
-
     public WillPlayEvent? PendingTrack { get; private set; }
 
     public string CurrentContextUri { get; private set; } = string.Empty;
-
     public string CurrentTrackUri { get; private set; } = string.Empty;
-
     public string LastPlayOrigin { get; private set; } = string.Empty;
 
     public long CurrentPositionMs { get; private set; }
-
     public long CurrentDurationMs { get; private set; }
 
     public uint Volume { get; private set; }
-
     public uint MaxVolume { get; private set; }
 
     public bool ShuffleContext { get; private set; }
-
     public bool RepeatContext { get; private set; }
-
     public bool RepeatTrack { get; private set; }
 
     public LibrespotEventState(
-    ILogger<LibrespotEventState> logger,
+        ILogger<LibrespotEventState> logger,
         IMediaEventService eventService)
     {
         _logger = logger;
-        _eventService =
-            eventService ??
-            throw new ArgumentNullException(
-                nameof(eventService));
+        _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
+
+        // Poll every 500ms for natural track end
+        _positionTimer = new Timer(CheckTrackEnd, null, 500, 500);
     }
 
-    private PlaybackState GetPlaybackState(
-        MetadataEvent metadata)
+    private PlaybackState GetPlaybackState(MetadataEvent metadata)
     {
-        MediaUri? uri =
-            MediaUriParser.ParseMediaUriValue(
-                metadata.Uri);
+        MediaUri? uri = MediaUriParser.ParseMediaUriValue(metadata.Uri);
 
         MediaMetaData track = new()
         {
             Uri = uri,
             Album = metadata.AlbumName,
             Title = metadata.Name,
-            Artist = string.Join(
-                ", ",
-                metadata.ArtistNames),
+            Artist = string.Join(", ", metadata.ArtistNames),
             Url = string.Empty,
-            ImageUrl =
-                string.IsNullOrEmpty(
-                    metadata.AlbumCoverUrl)
-                    ? string.Empty
-                    : metadata.AlbumCoverUrl,
+            ImageUrl = string.IsNullOrEmpty(metadata.AlbumCoverUrl) ? string.Empty : metadata.AlbumCoverUrl,
             Duration = metadata.Duration / 1000d
         };
 
@@ -93,9 +76,7 @@ public sealed class LibrespotEventState
         };
     }
 
-    private async Task PublishEventAsync(
-        MediaEventType type,
-        PlaybackState state)
+    private async Task PublishEventAsync(MediaEventType type, PlaybackState state)
     {
         MediaEvent mediaEvent = new(
             Type: type,
@@ -109,49 +90,62 @@ public sealed class LibrespotEventState
             },
             Timestamp: DateTimeOffset.UtcNow);
 
+        await _eventService.PublishMediaEventAsync(mediaEvent, CancellationToken.None);
+    }
 
-        await _eventService.PublishMediaEventAsync(
-            mediaEvent,
-            CancellationToken.None);
+    // 🔥 NATURAL END DETECTION (polling)
+    private void CheckTrackEnd(object? _)
+    {
+        if (!IsPlaying || CurrentTrack == null)
+            return;
+
+        if (CurrentDurationMs <= 0)
+            return; // live stream
+
+        // 500ms tolerance
+        if (CurrentPositionMs >= CurrentDurationMs - 500)
+        {
+            FireTrackFinished(CurrentTrack);
+        }
     }
 
     public void UpdateState(LibrespotEvent @event)
     {
-        LibrespotEvent previousEvent = _recentEvents.LastOrDefault();
-        string previousTrackUri = CurrentTrackUri;
-        long previousPosition = CurrentPositionMs;
-        long previousDuration = CurrentDurationMs;
-
-        bool naturalEndDetected = false;
-
         switch (@event)
         {
+            case ActiveEvent:
+                IsActive = true;
+                break;
+
+            case InactiveEvent:
+                IsActive = false;
+                break;
+
             case MetadataEvent metadata:
                 {
-                    // Detect natural end-of-track via URI change
-                    if (CurrentTrack != null &&
-                        previousTrackUri != metadata.Uri &&
-                        IsPlaying)
-                    {
-                        naturalEndDetected = true;
-                        FireTrackFinished(CurrentTrack);
-                    }
-
-                    // Update state
                     CurrentTrack = metadata;
                     CurrentContextUri = metadata.ContextUri;
                     CurrentTrackUri = metadata.Uri;
                     CurrentPositionMs = metadata.Position;
                     CurrentDurationMs = metadata.Duration;
 
-                    PlaybackState state = GetPlaybackState(metadata);
+                    var statusState = GetPlaybackState(metadata);
 
                     Task.Run(async () =>
                     {
-                        await _eventService.PublishPlaybackStatusAsync(state, CancellationToken.None);
-                        await PublishEventAsync(MediaEventType.Status, state);
+                        await _eventService.PublishPlaybackStatusAsync(statusState, CancellationToken.None);
+                        await PublishEventAsync(MediaEventType.Status, statusState);
                     }).GetAwaiter().GetResult();
 
+                    break;
+                }
+
+            case WillPlayEvent willPlay:
+                {
+                    PendingTrack = willPlay;
+                    CurrentContextUri = willPlay.ContextUri;
+                    CurrentTrackUri = willPlay.Uri;
+                    LastPlayOrigin = willPlay.PlayOrigin;
                     break;
                 }
 
@@ -162,52 +156,13 @@ public sealed class LibrespotEventState
                     CurrentTrackUri = playing.Uri;
                     LastPlayOrigin = playing.PlayOrigin;
 
-                    // If track changed while playing → natural end
-                    if (CurrentTrack != null &&
-                        previousTrackUri != playing.Uri)
-                    {
-                        naturalEndDetected = true;
-                        FireTrackFinished(CurrentTrack);
-                    }
-
                     if (CurrentTrack != null)
                     {
-                        PlaybackState state = GetPlaybackState(CurrentTrack);
+                        var playbackState = GetPlaybackState(CurrentTrack);
 
                         Task.Run(async () =>
                         {
-                            await PublishEventAsync(MediaEventType.PlaybackStarted, state);
-                        }).GetAwaiter().GetResult();
-                    }
-
-                    break;
-                }
-
-            case SeekEvent seek:
-                {
-                    CurrentPositionMs = seek.Position;
-                    CurrentDurationMs = seek.Duration;
-                    CurrentContextUri = seek.ContextUri;
-                    CurrentTrackUri = seek.Uri;
-                    LastPlayOrigin = seek.PlayOrigin;
-
-                    // Detect natural end via position >= duration
-                    if (CurrentTrack != null &&
-                        IsPlaying &&
-                        seek.Position >= seek.Duration &&
-                        seek.Duration > 0)
-                    {
-                        naturalEndDetected = true;
-                        FireTrackFinished(CurrentTrack);
-                    }
-
-                    if (CurrentTrack != null)
-                    {
-                        PlaybackState state = GetPlaybackState(CurrentTrack);
-
-                        Task.Run(async () =>
-                        {
-                            await PublishEventAsync(MediaEventType.Seeked, state);
+                            await PublishEventAsync(MediaEventType.PlaybackStarted, playbackState);
                         }).GetAwaiter().GetResult();
                     }
 
@@ -222,9 +177,7 @@ public sealed class LibrespotEventState
                     LastPlayOrigin = notPlaying.PlayOrigin;
 
                     if (CurrentTrack != null)
-                    {
                         FireTrackFinished(CurrentTrack);
-                    }
 
                     break;
                 }
@@ -238,11 +191,11 @@ public sealed class LibrespotEventState
 
                     if (CurrentTrack != null)
                     {
-                        PlaybackState state = GetPlaybackState(CurrentTrack);
+                        var pauseState = GetPlaybackState(CurrentTrack);
 
                         Task.Run(async () =>
                         {
-                            await PublishEventAsync(MediaEventType.PlaybackPaused, state);
+                            await PublishEventAsync(MediaEventType.PlaybackPaused, pauseState);
                         }).GetAwaiter().GetResult();
                     }
 
@@ -255,8 +208,27 @@ public sealed class LibrespotEventState
                     LastPlayOrigin = stopped.PlayOrigin;
 
                     if (CurrentTrack != null)
-                    {
                         FireTrackFinished(CurrentTrack);
+
+                    break;
+                }
+
+            case SeekEvent seek:
+                {
+                    CurrentPositionMs = seek.Position;
+                    CurrentDurationMs = seek.Duration;
+                    CurrentContextUri = seek.ContextUri;
+                    CurrentTrackUri = seek.Uri;
+                    LastPlayOrigin = seek.PlayOrigin;
+
+                    if (CurrentTrack != null)
+                    {
+                        var seekState = GetPlaybackState(CurrentTrack);
+
+                        Task.Run(async () =>
+                        {
+                            await PublishEventAsync(MediaEventType.Seeked, seekState);
+                        }).GetAwaiter().GetResult();
                     }
 
                     break;
@@ -269,11 +241,11 @@ public sealed class LibrespotEventState
 
                     if (CurrentTrack != null)
                     {
-                        PlaybackState state = GetPlaybackState(CurrentTrack);
+                        var volumeState = GetPlaybackState(CurrentTrack);
 
                         Task.Run(async () =>
                         {
-                            await PublishEventAsync(MediaEventType.VolumeChanged, state);
+                            await PublishEventAsync(MediaEventType.VolumeChanged, volumeState);
                         }).GetAwaiter().GetResult();
                     }
 
@@ -286,11 +258,11 @@ public sealed class LibrespotEventState
 
                     if (CurrentTrack != null)
                     {
-                        PlaybackState state = GetPlaybackState(CurrentTrack);
+                        var shuffleState = GetPlaybackState(CurrentTrack);
 
                         Task.Run(async () =>
                         {
-                            await PublishEventAsync(MediaEventType.ShuffleChanged, state);
+                            await PublishEventAsync(MediaEventType.ShuffleChanged, shuffleState);
                         }).GetAwaiter().GetResult();
                     }
 
@@ -303,11 +275,11 @@ public sealed class LibrespotEventState
 
                     if (CurrentTrack != null)
                     {
-                        PlaybackState state = GetPlaybackState(CurrentTrack);
+                        var repeatState = GetPlaybackState(CurrentTrack);
 
                         Task.Run(async () =>
                         {
-                            await PublishEventAsync(MediaEventType.RepeatChanged, state);
+                            await PublishEventAsync(MediaEventType.RepeatChanged, repeatState);
                         }).GetAwaiter().GetResult();
                     }
 
@@ -316,14 +288,6 @@ public sealed class LibrespotEventState
 
             case RepeatTrackEvent repeatTrack:
                 RepeatTrack = repeatTrack.Value;
-                break;
-
-            case ActiveEvent:
-                IsActive = true;
-                break;
-
-            case InactiveEvent:
-                IsActive = false;
                 break;
 
             case UnknownLibrespotEvent:
@@ -338,6 +302,7 @@ public sealed class LibrespotEventState
     private void FireTrackFinished(MetadataEvent track)
     {
         PlaybackState state = GetPlaybackState(track);
+        _logger.LogWarning("*** Track finished: {TrackUri}", track.Uri);
 
         Task.Run(async () =>
         {

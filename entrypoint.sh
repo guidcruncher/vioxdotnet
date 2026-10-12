@@ -26,16 +26,29 @@ chmod 666 /tmp/snapfifo /tmp/mpd_socket.sock
 
 # 3. Graceful Termination Handler
 cleanup() {
-    echo "Termination signal received. Gracefully shutting down audio services and .NET server..."
+    echo "Termination signal received. Gracefully shutting down audio services..."
 
-    # Gracefully stop MPD
-    mpd --kill 2>/dev/null ||utrue
+    touch /tmp/shutting_down
 
-    # Terminate remaining background jobs
-    if [ -n "$SNAPSERVER_PID" ] || [ -n "$LIBRESPOT_PID" ] || [ -n "$SNAPCLIENT_PID" ] || [ -n "$DOTNET_PID" ]; then
-        kill -TERM "$SNAPSERVER_PID" "$LIBRESPOT_PID" "$SNAPCLIENT_PID" "$DOTNET_PID" 2>/dev/null || true
-        wait "$SNAPSERVER_PID" "$LIBRESPOT_PID" "$SNAPCLIENT_PID" "$DOTNET_PID" 2>/dev/null || true
-    fi
+    echo "Stopping .NET Web API..."
+    kill -TERM "$DOTNET_PID" 2>/dev/null || true
+    wait "$DOTNET_PID" 2>/dev/null || true
+
+    echo "Stopping Snapclient..."
+    kill -TERM "$SNAPCLIENT_PID" 2>/dev/null || true
+    wait "$SNAPCLIENT_PID" 2>/dev/null || true
+
+    echo "Stopping MPD..."
+    kill -TERM "$MPD_PID" 2>/dev/null || true
+    wait "$MPD_PID" 2>/dev/null || true
+
+    echo "Stopping Snapserver..."
+    kill -TERM "$SNAPSERVER_PID" 2>/dev/null || true
+    wait "$SNAPSERVER_PID" 2>/dev/null || true
+
+    echo "Stopping Librespot..."
+    kill -TERM "$LIBRESPOT_PID" 2>/dev/null || true
+    wait "$LIBRESPOT_PID" 2>/dev/null || true
 
     echo "All processes stopped cleanly."
     exit 0

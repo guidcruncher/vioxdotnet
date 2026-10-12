@@ -34,7 +34,6 @@ const isLoading = ref<boolean>(false)
 const isActionPending = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
 
-
 const totalDuration = computed<number>(() => {
   return queue.value.reduce((acc, item) => acc + (item.duration || 0), 0)
 })
@@ -198,7 +197,9 @@ onMounted(() => {
   <div class="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
     <div class="max-w-7xl mx-auto space-y-6">
       <!-- Top Bar / Header -->
-      <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <header
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5"
+      >
         <div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Playback Queue</h1>
           <p class="text-xs md:text-sm text-slate-400 mt-1">
@@ -209,30 +210,45 @@ onMounted(() => {
         </div>
 
         <div class="flex items-center gap-2">
-          <button type="button" @click="fetchStatus" :disabled="isLoading"
+          <button
+            type="button"
+            @click="fetchStatus"
+            :disabled="isLoading"
             class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
-            title="Refresh Queue">
+            title="Refresh Queue"
+          >
             <RotateCcw class="w-5 h-5" :class="{ 'animate-spin': isLoading }" />
           </button>
 
-          <button type="button" @click="handleClear" :disabled="queue.length === 0 || isActionPending"
+          <button
+            type="button"
+            @click="handleClear"
+            :disabled="queue.length === 0 || isActionPending"
             class="p-2 text-red-400 hover:text-red-300 rounded-lg hover:bg-red-950/40 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-            title="Clear Queue">
+            title="Clear Queue"
+          >
             <Trash class="w-5 h-5" />
           </button>
         </div>
       </header>
 
       <!-- Error Notification -->
-      <div v-if="errorMessage"
-        class="p-4 rounded-xl bg-red-900/30 border border-red-700/50 text-red-200 text-sm flex items-start justify-between">
+      <div
+        v-if="errorMessage"
+        class="p-4 rounded-xl bg-red-900/30 border border-red-700/50 text-red-200 text-sm flex items-start justify-between"
+      >
         <div>
           <span class="font-semibold block mb-1">Queue Error</span>
           <span>{{ errorMessage }}</span>
         </div>
         <button type="button" @click="errorMessage = null" class="text-red-400 hover:text-red-200">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -241,22 +257,36 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Now Playing Card Sidebar -->
         <section
-          class="lg:col-span-5 xl:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+          class="lg:col-span-5 xl:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl"
+        >
           <div>
             <div class="flex items-center justify-between mb-4">
-              <span class="text-xs font-semibold tracking-wider uppercase text-indigo-400">Now Playing</span>
-              <span v-if="currentItem" class="text-xs text-slate-500 font-mono">Index #{{ currentIndex }}</span>
+              <span class="text-xs font-semibold tracking-wider uppercase text-indigo-400"
+                >Now Playing</span
+              >
+              <span v-if="currentItem" class="text-xs text-slate-500 font-mono"
+                >Index #{{ currentIndex }}</span
+              >
             </div>
 
             <!-- Artwork -->
             <div
-              class="relative aspect-square rounded-xl overflow-hidden bg-slate-800 mb-6 shadow-inner flex items-center justify-center border border-slate-700/50">
-              <img v-if="currentItem?.imageUrl" :src="currentItem.imageUrl" :alt="currentItem.title"
-                class="w-full h-full object-cover" />
+              class="relative aspect-square rounded-xl overflow-hidden bg-slate-800 mb-6 shadow-inner flex items-center justify-center border border-slate-700/50"
+            >
+              <img
+                v-if="currentItem?.imageUrl"
+                :src="currentItem.imageUrl"
+                :alt="currentItem.title"
+                class="w-full h-full object-cover"
+              />
               <div v-else class="text-slate-600 flex flex-col items-center">
                 <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"
+                  />
                 </svg>
                 <span class="text-xs">No Track</span>
               </div>
@@ -264,10 +294,16 @@ onMounted(() => {
 
             <!-- Metadata -->
             <div class="space-y-1 text-center sm:text-left">
-              <h2 class="text-xl font-bold text-white truncate" :title="currentItem?.title || 'Nothing Playing'">
+              <h2
+                class="text-xl font-bold text-white truncate"
+                :title="currentItem?.title || 'Nothing Playing'"
+              >
                 {{ currentItem?.title || 'Nothing Playing' }}
               </h2>
-              <p class="text-slate-400 text-sm truncate" :title="currentItem?.artist || 'Unknown Artist'">
+              <p
+                class="text-slate-400 text-sm truncate"
+                :title="currentItem?.artist || 'Unknown Artist'"
+              >
                 {{ currentItem?.artist || 'Select a track to start playback' }}
               </p>
               <p v-if="currentItem?.album" class="text-slate-500 text-xs truncate">
@@ -280,37 +316,61 @@ onMounted(() => {
           <div class="mt-8 space-y-6">
             <div class="flex items-center justify-center gap-4">
               <!-- Shuffle Button -->
-              <button type="button" @click="handleToggleShuffle" :disabled="isActionPending"
-                class="p-2.5 rounded-full transition-colors" :class="isShuffleEnabled
+              <button
+                type="button"
+                @click="handleToggleShuffle"
+                :disabled="isActionPending"
+                class="p-2.5 rounded-full transition-colors"
+                :class="
+                  isShuffleEnabled
                     ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  " :title="isShuffleEnabled ? 'Disable Shuffle' : 'Enable Shuffle'">
+                "
+                :title="isShuffleEnabled ? 'Disable Shuffle' : 'Enable Shuffle'"
+              >
                 <Shuffle class="w-5 h-5" />
               </button>
 
               <!-- Previous Button -->
-              <button type="button" @click="handlePrevious" :disabled="isActionPending || queue.length === 0"
+              <button
+                type="button"
+                @click="handlePrevious"
+                :disabled="isActionPending || queue.length === 0"
                 class="p-3 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30"
-                title="Previous Track">
+                title="Previous Track"
+              >
                 <SkipBack class="w-6 h-6" />
               </button>
 
               <!-- Next Button -->
-              <button type="button" @click="handleNext" :disabled="isActionPending || queue.length === 0"
+              <button
+                type="button"
+                @click="handleNext"
+                :disabled="isActionPending || queue.length === 0"
                 class="p-3 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30"
-                title="Next Track">
+                title="Next Track"
+              >
                 <SkipForward class="w-6 h-6" />
               </button>
 
               <!-- Repeat Mode Button -->
-              <button type="button" @click="handleCycleRepeat" :disabled="isActionPending"
-                class="p-2.5 rounded-full transition-colors relative" :class="repeatMode !== PlaybackRepeatMode.Off
+              <button
+                type="button"
+                @click="handleCycleRepeat"
+                :disabled="isActionPending"
+                class="p-2.5 rounded-full transition-colors relative"
+                :class="
+                  repeatMode !== PlaybackRepeatMode.Off
                     ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  " :title="getRepeatModeLabel()">
+                "
+                :title="getRepeatModeLabel()"
+              >
                 <Repeat class="w-5 h-5" />
-                <span v-if="repeatMode === PlaybackRepeatMode.Track"
-                  class="absolute -top-1 -right-1 bg-indigo-500 text-slate-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                <span
+                  v-if="repeatMode === PlaybackRepeatMode.Track"
+                  class="absolute -top-1 -right-1 bg-indigo-500 text-slate-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center"
+                >
                   1
                 </span>
               </button>
@@ -320,59 +380,90 @@ onMounted(() => {
 
         <!-- Queue Items List -->
         <section
-          class="lg:col-span-7 xl:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col">
+          class="lg:col-span-7 xl:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col"
+        >
           <div class="flex items-center justify-between mb-4 px-2">
             <h2 class="text-lg font-semibold text-white">Queue List</h2>
             <span class="text-xs text-slate-400">Click a track to skip to it</span>
           </div>
 
           <div v-if="isLoading && queue.length === 0" class="py-20 text-center text-slate-500">
-            <svg class="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-500" fill="none" stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              class="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Fetching queue status...
           </div>
 
-          <div v-else-if="queue.length === 0"
-            class="py-20 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
+          <div
+            v-else-if="queue.length === 0"
+            class="py-20 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl"
+          >
             <p class="text-base font-medium">The queue is currently empty.</p>
           </div>
 
           <div v-else class="space-y-2 overflow-y-auto max-h-[600px] pr-1 custom-scrollbar">
-            <div v-for="(item, idx) in queue" :key="idx" @click="handleSkipTo(idx)"
+            <div
+              v-for="(item, idx) in queue"
+              :key="idx"
+              @click="handleSkipTo(idx)"
               class="group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
               :class="[
                 idx === currentIndex
                   ? 'bg-indigo-950/40 border-indigo-600/50 text-white'
                   : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50',
-              ]">
+              ]"
+            >
               <!-- Track Info -->
               <div class="flex items-center gap-3.5 min-w-0 pr-3">
                 <!-- Index or Active Speaker Icon -->
                 <div class="w-6 text-center text-xs font-mono text-slate-500 shrink-0">
-                  <span v-if="idx === currentIndex" class="inline-block text-indigo-400 animate-pulse">
+                  <span
+                    v-if="idx === currentIndex"
+                    class="inline-block text-indigo-400 animate-pulse"
+                  >
                     <Volume2 class="w-4 h-4" />
                   </span>
                   <span v-else>{{ idx + 1 }}</span>
                 </div>
 
                 <!-- Thumbnail -->
-                <div class="w-11 h-11 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-slate-700/50">
-                  <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.title" class="w-full h-full object-cover" />
+                <div
+                  class="w-11 h-11 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-slate-700/50"
+                >
+                  <img
+                    v-if="item.imageUrl"
+                    :src="item.imageUrl"
+                    :alt="item.title"
+                    class="w-full h-full object-cover"
+                  />
                   <div v-else class="w-full h-full flex items-center justify-center text-slate-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"
+                      />
                     </svg>
                   </div>
                 </div>
 
                 <!-- Text Details -->
                 <div class="min-w-0">
-                  <p class="text-sm font-medium truncate"
-                    :class="idx === currentIndex ? 'text-indigo-300' : 'text-slate-100'">
+                  <p
+                    class="text-sm font-medium truncate"
+                    :class="idx === currentIndex ? 'text-indigo-300' : 'text-slate-100'"
+                  >
                     {{ item.title }}
                   </p>
                   <p class="text-xs text-slate-400 truncate">
@@ -387,12 +478,20 @@ onMounted(() => {
                   {{ formatDuration(item.duration) }}
                 </span>
 
-                <button type="button" @click.stop="handleRemoveItem(idx)" :disabled="isActionPending"
+                <button
+                  type="button"
+                  @click.stop="handleRemoveItem(idx)"
+                  :disabled="isActionPending"
                   class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  title="Remove from queue">
+                  title="Remove from queue"
+                >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </div>
