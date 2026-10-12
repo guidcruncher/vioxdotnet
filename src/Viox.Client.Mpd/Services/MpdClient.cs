@@ -16,7 +16,7 @@ using Viox.Client.Mpd.Configuration;
 /// <summary>
 /// A managed TCP client implementation for interacting with a Music Player Daemon (MPD) server.
 /// </summary>
-public sealed class MpdClient : IMpdClient, IAsyncDisposable, IDisposable
+public sealed class MpdClient : IMpdClient, IMpdClientIdle, IAsyncDisposable, IDisposable
 {
     private readonly MpdOptions _options;
     private readonly ILogger<MpdClient> _logger;

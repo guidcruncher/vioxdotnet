@@ -42,7 +42,8 @@ public static class MpdServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(configureOptions);
 
         services.Configure(configureOptions);
-        services.AddSingleton<IMpdClient, MpdClient>();
+services.AddSingleton<IMpdClient, MpdClient>();  
+services.AddSingleton<IMpdClientIdle, MpdClient>();
         services.AddHostedService<MpdEventListenerService>();
         services.AddHostedService<MpdConnectionHostedService>();
 

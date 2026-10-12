@@ -107,10 +107,10 @@ class SSESingleton {
     if (!payload) return
 
     if (payload.eventType) {
-      let data: EventPayload
+      let data: MediaEvent | null = null
       try {
         data = JSON.parse(payload.message)
-        this.emit(payload.eventType, data)
+        this.emit(payload.eventType, data as MediaEvent)
       } catch {}
     }
   }
@@ -136,14 +136,13 @@ class SSESingleton {
     }
   }
 
-  private emit(eventName: string, payload: EventPayload) {
+  private emit(eventName: string, payload: MediaEvent) {
     const set = this.listeners[eventName]
     if (!set) return
 
     set.forEach((handler) => {
       try {
-        let ev: MediaEvent = JSON.parse(payload.message)
-        handler(ev)
+        handler(payload)
       } catch (err) {
         console.error(`Error in SSE listener '${eventName}':`, err)
       }

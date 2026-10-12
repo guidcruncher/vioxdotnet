@@ -12,7 +12,7 @@ namespace Viox.Client.Mpd.Events;
 /// </summary>
 public sealed class MpdEventListenerService : BackgroundService
 {
-    private readonly IMpdClient _mpdClient;
+    private readonly IMpdClientIdle _mpdClient;
     private readonly IMediaEventService _eventService;
     private readonly ILogger<MpdEventListenerService> _logger;
 
@@ -30,7 +30,7 @@ public sealed class MpdEventListenerService : BackgroundService
     /// <param name="eventService the media event service.">The media event service.</param>
     /// <param name="logger">The logger.</param>
     public MpdEventListenerService(
-        IMpdClient mpdClient,
+        IMpdClientIdle mpdClient,
         IMediaEventService eventService,
         ILogger<MpdEventListenerService> logger)
     {
