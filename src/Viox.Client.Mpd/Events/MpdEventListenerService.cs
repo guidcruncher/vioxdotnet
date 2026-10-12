@@ -107,7 +107,7 @@ public sealed class MpdEventListenerService : BackgroundService
                 break;
 
             case "playlist":
-                await PublishEventAsync(MediaEventType.QueueChanged, newState, ct);
+                // await PublishEventAsync(MediaEventType.QueueChanged, newState, ct);
                 break;
         }
 
@@ -285,7 +285,7 @@ public sealed class MpdEventListenerService : BackgroundService
 
     private PlaybackState ParsePlaybackState(string status, string currentSong)
     {
-        var track = ParseMetadata(currentSong);
+        //var track = ParseMetadata(currentSong);
 
         double position = 0;
         bool playing = false;
@@ -311,7 +311,7 @@ public sealed class MpdEventListenerService : BackgroundService
         return new PlaybackState
         {
             ActiveBackend = "mpd",
-            Track = track,
+            Track = null,
             Position = position,
             Playing = playing,
             IsLive = false

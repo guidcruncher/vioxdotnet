@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 using Viox.Core.Models;
+using Viox.Core.Services;
 
 namespace Viox.Core.Events;
 
@@ -8,12 +9,15 @@ public sealed class MediaEventService : IMediaEventService
 {
     private readonly IServerEventPublisher _eventPublisher;
     private readonly ILogger<MediaEventService> _logger;
+    private readonly ICurrentMediaService _currentMediaService;
 
     public MediaEventService(
         IServerEventPublisher eventPublisher,
+        ICurrentMediaService currentMediaService,
         ILogger<MediaEventService> logger)
     {
         _eventPublisher = eventPublisher;
+        _currentMediaService = currentMediaService;
         _logger = logger;
     }
 
@@ -35,8 +39,8 @@ public sealed class MediaEventService : IMediaEventService
           );
 
         MediaEvent mediaEvent = new(MediaEventType.Status, state.ActiveBackend,
-            state.Track,
-        data,
+            _currentMediaService.CurrentMedia,
+            data,
             DateTimeOffset.UtcNow
         );
 
