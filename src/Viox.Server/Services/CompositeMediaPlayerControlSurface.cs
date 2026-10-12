@@ -45,7 +45,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         IOptions<MediaPlayerOptions> options,
         IMediaEventService eventService,
         IPlaybackQueueService queueService,
-    EpgQueryService epgService,
+        EpgQueryService epgService,
         ILogger<CompositeMediaPlayerControlSurface> logger)
     {
         _epgService = epgService ?? throw new ArgumentNullException(nameof(epgService));
@@ -61,6 +61,17 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         _queueService.TrackPlayRequested += OnQueueTrackPlayRequestedAsync;
         _queueService.PlaybackStopRequested += OnQueuePlaybackStopRequestedAsync;
     }
+
+    public async Task HandleMediaEvent(MediaEvent e)
+    {
+        _logger.LogInformation("Raised MediaEvent {type} ", e.Type);
+        if (e.Type == MediaEventType.TrackFinished)
+        {
+            _logger.LogInformation("Proceeding to next track");
+            await NextAsync();
+        }
+    }
+
 
     public async Task PlayAsync(string uri, CancellationToken cancellationToken = default)
     {

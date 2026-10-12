@@ -3,6 +3,7 @@ using Viox.Client.Mpd.Events;
 using Viox.Core.Events;
 using Viox.Core.Models;
 using Viox.Core.Services;
+using Viox.Server.Abstraction;
 
 namespace Viox.Server.Services;
 
@@ -16,13 +17,16 @@ public sealed class MediaEventListenerService : BackgroundService
     private readonly IMpdEventService _mpdEventService;
     private readonly ILogger<MediaEventListenerService> _logger;
     private readonly IMediaEventService _mediaEventService;
+    private readonly IMediaPlayerControlSurface _control;
 
     public MediaEventListenerService(
+    IMediaPlayerControlSurface control,
         ILibrespotEventService librespotEventService,
         IMpdEventService mpdEventService,
          IMediaEventService mediaEventService,
         ILogger<MediaEventListenerService> logger)
     {
+        _control = control;
         _mediaEventService = mediaEventService;
         _librespotEventService = librespotEventService;
         _mpdEventService = mpdEventService;
@@ -103,15 +107,7 @@ public sealed class MediaEventListenerService : BackgroundService
 
     private void HandleLibrespotMetadata(object? sender, MetadataEvent e)
     {
-        var track = new MediaMetaData
-        {
-            Title = e.Name,
-            Artist = string.Join(", ", e.ArtistNames),
-            Album = e.AlbumName,
-            Uri = MediaUriParser.ParseMediaUriValue(e.Uri),
-            ImageUrl = e.AlbumCoverUrl
-        };
-        PublishUnified(new MediaEvent(MediaEventType.TrackStarted, "librespot", track, e, DateTimeOffset.UtcNow));
+        PublishUnified(new MediaEvent(MediaEventType.TrackStarted, "librespot", new MediaMetaData { Uri = MediaUriParser.ParseMediaUriValue(e.Uri) }, e, DateTimeOffset.UtcNow));
     }
 
     private void HandleLibrespotNotPlayingReceived(object? sender, NotPlayingEvent e) =>
@@ -177,6 +173,7 @@ public sealed class MediaEventListenerService : BackgroundService
     private async Task RouteUnifiedEventAsync(MediaEvent mediaEvent, CancellationToken ct = default)
     {
         await _mediaEventService.PublishMediaEventAsync(mediaEvent, ct);
+        await _control.HandleMediaEvent(mediaEvent);
     }
 
     private void PublishUnified(MediaEvent mediaEvent)

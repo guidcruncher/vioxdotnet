@@ -95,7 +95,10 @@ public static class VioxServerServiceCollectionExtensions
         services.AddVioxScheduler(configuration);
         services.AddVioxSchedulerTasksFromEntryAssembly();
 
-        // 8. API and OpenAPI Setup with JSON Options
+        // 8. Event System
+        services.AddHostedService<MediaEventListenerService>();
+
+        // 9. API and OpenAPI Setup with JSON Options
         services.AddControllers()
             .AddJsonOptions(options =>
             {
