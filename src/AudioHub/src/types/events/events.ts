@@ -1,5 +1,20 @@
 import type { MediaMetaData } from '@/types'
 
+export const MediaEventTypes = [
+  'PlaybackStarted',
+  'PlaybackPaused',
+  'PlaybackStopped',
+  'TrackStarted',
+  'TrackChanged',
+  'TrackFinished',
+  'Seeked',
+  'VolumeChanged',
+  'QueueChanged',
+  'ShuffleChanged',
+  'RepeatChanged',
+  'Status',
+]
+
 export interface EmitEventRequest {
   eventType: string
   message: string

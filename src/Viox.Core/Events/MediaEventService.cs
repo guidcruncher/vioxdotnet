@@ -26,7 +26,7 @@ public sealed class MediaEventService : IMediaEventService
 
     public async Task PublishPlaybackStatusAsync(PlaybackState state, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Publishing full playback status update.");
+        _logger.LogTrace("Publishing full playback status update.");
 
         PlaybackStateData data = new(
                state.Position,

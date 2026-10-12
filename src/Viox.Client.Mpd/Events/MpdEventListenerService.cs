@@ -8,7 +8,7 @@ using Viox.Core.Models;
 namespace Viox.Client.Mpd.Events;
 
 /// <summary>
-/// Background service that listens for events from the Music Player Daemon (MPD) and publishes media events.
+/// Listens for MPD events and publishes corresponding media events.
 /// </summary>
 public sealed class MpdEventListenerService : BackgroundService
 {
@@ -16,19 +16,20 @@ public sealed class MpdEventListenerService : BackgroundService
     private readonly IMediaEventService _eventService;
     private readonly ILogger<MpdEventListenerService> _logger;
 
-    private MediaMetaData? _lastTrack;
-    private double _lastPosition;
-    private bool _lastPlaying;
+    // Previous state snapshot
+    private PlaybackState _prevState = new()
+    {
+        ActiveBackend = "mpd",
+        Track = null,
+        Position = 0,
+        Playing = false,
+        IsLive = false
+    };
 
-    private bool _lastShuffle;
-    private bool _lastRepeat;
+    private bool _prevShuffle;
+    private bool _prevRepeat;
+    private int _prevVolume;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MpdEventListenerService"/> class.
-    /// </summary>
-    /// <param name="mpdClient">The MPD client.</param>
-    /// <param name="eventService the media event service.">The media event service.</param>
-    /// <param name="logger">The logger.</param>
     public MpdEventListenerService(
         IMpdClientIdle mpdClient,
         IMediaEventService eventService,
@@ -39,47 +40,34 @@ public sealed class MpdEventListenerService : BackgroundService
         _logger = logger;
     }
 
-    /// <inheritdoc />
-    protected override async Task ExecuteAsync(
-        CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation(
-            "Starting MPD event listener...");
+        _logger.LogInformation("Starting MPD event listener...");
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await _mpdClient.ConnectAsync(
+                await _mpdClient.ConnectAsync(stoppingToken);
+
+                // Listen only to subsystems we care about
+                string response = await _mpdClient.SendCommandAsync(
+                    "idle player mixer playlist options",
                     stoppingToken);
 
-                string response =
-                    await _mpdClient.SendCommandAsync(
-                        "idle player mixer playlist options update",
-                        stoppingToken);
+                string? eventLine = response
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault();
 
-                string? eventLine =
-                    response.Split(
-                            '\n',
-                            StringSplitOptions.RemoveEmptyEntries)
-                        .FirstOrDefault();
-
-                if (eventLine is null)
-                    continue;
-
-                if (!eventLine.StartsWith(
-                        "changed:",
-                        StringComparison.OrdinalIgnoreCase))
+                if (eventLine is null ||
+                    !eventLine.StartsWith("changed:", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                string mpdEvent =
-                    eventLine["changed:".Length..].Trim();
+                string subsystem = eventLine["changed:".Length..].Trim();
 
-                await HandleEventAsync(
-                    mpdEvent,
-                    stoppingToken);
+                await HandleSubsystemAsync(subsystem, stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -87,206 +75,147 @@ public sealed class MpdEventListenerService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(
-                    ex,
-                    "MPD listener failed, restarting...");
-
-                await Task.Delay(
-                    1000,
-                    stoppingToken);
+                _logger.LogWarning(ex, "MPD listener failed, restarting...");
+                await Task.Delay(1000, stoppingToken);
             }
         }
 
-        _logger.LogInformation(
-            "MPD event listener stopped.");
+        _logger.LogInformation("MPD event listener stopped.");
     }
 
-    private async Task HandleEventAsync(
-        string mpdEvent,
-        CancellationToken ct)
+    private async Task HandleSubsystemAsync(string subsystem, CancellationToken ct)
     {
-        string status =
-            await _mpdClient.SendCommandAsync(
-                "status",
-                ct);
+        // Always refresh status + currentsong for a consistent snapshot
+        string status = await _mpdClient.SendCommandAsync("status", ct);
+        string currentSong = await _mpdClient.SendCommandAsync("currentsong", ct);
 
-        string currentSong =
-            await _mpdClient.SendCommandAsync(
-                "currentsong",
-                ct);
+        var newState = ParsePlaybackState(status, currentSong);
 
-        PlaybackState state =
-            ParsePlaybackState(
-                status,
-                currentSong);
-
-        await PublishPlaybackEventsAsync(
-            state,
-            ct);
-
-        switch (mpdEvent)
+        // Detect events based on subsystem + previous vs current snapshot
+        switch (subsystem)
         {
-            case "mixer":
-                await PublishEventAsync(
-                    MediaEventType.VolumeChanged,
-                    state,
-                    ct);
+            case "player":
+                await HandlePlayerEventsAsync(status, newState, ct);
                 break;
 
-            case "playlist":
-                await PublishEventAsync(
-                    MediaEventType.QueueChanged,
-                    state,
-                    ct);
+            case "mixer":
+                await HandleMixerEventsAsync(status, newState, ct);
                 break;
 
             case "options":
-                await PublishOptionEventsAsync(
-                    status,
-                    state,
-                    ct);
+                await HandleOptionEventsAsync(status, newState, ct);
+                break;
+
+            case "playlist":
+                await PublishEventAsync(MediaEventType.QueueChanged, newState, ct);
                 break;
         }
 
-        await DetectTrackFinishedAsync(
-            state,
-            ct);
+        // Always publish current playback status
+        await _eventService.PublishPlaybackStatusAsync(newState, ct);
 
-        await DetectSeekAsync(
-            state,
-            ct);
-
-        await _eventService.PublishPlaybackStatusAsync(
-            state,
-            ct);
-
-        _lastTrack = state.Track;
-        _lastPosition = state.Position;
-        _lastPlaying = state.Playing;
+        // Update previous snapshot
+        _prevState = newState;
     }
 
-    private async Task PublishPlaybackEventsAsync(
-        PlaybackState state,
+    // PLAYER: track start, track finish, seek, pause/resume
+    private async Task HandlePlayerEventsAsync(
+        string status,
+        PlaybackState newState,
         CancellationToken ct)
     {
-        bool trackChanged =
-            _lastTrack is not null &&
-            state.Track is not null &&
-            !string.Equals(
-                _lastTrack.Url,
-                state.Track.Url,
-                StringComparison.OrdinalIgnoreCase);
+        var prev = _prevState;
 
-        if (trackChanged)
+        bool trackChanged =
+            prev.Track?.Url is not null &&
+            newState.Track?.Url is not null &&
+            !string.Equals(prev.Track.Url, newState.Track.Url, StringComparison.OrdinalIgnoreCase);
+
+        bool wasPlaying = prev.Playing;
+        bool isPlaying = newState.Playing;
+
+        // Track finished: old track was playing, now a different track is active
+        if (trackChanged && wasPlaying)
         {
             await PublishEventAsync(
-                MediaEventType.TrackChanged,
-                state,
+                MediaEventType.TrackFinished,
+                newState,
+                prev.Track,
                 ct);
 
             await PublishEventAsync(
                 MediaEventType.TrackStarted,
-                state,
+                newState,
+                newState.Track,
                 ct);
         }
-
-        if (!_lastPlaying && state.Playing)
+        else if (!trackChanged && isPlaying && !wasPlaying)
         {
-            await PublishEventAsync(
-                MediaEventType.PlaybackStarted,
-                state,
-                ct);
+            // Resume or start on same track
+            await PublishEventAsync(MediaEventType.PlaybackStarted, newState, ct);
         }
 
-        if (_lastPlaying && !state.Playing)
+        // Pause / resume
+        if (wasPlaying && !isPlaying)
         {
-            await PublishEventAsync(
-                MediaEventType.PlaybackPaused,
-                state,
-                ct);
+            await PublishEventAsync(MediaEventType.PlaybackPaused, newState, ct);
+        }
+        else if (!wasPlaying && isPlaying)
+        {
+            await PublishEventAsync(MediaEventType.PlaybackStarted, newState, ct);
+        }
+
+        // Seek: same track, position jump
+        if (prev.Track?.Url == newState.Track?.Url)
+        {
+            double delta = Math.Abs(newState.Position - prev.Position);
+
+            // Threshold in seconds
+            if (delta > 3)
+            {
+                await PublishEventAsync(MediaEventType.Seeked, newState, ct);
+            }
         }
     }
 
-    private async Task DetectTrackFinishedAsync(
-        PlaybackState state,
-        CancellationToken ct)
-    {
-        if (_lastTrack is null)
-            return;
-
-        bool trackChanged =
-            state.Track?.Url is not null &&
-            !string.Equals(
-                _lastTrack.Url,
-                state.Track.Url,
-                StringComparison.OrdinalIgnoreCase);
-
-        bool elapsedReset =
-            state.Position < 1 &&
-            _lastPosition > 3;
-
-        if (trackChanged &&
-            elapsedReset &&
-            state.Playing)
-        {
-            await PublishEventAsync(
-                MediaEventType.TrackFinished,
-                state,
-                _lastTrack,
-                ct);
-        }
-    }
-
-    private async Task DetectSeekAsync(
-        PlaybackState state,
-        CancellationToken ct)
-    {
-        if (_lastTrack?.Url != state.Track?.Url)
-            return;
-
-        double delta =
-            Math.Abs(
-                state.Position -
-                _lastPosition);
-
-        if (delta > 5)
-        {
-            await PublishEventAsync(
-                MediaEventType.Seeked,
-                state,
-                ct);
-        }
-    }
-
-    private async Task PublishOptionEventsAsync(
+    // MIXER: volume changes
+    private async Task HandleMixerEventsAsync(
         string status,
-        PlaybackState state,
+        PlaybackState newState,
         CancellationToken ct)
     {
-        bool shuffle =
-            ParseFlag(status, "random");
+        int volume = ParseInt(status, "volume");
 
-        bool repeat =
-            ParseFlag(status, "repeat");
-
-        if (shuffle != _lastShuffle)
+        if (volume != _prevVolume)
         {
-            await PublishEventAsync(
-                MediaEventType.ShuffleChanged,
-                state,
-                ct);
+            _prevVolume = volume;
 
-            _lastShuffle = shuffle;
+            await PublishEventAsync(
+                MediaEventType.VolumeChanged,
+                newState,
+                ct);
+        }
+    }
+
+    // OPTIONS: shuffle / repeat changes
+    private async Task HandleOptionEventsAsync(
+        string status,
+        PlaybackState newState,
+        CancellationToken ct)
+    {
+        bool shuffle = ParseFlag(status, "random");
+        bool repeat = ParseFlag(status, "repeat");
+
+        if (shuffle != _prevShuffle)
+        {
+            _prevShuffle = shuffle;
+            await PublishEventAsync(MediaEventType.ShuffleChanged, newState, ct);
         }
 
-        if (repeat != _lastRepeat)
+        if (repeat != _prevRepeat)
         {
-            await PublishEventAsync(
-                MediaEventType.RepeatChanged,
-                state,
-                ct);
-
-            _lastRepeat = repeat;
+            _prevRepeat = repeat;
+            await PublishEventAsync(MediaEventType.RepeatChanged, newState, ct);
         }
     }
 
@@ -295,11 +224,7 @@ public sealed class MpdEventListenerService : BackgroundService
         PlaybackState state,
         CancellationToken ct)
     {
-        await PublishEventAsync(
-            type,
-            state,
-            state.Track,
-            ct);
+        await PublishEventAsync(type, state, state.Track, ct);
     }
 
     private async Task PublishEventAsync(
@@ -308,9 +233,7 @@ public sealed class MpdEventListenerService : BackgroundService
         MediaMetaData? track,
         CancellationToken ct)
     {
-        _logger.LogInformation(
-            "Publishing media event: {Event}",
-            type);
+        _logger.LogInformation("Publishing media event: {Event}", type);
 
         MediaEvent mediaEvent = new(
             Type: type,
@@ -324,76 +247,64 @@ public sealed class MpdEventListenerService : BackgroundService
             },
             Timestamp: DateTimeOffset.UtcNow);
 
-        await _eventService.PublishMediaEventAsync(
-            mediaEvent,
-            ct);
+        await _eventService.PublishMediaEventAsync(mediaEvent, ct);
     }
 
-    private static bool ParseFlag(
-        string status,
-        string property)
+    private static bool ParseFlag(string status, string property)
     {
-        using var sr =
-            new StringReader(status);
-
+        using var sr = new StringReader(status);
         string? line;
 
         while ((line = sr.ReadLine()) != null)
         {
-            if (!line.StartsWith(
-                    property + ":",
-                    StringComparison.OrdinalIgnoreCase))
-            {
+            if (!line.StartsWith(property + ":", StringComparison.OrdinalIgnoreCase))
                 continue;
-            }
 
-            return line[(property.Length + 1)..]
-                .Trim() == "1";
+            return line[(property.Length + 1)..].Trim() == "1";
         }
 
         return false;
     }
 
-    private PlaybackState ParsePlaybackState(
-        string status,
-        string currentSong)
+    private static int ParseInt(string status, string property)
     {
-        var track =
-            ParseMetadata(currentSong);
-
-        double position = 0;
-        bool playing = false;
-
-        using var sr =
-            new StringReader(status);
-
+        using var sr = new StringReader(status);
         string? line;
 
         while ((line = sr.ReadLine()) != null)
         {
-            if (line.StartsWith(
-                    "elapsed:",
-                    StringComparison.OrdinalIgnoreCase))
+            if (!line.StartsWith(property + ":", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (int.TryParse(line[(property.Length + 1)..].Trim(), out var value))
+                return value;
+        }
+
+        return 0;
+    }
+
+    private PlaybackState ParsePlaybackState(string status, string currentSong)
+    {
+        var track = ParseMetadata(currentSong);
+
+        double position = 0;
+        bool playing = false;
+
+        using var sr = new StringReader(status);
+        string? line;
+
+        while ((line = sr.ReadLine()) != null)
+        {
+            if (line.StartsWith("elapsed:", StringComparison.OrdinalIgnoreCase))
             {
-                if (double.TryParse(
-                        line[8..].Trim(),
-                        out var pos))
-                {
+                if (double.TryParse(line["elapsed:".Length..].Trim(), out var pos))
                     position = pos;
-                }
             }
 
-            if (line.StartsWith(
-                    "state:",
-                    StringComparison.OrdinalIgnoreCase))
+            if (line.StartsWith("state:", StringComparison.OrdinalIgnoreCase))
             {
-                var state =
-                    line["state:".Length..].Trim();
-
-                playing =
-                    state.Equals(
-                        "play",
-                        StringComparison.OrdinalIgnoreCase);
+                var state = line["state:".Length..].Trim();
+                playing = state.Equals("play", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -407,46 +318,36 @@ public sealed class MpdEventListenerService : BackgroundService
         };
     }
 
-    private MediaMetaData ParseMetadata(
-        string response)
+    private MediaMetaData ParseMetadata(string response)
     {
         string title = "";
         string artist = "";
         string album = "";
         string url = "";
 
-        using var sr =
-            new StringReader(response);
-
+        using var sr = new StringReader(response);
         string? line;
 
         while ((line = sr.ReadLine()) != null)
         {
             int idx = line.IndexOf(':');
-
             if (idx <= 0)
                 continue;
 
-            string key =
-                line[..idx].Trim();
-
-            string value =
-                line[(idx + 1)..].Trim();
+            string key = line[..idx].Trim();
+            string value = line[(idx + 1)..].Trim();
 
             switch (key.ToLowerInvariant())
             {
                 case "title":
                     title = value;
                     break;
-
                 case "artist":
                     artist = value;
                     break;
-
                 case "album":
                     album = value;
                     break;
-
                 case "file":
                     url = value;
                     break;

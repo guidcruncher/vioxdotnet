@@ -34,7 +34,20 @@ const isLoading = ref<boolean>(false)
 const isActionPending = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
 
-const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
+const trackEventTypes = [
+  'PlaybackStarted',
+  'PlaybackPaused',
+  'PlaybackStopped',
+  'TrackStarted',
+  'TrackChanged',
+  'TrackFinished',
+  'Seeked',
+  'VolumeChanged',
+  'QueueChanged',
+  'ShuffleChanged',
+  'RepeatChanged',
+]
+
 trackEventTypes.forEach((eventType) => {
   sse.on(eventType, async (payload: MediaEvent) => {
     try {

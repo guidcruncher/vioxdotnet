@@ -48,10 +48,14 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
-  sse.on('TrackStarted', async (payload: MediaEvent) => {})
+  sse.on('PlaybackStarted', async (payload: MediaEvent) => {
+    handleTrackEvent(payload.track, true)
+  })
 
   sse.on('TrackFinished', async (payload: MediaEvent) => {
-    await api.queue.next()
+    if (!state.value.playing) {
+      await api.queue.next()
+    }
   })
 
   sse.on('Status', (payload: MediaEvent) => {
@@ -65,7 +69,20 @@ export const usePlaybackStore = defineStore('playback', () => {
     applyStateUpdates(data)
   })
 
-  const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
+  const trackEventTypes = [
+    'PlaybackStarted',
+    'PlaybackPaused',
+    'PlaybackStopped',
+    'TrackStarted',
+    'TrackChanged',
+    'TrackFinished',
+    'Seeked',
+    'VolumeChanged',
+    'QueueChanged',
+    'ShuffleChanged',
+    'RepeatChanged',
+  ]
+
   trackEventTypes.forEach((eventType) => {
     sse.on(eventType, (payload: MediaEvent) => {
       try {

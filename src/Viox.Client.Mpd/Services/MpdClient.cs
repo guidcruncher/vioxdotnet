@@ -49,7 +49,7 @@ public sealed class MpdClient : IMpdClient, IMpdClientIdle, IAsyncDisposable, ID
 
         if (_tcpClient is { Connected: true } && _stream is not null)
         {
-            _logger.LogInformation("Connection already established to {Host}:{Port}", _options.Host, _options.Port);
+            _logger.LogTrace("Connection already established to {Host}:{Port}", _options.Host, _options.Port);
             return;
         }
 
@@ -240,7 +240,7 @@ public sealed class MpdClient : IMpdClient, IMpdClientIdle, IAsyncDisposable, ID
 
         try
         {
-            _logger.LogInformation("Closing connection to MPD server...");
+            _logger.LogTrace("Closing connection to MPD server...");
             await SendCommandInternalAsync("close", cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)

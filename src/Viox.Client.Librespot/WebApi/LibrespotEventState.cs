@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 
+using Microsoft.Extensions.Logging;
+
 using Viox.Client.Librespot.Events;
 using Viox.Core.Events;
 using Viox.Core.Models;
@@ -14,6 +16,7 @@ public sealed class LibrespotEventState
 {
     private readonly ConcurrentQueue<LibrespotEvent> _recentEvents = new();
     private readonly IMediaEventService _eventService;
+    private readonly ILogger<LibrespotEventState> _logger;
 
     private const int MaxStoredEvents = 100;
 
@@ -46,8 +49,10 @@ public sealed class LibrespotEventState
     public bool RepeatTrack { get; private set; }
 
     public LibrespotEventState(
+    ILogger<LibrespotEventState> logger,
         IMediaEventService eventService)
     {
+        _logger = logger;
         _eventService =
             eventService ??
             throw new ArgumentNullException(
@@ -104,6 +109,7 @@ public sealed class LibrespotEventState
             },
             Timestamp: DateTimeOffset.UtcNow);
 
+
         await _eventService.PublishMediaEventAsync(
             mediaEvent,
             CancellationToken.None);
@@ -112,6 +118,7 @@ public sealed class LibrespotEventState
     public void UpdateState(
         LibrespotEvent @event)
     {
+
         switch (@event)
         {
             case ActiveEvent:
