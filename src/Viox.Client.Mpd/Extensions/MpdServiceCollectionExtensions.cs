@@ -44,7 +44,7 @@ public static class MpdServiceCollectionExtensions
         services.Configure(configureOptions);
         services.AddSingleton<IMpdClient, MpdClient>();
         services.AddSingleton<IMpdClientIdle, MpdClient>();
-        services.AddHostedService<MpdEventListenerService>();
+        services.AddHostedService<MpdEventService>();
         services.AddHostedService<MpdConnectionHostedService>();
 
         return services;

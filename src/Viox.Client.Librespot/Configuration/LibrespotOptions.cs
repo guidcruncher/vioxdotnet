@@ -15,7 +15,7 @@ public sealed class LibrespotOptions
     /// <summary>
     /// Gets or sets the WebSocket endpoint URI for event streams.
     /// </summary>
-    public string WebSocketUrl { get; set; } = "ws://localhost:3678/events";
+    public string WebSocketUri { get; set; } = "ws://localhost:3678/events";
 
     /// <summary>
     /// Gets or sets the REST client request timeout in seconds.

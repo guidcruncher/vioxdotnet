@@ -2,18 +2,16 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Viox.Client.Mpd.Services;
-using Viox.Core.Events;
 using Viox.Core.Models;
 
 namespace Viox.Client.Mpd.Events;
 
 /// <summary>
-/// Listens for MPD events and publishes corresponding media events.
+/// Listens for MPD events and raises them via strongly typed C# events.
 /// </summary>
-public sealed class MpdEventListenerService : BackgroundService
+public sealed class MpdEventService : BackgroundService, IMpdEventService
 {
     private readonly IMpdClientIdle _mpdClient;
-    private readonly IMediaEventService _eventService;
     private readonly ILogger<MpdEventListenerService> _logger;
 
     // Previous state snapshot
@@ -30,13 +28,22 @@ public sealed class MpdEventListenerService : BackgroundService
     private bool _prevRepeat;
     private int _prevVolume;
 
+    public event EventHandler<MpdEvent>? OnEventReceived;
+    public event EventHandler<MpdTrackStartedEvent>? OnTrackStartedReceived;
+    public event EventHandler<MpdTrackFinishedEvent>? OnTrackFinishedReceived;
+    public event EventHandler<MpdPlaybackStartedEvent>? OnPlaybackStartedReceived;
+    public event EventHandler<MpdPlaybackPausedEvent>? OnPlaybackPausedReceived;
+    public event EventHandler<MpdSeekedEvent>? OnSeekedReceived;
+    public event EventHandler<MpdVolumeEvent>? OnVolumeReceived;
+    public event EventHandler<MpdShuffleChangedEvent>? OnShuffleChangedReceived;
+    public event EventHandler<MpdRepeatChangedEvent>? OnRepeatChangedReceived;
+    public event EventHandler<PlaybackState>? OnPlaybackStatusUpdated;
+
     public MpdEventListenerService(
         IMpdClientIdle mpdClient,
-        IMediaEventService eventService,
         ILogger<MpdEventListenerService> logger)
     {
         _mpdClient = mpdClient;
-        _eventService = eventService;
         _logger = logger;
     }
 
@@ -50,7 +57,6 @@ public sealed class MpdEventListenerService : BackgroundService
             {
                 await _mpdClient.ConnectAsync(stoppingToken);
 
-                // Listen only to subsystems we care about
                 string response = await _mpdClient.SendCommandAsync(
                     "idle player mixer playlist options",
                     stoppingToken);
@@ -85,44 +91,34 @@ public sealed class MpdEventListenerService : BackgroundService
 
     private async Task HandleSubsystemAsync(string subsystem, CancellationToken ct)
     {
-        // Always refresh status + currentsong for a consistent snapshot
         string status = await _mpdClient.SendCommandAsync("status", ct);
         string currentSong = await _mpdClient.SendCommandAsync("currentsong", ct);
 
         var newState = ParsePlaybackState(status, currentSong);
 
-        // Detect events based on subsystem + previous vs current snapshot
         switch (subsystem)
         {
             case "player":
-                await HandlePlayerEventsAsync(status, newState, ct);
+                await HandlePlayerEventsAsync(newState, ct);
                 break;
 
             case "mixer":
-                await HandleMixerEventsAsync(status, newState, ct);
+                HandleMixerEvents(status, newState);
                 break;
 
             case "options":
-                await HandleOptionEventsAsync(status, newState, ct);
+                HandleOptionEvents(status, newState);
                 break;
 
             case "playlist":
-                // await PublishEventAsync(MediaEventType.QueueChanged, newState, ct);
                 break;
         }
 
-        // Always publish current playback status
-        await _eventService.PublishPlaybackStatusAsync(newState, ct);
-
-        // Update previous snapshot
+        OnPlaybackStatusUpdated?.Invoke(this, newState);
         _prevState = newState;
     }
 
-    // PLAYER: track start, track finish, seek, pause/resume
-    private async Task HandlePlayerEventsAsync(
-        string status,
-        PlaybackState newState,
-        CancellationToken ct)
+    private async Task HandlePlayerEventsAsync(PlaybackState newState, CancellationToken ct)
     {
         var prev = _prevState;
 
@@ -134,74 +130,50 @@ public sealed class MpdEventListenerService : BackgroundService
         bool wasPlaying = prev.Playing;
         bool isPlaying = newState.Playing;
 
-        // Track finished: old track was playing, now a different track is active
         if (trackChanged && wasPlaying)
         {
-            await PublishEventAsync(
-                MediaEventType.TrackFinished,
-                newState,
-                prev.Track,
-                ct);
-
-            await PublishEventAsync(
-                MediaEventType.TrackStarted,
-                newState,
-                newState.Track,
-                ct);
+            RaiseEvent(new MpdTrackFinishedEvent(prev.Track), OnTrackFinishedReceived);
+            RaiseEvent(new MpdTrackStartedEvent(newState.Track), OnTrackStartedReceived);
         }
         else if (!trackChanged && isPlaying && !wasPlaying)
         {
-            // Resume or start on same track
-            await PublishEventAsync(MediaEventType.PlaybackStarted, newState, ct);
+            RaiseEvent(new MpdPlaybackStartedEvent(newState.Position, newState.Playing), OnPlaybackStartedReceived);
         }
 
-        // Pause / resume
         if (wasPlaying && !isPlaying)
         {
-            await PublishEventAsync(MediaEventType.PlaybackPaused, newState, ct);
+            RaiseEvent(new MpdPlaybackPausedEvent(newState.Position), OnPlaybackPausedReceived);
         }
         else if (!wasPlaying && isPlaying)
         {
-            await PublishEventAsync(MediaEventType.PlaybackStarted, newState, ct);
+            RaiseEvent(new MpdPlaybackStartedEvent(newState.Position, newState.Playing), OnPlaybackStartedReceived);
         }
 
-        // Seek: same track, position jump
         if (prev.Track?.Url == newState.Track?.Url)
         {
             double delta = Math.Abs(newState.Position - prev.Position);
 
-            // Threshold in seconds
             if (delta > 3)
             {
-                await PublishEventAsync(MediaEventType.Seeked, newState, ct);
+                RaiseEvent(new MpdSeekedEvent(newState.Position, newState.Duration), OnSeekedReceived);
             }
         }
+
+        await Task.CompletedTask;
     }
 
-    // MIXER: volume changes
-    private async Task HandleMixerEventsAsync(
-        string status,
-        PlaybackState newState,
-        CancellationToken ct)
+    private void HandleMixerEvents(string status, PlaybackState newState)
     {
         int volume = ParseInt(status, "volume");
 
         if (volume != _prevVolume)
         {
             _prevVolume = volume;
-
-            await PublishEventAsync(
-                MediaEventType.VolumeChanged,
-                newState,
-                ct);
+            RaiseEvent(new MpdVolumeEvent(volume, 100), OnVolumeReceived);
         }
     }
 
-    // OPTIONS: shuffle / repeat changes
-    private async Task HandleOptionEventsAsync(
-        string status,
-        PlaybackState newState,
-        CancellationToken ct)
+    private void HandleOptionEvents(string status, PlaybackState newState)
     {
         bool shuffle = ParseFlag(status, "random");
         bool repeat = ParseFlag(status, "repeat");
@@ -209,45 +181,21 @@ public sealed class MpdEventListenerService : BackgroundService
         if (shuffle != _prevShuffle)
         {
             _prevShuffle = shuffle;
-            await PublishEventAsync(MediaEventType.ShuffleChanged, newState, ct);
+            RaiseEvent(new MpdShuffleChangedEvent(shuffle), OnShuffleChangedReceived);
         }
 
         if (repeat != _prevRepeat)
         {
             _prevRepeat = repeat;
-            await PublishEventAsync(MediaEventType.RepeatChanged, newState, ct);
+            RaiseEvent(new MpdRepeatChangedEvent(repeat), OnRepeatChangedReceived);
         }
     }
 
-    private async Task PublishEventAsync(
-        MediaEventType type,
-        PlaybackState state,
-        CancellationToken ct)
+    private void RaiseEvent<T>(T mpdEvent, EventHandler<T>? handler) where T : MpdEvent
     {
-        await PublishEventAsync(type, state, state.Track, ct);
-    }
-
-    private async Task PublishEventAsync(
-        MediaEventType type,
-        PlaybackState state,
-        MediaMetaData? track,
-        CancellationToken ct)
-    {
-        _logger.LogInformation("Publishing media event: {Event}", type);
-
-        MediaEvent mediaEvent = new(
-            Type: type,
-            Backend: state.ActiveBackend,
-            Track: track,
-            Data: new
-            {
-                Position = state.Position,
-                Playing = state.Playing,
-                IsLive = state.IsLive
-            },
-            Timestamp: DateTimeOffset.UtcNow);
-
-        await _eventService.PublishMediaEventAsync(mediaEvent, ct);
+        _logger.LogInformation("Raising MPD event: {EventType}", mpdEvent.Type);
+        OnEventReceived?.Invoke(this, mpdEvent);
+        handler?.Invoke(this, mpdEvent);
     }
 
     private static bool ParseFlag(string status, string property)
@@ -285,7 +233,7 @@ public sealed class MpdEventListenerService : BackgroundService
 
     private PlaybackState ParsePlaybackState(string status, string currentSong)
     {
-        //var track = ParseMetadata(currentSong);
+        var track = ParseMetadata(currentSong);
 
         double position = 0;
         bool playing = false;
@@ -311,7 +259,7 @@ public sealed class MpdEventListenerService : BackgroundService
         return new PlaybackState
         {
             ActiveBackend = "mpd",
-            Track = null,
+            Track = track,
             Position = position,
             Playing = playing,
             IsLive = false
