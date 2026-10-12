@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { EventPayload, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import type { MediaEvent, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
 import {
   Volume2,
@@ -33,17 +33,6 @@ const repeatMode = ref<PlaybackRepeatMode>(PlaybackRepeatMode.Off)
 const isLoading = ref<boolean>(false)
 const isActionPending = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
-
-const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
-trackEventTypes.forEach((eventType) => {
-  sse.on(eventType, async (payload: EventPayload) => {
-    try {
-      await fetchStatus()
-    } catch (err) {
-      console.error(`Failed to parse ${eventType} event message:`, err)
-    }
-  })
-})
 
 const totalDuration = computed<number>(() => {
   return queue.value.reduce((acc, item) => acc + (item.duration || 0), 0)
@@ -518,13 +507,16 @@ onMounted(() => {
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }

@@ -1,4 +1,4 @@
-namespace Viox.Core.Scheduler;
+namespace Viox.Server.Services;
 
 using System;
 using System.Collections.Generic;
@@ -12,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Viox.Core.Scheduler;
+
 public class CronBackgroundSchedulerService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -24,30 +26,38 @@ public class CronBackgroundSchedulerService : BackgroundService
         ILogger<CronBackgroundSchedulerService> logger,
         IOptions<SchedulerOptions> options)
     {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-        _options = options.Value;
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public override Task StartAsync(CancellationToken cancellationToken)
+    public void AddUserTask(IScheduledTask task)
+    {
+        var cronExpression = CronExpression.Parse(task.Schedule, CronFormat.IncludeSeconds);
+        _scheduledTasks.Add(new SchedulerTaskRegistration(task, cronExpression));
+        _logger.LogInformation("Added user task: {TaskName} with schedule {Schedule}", task.Name, task.Schedule);
+    }
+
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         if (!_options.Enabled)
         {
             _logger.LogInformation("Viox Scheduler is disabled via configuration.");
-            return base.StartAsync(cancellationToken);
+            await base.StartAsync(cancellationToken);
+            return;
         }
 
-        _logger.LogInformation("Initializing scheduled tasks discovery via Dependency Injection...");
+        _logger.LogInformation("Initializing scheduled tasks discovery via Dependency Injection and file reader...");
 
         using (var scope = _serviceProvider.CreateScope())
         {
+            // 1. Discover tasks from DI container
             var tasks = scope.ServiceProvider.GetServices<IScheduledTask>();
             foreach (var task in tasks)
             {
                 try
                 {
                     var cronStr = task.Schedule.Replace("\0", string.Empty);
-                    _logger.LogWarning("Task Cron '{cronStr}'", cronStr);
                     var cronExpression = CronExpression.Parse(cronStr, CronFormat.IncludeSeconds);
                     _scheduledTasks.Add(new SchedulerTaskRegistration(task, cronExpression));
                     _logger.LogInformation("Discovered scheduled task: {TaskName} with schedule {Schedule} (RunOnStartup: {RunOnStartup})",
@@ -58,9 +68,28 @@ public class CronBackgroundSchedulerService : BackgroundService
                     _logger.LogError(ex, "Failed to parse cron expression '{Schedule}' for task '{TaskName}'", task.Schedule, task.Name);
                 }
             }
+
+            // 2. Load user tasks from file/configuration reader and register using AddUserTask
+            try
+            {
+                var fileReader = scope.ServiceProvider.GetService<IUserTaskSettingsFileReader>();
+                if (fileReader != null)
+                {
+                    var settingsList = await fileReader.ReadSettingsAsync(cancellationToken);
+                    foreach (var setting in settingsList)
+                    {
+                        IScheduledTask task = UserTask.CreateUserTask(scope, setting);
+                        AddUserTask(task);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load user task settings from file reader.");
+            }
         }
 
-        return base.StartAsync(cancellationToken);
+        await base.StartAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -69,10 +98,8 @@ public class CronBackgroundSchedulerService : BackgroundService
         {
             return;
         }
-
         _logger.LogInformation("Cron background task scheduler started.");
 
-        // Handle RunOnStartup tasks
         foreach (var taskRegistration in _scheduledTasks)
         {
             if (taskRegistration.Task.RunOnStartup)
@@ -85,7 +112,6 @@ public class CronBackgroundSchedulerService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var utcNow = DateTime.UtcNow;
-
             foreach (var taskRegistration in _scheduledTasks)
             {
                 var nextOccurrence = taskRegistration.CronExpression.GetNextOccurrence(utcNow, TimeZoneInfo.Utc);
@@ -99,20 +125,17 @@ public class CronBackgroundSchedulerService : BackgroundService
                     }
                 }
             }
-
             await Task.Delay(TimeSpan.FromSeconds(_options.CheckIntervalSeconds), stoppingToken);
         }
     }
 
     private async Task ExecuteTaskSafelyAsync(IScheduledTask task, CancellationToken cancellationToken)
     {
-        // Concurrency guard: Check if task is already running
         if (!taskRegistrationState.GetOrAdd(task.Name, _ => new SemaphoreSlim(1, 1)).Wait(0))
         {
             _logger.LogWarning("Task {TaskName} is already running. Skipping this execution cycle to avoid overlap.", task.Name);
             return;
         }
-
         try
         {
             using var scope = _serviceProvider.CreateScope();
@@ -133,4 +156,3 @@ public class CronBackgroundSchedulerService : BackgroundService
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> taskRegistrationState = new();
     private sealed record SchedulerTaskRegistration(IScheduledTask Task, CronExpression CronExpression);
 }
-

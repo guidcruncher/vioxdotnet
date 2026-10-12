@@ -59,7 +59,7 @@ public class EpgQueryService
     private string getChannelId(string title)
     {
         string id = ($"{title.ToLower().Replace(" ", ".").Trim()}.uk").Replace(".uk.uk", ".uk");
-        _logger.LogInformation("Epg Id {id}", id);
+        _logger.LogTrace("Getting Channel Id  {id} from'{title}'", id, title);
         return id;
     }
 

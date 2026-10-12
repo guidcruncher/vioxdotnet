@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Viox.Client.Mpd.Configuration;
+using Viox.Client.Mpd.Events;
 using Viox.Client.Mpd.Services;
 
 namespace Viox.Client.Mpd.Extensions;
@@ -42,6 +43,8 @@ public static class MpdServiceCollectionExtensions
 
         services.Configure(configureOptions);
         services.AddSingleton<IMpdClient, MpdClient>();
+        services.AddSingleton<IMpdClientIdle, MpdClient>();
+        services.AddHostedService<MpdEventListenerService>();
         services.AddHostedService<MpdConnectionHostedService>();
 
         return services;

@@ -1,6 +1,6 @@
 // sseSingleton.ts
 import { ref } from 'vue'
-import type { EventPayload, EventHandler } from '@/types'
+import type { MediaEvent, EventPayload, EventHandler } from '@/types'
 
 interface ListenerMap {
   [eventName: string]: Set<EventHandler>
@@ -41,13 +41,10 @@ class SSESingleton {
         this.error.value = null
 
         Object.keys(this.listeners).forEach((eventName) => {
-          if (eventName !== 'message') {
-            this.eventSource?.addEventListener(eventName, this.handleCustomEvent)
-          }
+          this.eventSource?.addEventListener(eventName, this.handleCustomEvent)
         })
       }
 
-      this.eventSource.onmessage = this.handleMessage
       this.eventSource.onerror = () => {
         this.isConnected.value = false
         this.scheduleReconnect(url, opts, reconnectCfg)
@@ -105,20 +102,16 @@ class SSESingleton {
     }
   }
 
-  private handleMessage = (event: MessageEvent) => {
+  private handleCustomEvent = (event: MessageEvent) => {
     const payload = this.processPayload(event.data)
     if (!payload) return
 
-    this.emit('message', payload)
-    if (payload.eventType && payload.eventType !== 'message') {
-      this.emit(payload.eventType, payload)
-    }
-  }
-
-  private handleCustomEvent = (event: MessageEvent) => {
-    const payload = this.processPayload(event.data)
-    if (payload) {
-      this.emit(event.type, payload)
+    if (payload.eventType) {
+      let data: MediaEvent | null = null
+      try {
+        data = JSON.parse(payload.message)
+        this.emit(payload.eventType, data as MediaEvent)
+      } catch {}
     }
   }
 
@@ -143,7 +136,7 @@ class SSESingleton {
     }
   }
 
-  private emit(eventName: string, payload: EventPayload) {
+  private emit(eventName: string, payload: MediaEvent) {
     const set = this.listeners[eventName]
     if (!set) return
 

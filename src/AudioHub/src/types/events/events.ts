@@ -1,3 +1,20 @@
+import type { MediaMetaData } from '@/types'
+
+export const MediaEventTypes = [
+  'PlaybackStarted',
+  'PlaybackPaused',
+  'PlaybackStopped',
+  'TrackStarted',
+  'TrackChanged',
+  'TrackFinished',
+  'Seeked',
+  'VolumeChanged',
+  'QueueChanged',
+  'ShuffleChanged',
+  'RepeatChanged',
+  'Status',
+]
+
 export interface EmitEventRequest {
   eventType: string
   message: string
@@ -12,15 +29,22 @@ export interface SubscriberCountResponse {
   activeSubscribers: number
 }
 
-export interface EventPayload<T = any> {
+export interface EventPayload {
   eventId: string
   eventType: string
   message: string
   timestamp: string
-  data?: T
 }
 
-export type EventHandler<T = any> = (payload: EventPayload<T>) => void
+export interface MediaEvent<T = any> {
+  type: string
+  backend: string
+  track?: MediaMetaData
+  data?: T
+  timestamp: string
+}
+
+export type EventHandler<T = any> = (payload: MediaEvent<T>) => void
 
 export interface UseServerEventsOptions {
   autoReconnect?: boolean

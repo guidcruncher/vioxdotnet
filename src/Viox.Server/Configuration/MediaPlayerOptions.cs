@@ -16,5 +16,5 @@ public sealed class MediaPlayerOptions
     /// Gets or sets the status polling interval in seconds.
     /// Default is 5 seconds.
     /// </summary>
-    public int PollingIntervalSeconds { get; set; } = 5;
+    public int PollingIntervalSeconds { get; set; } = 1;
 }

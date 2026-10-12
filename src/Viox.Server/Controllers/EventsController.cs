@@ -3,8 +3,8 @@ using System.Net.ServerSentEvents;
 
 using Microsoft.AspNetCore.Mvc;
 
+using Viox.Core.Events;
 using Viox.Core.Models;
-using Viox.Core.Services;
 
 namespace Viox.Server.Controllers;
 

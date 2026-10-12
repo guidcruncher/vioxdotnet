@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { MediaMetaData, PlaybackState, EventPayload } from '@/types'
+import type { MediaMetaData, PlaybackState, MediaEvent } from '@/types'
 import { useApiClient } from '@/composables/useApiClient'
 import { useServerEvents } from '@/composables/useServerEvents'
 
@@ -48,30 +48,25 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
-  sse.on('status', (payload: EventPayload) => {
-    try {
-      if (payload.message) {
-        const data = JSON.parse(payload.message) as PlaybackState
-        applyStateUpdates(data)
-      }
-    } catch (err) {
-      console.error('Failed to parse status event message:', err)
+  sse.on('PlaybackStarted', async (payload: MediaEvent) => {
+    handleTrackEvent(payload.track, true)
+  })
+
+  sse.on('TrackFinished', async (payload: MediaEvent) => {
+    if (!state.value.playing) {
+      await api.queue.next()
     }
   })
 
-  const trackEventTypes = ['play', 'pause', 'previous', 'next', 'stop', 'trackchanged']
-  trackEventTypes.forEach((eventType) => {
-    sse.on(eventType, (payload: EventPayload) => {
-      try {
-        const data = payload.message ? (JSON.parse(payload.message) as MediaMetaData) : undefined
-
-        const playingState = eventType === 'play' ? true : eventType === 'pause' ? false : undefined
-
-        handleTrackEvent(data, playingState)
-      } catch (err) {
-        console.error(`Failed to parse ${eventType} event message:`, err)
-      }
-    })
+  sse.on('Status', (payload: MediaEvent) => {
+    const data: PlaybackState = {
+      activeBackend: payload.backend,
+      track: payload.track,
+      position: payload.data.position,
+      playing: payload.data.playing,
+      isLive: payload.data.isLive,
+    }
+    applyStateUpdates(data)
   })
 
   async function syncState() {

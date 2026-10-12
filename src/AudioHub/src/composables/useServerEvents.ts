@@ -1,6 +1,7 @@
 import { onUnmounted, readonly } from 'vue'
 import { sseSingleton } from './sseSingleton'
-import type { EventHandler, UseServerEventsOptions } from '@/types'
+import type { MediaEvent, EventHandler, UseServerEventsOptions } from '@/types'
+import { MediaEventTypes } from '@/types'
 
 export function useServerEvents(options: UseServerEventsOptions = {}) {
   const {
@@ -26,11 +27,21 @@ export function useServerEvents(options: UseServerEventsOptions = {}) {
   }
 
   const on = (eventName: string, handler: EventHandler) => {
+    if (!MediaEventTypes.includes(eventName)) {
+      alert(`Event type "${eventName}" is not a recognized MediaEvent type.`)
+      return
+    }
+
     sseSingleton.on(eventName, handler)
     return () => off(eventName, handler)
   }
 
   const off = (eventName: string, handler: EventHandler) => {
+    if (!MediaEventTypes.includes(eventName)) {
+      alert(`Event type "${eventName}" is not a recognized MediaEvent type.`)
+      return
+    }
+
     sseSingleton.off(eventName, handler)
   }
 

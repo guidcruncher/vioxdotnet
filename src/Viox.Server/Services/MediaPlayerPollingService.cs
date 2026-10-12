@@ -39,7 +39,7 @@ public sealed class MediaPlayerPollingService : BackgroundService
             int intervalSeconds = _options.CurrentValue.PollingIntervalSeconds;
             if (intervalSeconds <= 0)
             {
-                intervalSeconds = 5;
+                intervalSeconds = 1;
             }
 
             try

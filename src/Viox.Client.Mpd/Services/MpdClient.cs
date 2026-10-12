@@ -16,7 +16,7 @@ using Viox.Client.Mpd.Configuration;
 /// <summary>
 /// A managed TCP client implementation for interacting with a Music Player Daemon (MPD) server.
 /// </summary>
-public sealed class MpdClient : IMpdClient, IAsyncDisposable, IDisposable
+public sealed class MpdClient : IMpdClient, IMpdClientIdle, IAsyncDisposable, IDisposable
 {
     private readonly MpdOptions _options;
     private readonly ILogger<MpdClient> _logger;
@@ -49,7 +49,7 @@ public sealed class MpdClient : IMpdClient, IAsyncDisposable, IDisposable
 
         if (_tcpClient is { Connected: true } && _stream is not null)
         {
-            _logger.LogInformation("Connection already established to {Host}:{Port}", _options.Host, _options.Port);
+            _logger.LogTrace("Connection already established to {Host}:{Port}", _options.Host, _options.Port);
             return;
         }
 
@@ -240,7 +240,7 @@ public sealed class MpdClient : IMpdClient, IAsyncDisposable, IDisposable
 
         try
         {
-            _logger.LogInformation("Closing connection to MPD server...");
+            _logger.LogTrace("Closing connection to MPD server...");
             await SendCommandInternalAsync("close", cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -341,4 +341,13 @@ public sealed class MpdClient : IMpdClient, IAsyncDisposable, IDisposable
         }
         return elapsedSeconds;
     }
+
+    /// <inheritdoc />
+    public Task WriteLineAsync(string command, CancellationToken ct)
+        => _writer!.WriteLineAsync(command.AsMemory(), ct);
+
+    /// <inheritdoc />
+    public Task<string?> ReadLineAsync(CancellationToken ct)
+        => _reader!.ReadLineAsync(ct).AsTask();
+
 }

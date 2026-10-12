@@ -1,4 +1,4 @@
-namespace Viox.Core.Extensions;
+namespace Viox.Server.Extensions;
 
 using System.Linq;
 using System.Reflection;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Viox.Core.Scheduler;
+using Viox.Server.Services;
 
 public static class SchedulerServiceCollectionExtensions
 {
@@ -35,6 +36,11 @@ public static class SchedulerServiceCollectionExtensions
 
         foreach (var taskType in taskTypes)
         {
+            if (taskType.FullName == "Viox.Core.Scheduler.UserTask")
+            {
+                continue;
+            }
+
             services.AddTransient(typeof(IScheduledTask), taskType);
         }
 
