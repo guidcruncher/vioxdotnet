@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import type { MediaMetaData } from '@/types'
 
-defineProps<{
+const props = defineProps<{
+  defaultimage?: string
   track: MediaMetaData
   isPlaying: boolean
 }>()
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (props.defaultimage) {
+    if (img.src !== props.defaultimage) img.src = props.defaultimage
+  } else {
+    if (img.src !== '/audiosources.png') img.src = '/audiosources.png'
+  }
+}
 </script>
 
 <template>
@@ -15,6 +25,7 @@ defineProps<{
     >
       <img
         :src="track.imageUrl"
+        @error="handleImageError"
         :alt="track.title"
         class="w-full h-full object-cover transition-transform duration-700"
         :class="{ 'scale-105': isPlaying }"

@@ -1,6 +1,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 export interface Breakpoints {
+  xs: number
   sm: number
   md: number
   lg: number
@@ -9,8 +10,9 @@ export interface Breakpoints {
 }
 
 const defaultBreakpoints: Breakpoints = {
-  sm: 640,
-  md: 768,
+  xs: 0,
+  sm: 576,
+  md: 720,
   lg: 1024,
   xl: 1280,
   '2xl': 1536,
@@ -23,6 +25,7 @@ export function useBreakpoint(customBreakpoints: Partial<Breakpoints> = {}) {
   const height = ref(typeof window !== 'undefined' ? window.innerHeight : 0)
 
   const matches = ref({
+    xs: true,
     sm: false,
     md: false,
     lg: false,
@@ -47,6 +50,12 @@ export function useBreakpoint(customBreakpoints: Partial<Breakpoints> = {}) {
     const keys = Object.keys(breakpoints) as (keyof Breakpoints)[]
 
     keys.forEach((key) => {
+      // xs (0px) is always true, skip matchMedia setup for it
+      if (breakpoints[key] === 0) {
+        matches.value[key] = true
+        return
+      }
+
       const query = `(min-width: ${breakpoints[key]}px)`
       const mql = window.matchMedia(query)
 
@@ -79,14 +88,14 @@ export function useBreakpoint(customBreakpoints: Partial<Breakpoints> = {}) {
   })
 
   const isXs = computed(() => breakpoint.value === 'xs')
-  const isSm = computed(() => matches.value.sm)
-  const isMd = computed(() => matches.value.md)
-  const isLg = computed(() => matches.value.lg)
-  const isXl = computed(() => matches.value.xl)
+  const isSm = computed(() => breakpoint.value === 'sm')
+  const isMd = computed(() => breakpoint.value === 'md')
+  const isLg = computed(() => breakpoint.value === 'lg')
+  const isXl = computed(() => breakpoint.value === 'xl')
   const is2Xl = computed(() => matches.value['2xl'])
 
-  const isSmallerThan = (key: keyof Breakpoints) => !matches.value[key]
-  const isLargerThan = (key: keyof Breakpoints) => matches.value[key]
+  const isSmallerThan = (key: keyof Breakpoints) => width.value < breakpoints[key]
+  const isLargerThan = (key: keyof Breakpoints) => width.value >= breakpoints[key]
 
   return {
     width,

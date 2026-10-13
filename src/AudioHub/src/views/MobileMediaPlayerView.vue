@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import type { MediaMetaData } from '@/types'
+import { ref, computed, onMounted } from 'vue'
+import { useApiClient } from '@/composables/useApiClient'
+import { useServerEvents } from '@/composables/useServerEvents'
+import type { MediaMetaData, MediaEvent, PlaybackState, QueueStatusResponse } from '@/types'
 import MobilePlayerHeader from '../components/MobilePlayerHeader.vue'
 import MobileAlbumArt from '../components/MobileAlbumArt.vue'
 import MobileTrackInfo from '../components/MobileTrackInfo.vue'
@@ -9,132 +11,156 @@ import MobilePlayerControls from '../components/MobilePlayerControls.vue'
 import MobileVolumeControl from '../components/MobileVolumeControl.vue'
 import MobilePlaylistDrawer from '../components/MobilePlaylistDrawer.vue'
 
-// TODO: Import your actual Pinia store or custom composable here
-// e.g., const playerStore = usePlayerStore();
-// e.g., const { currentTrack, isPlaying, playlist, currentTime, ... } = useAudioPlayer();
+const apiClient = useApiClient()
+const queueApi = apiClient.queue
 
-// Mock initial data as placeholders matching expected API interfaces
-const playlist = ref<MediaMetaData[]>([])
+const sse = useServerEvents({
+  autoReconnect: true,
+  immediate: true,
+})
 
-const currentIndex = ref(0)
-const currentTrack = ref<MediaMetaData>(playlist.value[0])
-const isPlaying = ref(false)
-const currentTime = ref(0)
-const isShuffle = ref(false)
-const isQueueOpen = ref(false)
+const queue = ref<MediaMetaData[]>([])
+const currentIndex = ref<number>(-1)
+const currentItem = ref<MediaMetaData | null>(null)
+const isShuffleEnabled = ref<boolean>(false)
+const isQueueOpen = ref<boolean>(false)
+const lastTrack = ref<string>('')
 
-let timer: number | null = null
+const playbackState = ref<PlaybackState>({
+  playing: false,
+  activeBackend: '',
+  track: null,
+  position: 0,
+  isLive: false,
+})
 
-// TODO: Replace with store actions / composable methods
-function togglePlay() {
-  isPlaying.value = !isPlaying.value
-  if (isPlaying.value) {
-    startTimer()
-  } else {
-    stopTimer()
-  }
-}
-
-function startTimer() {
-  if (timer) return
-  timer = window.setInterval(() => {
-    if (currentTime.value < (currentTrack.value.duration ?? 0)) {
-      currentTime.value += 1
-    } else {
-      nextTrack()
+const activeTrack = computed<MediaMetaData>(() => {
+  return (
+    currentItem.value ||
+    playbackState.value.track || {
+      rawUri: '',
+      title: 'Nothing Playing',
+      artist: 'Select a track',
+      album: '',
+      url: '',
+      imageUrl: '',
     }
-  }, 1000)
-}
+  )
+})
 
-function stopTimer() {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
+const isPlaying = computed(() => !!playbackState.value.playing)
+
+sse.on('Status', async (payload: MediaEvent) => {
+  playbackState.value = {
+    activeBackend: payload.backend,
+    track: payload.track,
+    position: payload.data.position,
+    playing: payload.data.playing,
+    isLive: payload.data.isLive,
+  }
+
+  if (payload.track?.rawUri && payload.track.rawUri !== lastTrack.value) {
+    lastTrack.value = payload.track.rawUri
+    await fetchStatus()
+  }
+})
+
+async function fetchStatus(): Promise<void> {
+  try {
+    const status: QueueStatusResponse = await queueApi.getStatus()
+    queue.value = status.items || []
+    currentIndex.value = status.currentIndex ?? -1
+    currentItem.value = status.currentItem || playbackState.value.track || null
+    isShuffleEnabled.value = status.isShuffleEnabled ?? false
+  } catch (err) {
+    console.error('Failed to fetch queue status:', err)
   }
 }
 
-function nextTrack() {
-  if (isShuffle.value) {
-    let nextIdx
-    do {
-      nextIdx = Math.floor(Math.random() * playlist.value.length)
-    } while (nextIdx === currentIndex.value && playlist.value.length > 1)
-    currentIndex.value = nextIdx
+async function togglePlay() {
+  if (playbackState.value.playing) {
+    await apiClient.media.pause()
   } else {
-    currentIndex.value = (currentIndex.value + 1) % playlist.value.length
+    await apiClient.media.resume()
   }
-  currentTrack.value = playlist.value[currentIndex.value]
-  currentTime.value = 0
 }
 
-function prevTrack() {
-  currentIndex.value = (currentIndex.value - 1 + playlist.value.length) % playlist.value.length
-  currentTrack.value = playlist.value[currentIndex.value]
-  currentTime.value = 0
+async function nextTrack() {
+  await queueApi.next()
+  await fetchStatus()
 }
 
-function seek(newTime: number) {
-  currentTime.value = newTime
+async function prevTrack() {
+  await queueApi.previous()
+  await fetchStatus()
 }
 
-function toggleShuffle() {
-  isShuffle.value = !isShuffle.value
+async function toggleShuffle() {
+  const nextState = !isShuffleEnabled.value
+  await queueApi.setShuffle(nextState)
+  isShuffleEnabled.value = nextState
+  await fetchStatus()
 }
 
-function selectTrack(track: MediaMetaData) {
-  const index = playlist.value.findIndex((t: any) => t.rawUri === track.rawUri)
+async function seek(newTime: number) {
+  if (apiClient.media.seek) {
+    await apiClient.media.seek({ position: `${newTime}` })
+  }
+}
+
+async function selectTrack(track: MediaMetaData) {
+  const index = queue.value.findIndex((t: any) => t.rawUri === track.rawUri)
   if (index !== -1) {
-    currentIndex.value = index
-    currentTrack.value = playlist.value[index]
-    currentTime.value = 0
-    isPlaying.value = true
-    startTimer()
+    await queueApi.skipTo(index)
+    await fetchStatus()
   }
   isQueueOpen.value = false
 }
 
-onMounted(() => {
-  // TODO: Initialize player state or fetch initial playlist from API here
-  // e.g., playerStore.fetchPlaylist();
-})
-
-onUnmounted(() => {
-  stopTimer()
+onMounted(async () => {
+  await fetchStatus()
+  const state = await apiClient.media.getPlaybackState()
+  if (state) {
+    playbackState.value = state
+    if (state.track?.rawUri) {
+      lastTrack.value = state.track.rawUri
+    }
+  }
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-    <!-- Responsive Mobile Container -->
+    <!-- Responsive Mobile Container (Strictly Isolated Phone Shell) -->
     <div
-      class="relative w-full max-w-sm bg-zinc-900 rounded-[2.5rem] border border-zinc-800 shadow-2xl overflow-hidden flex flex-col justify-between"
+      class="relative w-full max-w-sm h-[800px] bg-zinc-900 rounded-[2.5rem] border border-zinc-800 shadow-2xl overflow-hidden flex flex-col justify-between"
     >
       <!-- Top Header -->
       <MobilePlayerHeader
-        :playlist-count="playlist.length"
+        :playlist-count="queue.length"
         @toggle-queue="isQueueOpen = true"
         @minimize="console.log('Minimized')"
       />
 
       <!-- Main Content Area -->
-      <div class="flex-1 flex flex-col justify-center">
+      <div class="flex-1 flex flex-col justify-center px-6">
         <!-- Album Artwork -->
-        <MobileAlbumArt :track="currentTrack" :is-playing="isPlaying" />
+        <MobileAlbumArt :track="activeTrack" :is-playing="isPlaying" />
 
         <!-- Track Title & Artist -->
-        <MobileTrackInfo :track="currentTrack" />
+        <MobileTrackInfo :track="activeTrack" />
 
         <!-- Progress Bar -->
         <MobileProgressBar
-          :current-time="currentTime"
-          :duration="currentTrack.duration"
+          :current-time="playbackState.position"
+          :duration="activeTrack.duration"
           @seek="seek"
         />
 
         <!-- Playback Controls -->
         <MobilePlayerControls
           :is-playing="isPlaying"
-          :is-shuffle="isShuffle"
+          :is-shuffle="isShuffleEnabled"
           @toggle-play="togglePlay"
           @next="nextTrack"
           @prev="prevTrack"
@@ -145,11 +171,11 @@ onUnmounted(() => {
       <!-- Volume Control Bottom Bar -->
       <MobileVolumeControl />
 
-      <!-- Playlist Queue Drawer -->
+      <!-- Playlist Queue Drawer (Handles queue list conditionally as an overlay/drawer) -->
       <MobilePlaylistDrawer
         :is-open="isQueueOpen"
-        :playlist="playlist"
-        :current-track-id="currentTrack.rawUri"
+        :playlist="queue"
+        :current-track-id="activeTrack.rawUri"
         @close="isQueueOpen = false"
         @select-track="selectTrack"
       />
