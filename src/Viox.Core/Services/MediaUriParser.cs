@@ -70,7 +70,7 @@ public static class MediaUriParser
 
     public static MediaUri? ParseMediaUriValue(string uri)
     {
-        ArgumentNullException.ThrowIfNull(uri);
+        if (uri is null) { return null; }
         string[] segments = uri.Split(":");
         if (segments.Length < 3 || segments.Length > 4)
         {

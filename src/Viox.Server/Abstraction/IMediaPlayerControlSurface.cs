@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Viox.Core.Events;
 using Viox.Core.Models;
 
 /// <summary>
@@ -11,6 +12,7 @@ using Viox.Core.Models;
 /// </summary>
 public interface IMediaPlayerControlSurface
 {
+    Task HandleMediaEvent(MediaEvent e);
     MediaMetaData? GetCurrentTrack();
     Task PlayAsync(string uri, CancellationToken cancellationToken = default);
     Task PauseAsync(CancellationToken cancellationToken = default);
