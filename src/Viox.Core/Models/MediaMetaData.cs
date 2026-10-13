@@ -14,37 +14,37 @@ public class MediaMetaData
     /// <summary>
     /// Gets the Raw URI value
     /// </summary>
-    public string RawUri { get => (Uri is null ? string.Empty : (Uri.SecondaryId is null ? $"{Uri.Source}:{Uri.Type}:{Uri.Id}" : $"{Uri.Source}:{Uri.Type}:{Uri.Id}:{Uri.SecondaryId}")); }
+    public string RawUri { get => (Uri is null ? String.Empty : (Uri.SecondaryId is null ? $"{Uri.Source}:{Uri.Type}:{Uri.Id}" : $"{Uri.Source}:{Uri.Type}:{Uri.Id}:{Uri.SecondaryId}")); }
 
     /// <summary>
     /// Gets the display album of the media item.
     /// </summary>
-    public required string Album { get; set; }
+    public string Album { get; set; } = String.Empty;
 
     /// <summary>
     /// Gets the display title of the media item.
     /// </summary>
-    public required string Title { get; set; }
+    public string Title { get; set; } = String.Empty;
 
     /// <summary>
     /// Gets the artist, creator, or broadcaster associated with the media item.
     /// </summary>
-    public required string Artist { get; set; }
+    public string Artist { get; set; } = String.Empty;
 
     /// <summary>
     /// Gets the primary playback or web location URL for the media item.
     /// </summary>
-    public required string Url { get; set; }
+    public string Url { get; set; } = String.Empty;
 
     /// <summary>
     /// Gets the web location URL of the thumbnail or album artwork image.
     /// </summary>
-    public required string ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = String.Empty;
 
     /// <summary>
     /// Gets the playbach duration in seconds
     /// </summary>
-    public double? Duration { get; set; }
+    public double? Duration { get; set; } = null;
 
     public bool Favourite { get; set; } = false;
 

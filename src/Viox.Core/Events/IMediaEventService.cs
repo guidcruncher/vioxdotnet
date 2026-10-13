@@ -4,6 +4,7 @@ namespace Viox.Core.Events;
 
 public interface IMediaEventService
 {
+
     Task PublishMediaEventAsync(
         MediaEvent mediaEvent,
         CancellationToken ct);

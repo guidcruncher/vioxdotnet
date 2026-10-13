@@ -439,7 +439,7 @@ public static class VioxCoreServiceCollectionExtension
         services.Configure<ServerEventOptions>(
             configuration.GetSection(ServerEventOptions.SectionName));
         services.AddSingleton<IServerEventPublisher, ServerEventPublisher>();
-        services.AddTransient<IMediaEventService, MediaEventService>();
+        services.AddSingleton<IMediaEventService, MediaEventService>();
         return services;
     }
 
