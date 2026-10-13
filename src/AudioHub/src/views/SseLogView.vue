@@ -143,7 +143,7 @@ const stopResize = () => {
               'bg-rose-500': !isConnected && !isReconnecting,
             }"
           ></span>
-          <span>SSE Diagnostic Event Log</span>
+          <span>Events</span>
         </h1>
 
         <!-- Connection Badge -->
