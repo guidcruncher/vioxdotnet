@@ -2,7 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { PlaybackState, MediaEvent, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import type {
+  PlaybackState,
+  MediaEvent,
+  PlayRequest,
+  MediaMetaData,
+  QueueStatusResponse,
+} from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
 import {
   Volume2,

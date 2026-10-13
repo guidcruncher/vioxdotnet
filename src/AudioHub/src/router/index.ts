@@ -30,6 +30,7 @@ export const router = createRouter({
       children: [
         { path: 'clock', component: () => import('@/views/DigitalClockView.vue') },
         { path: 'sse', component: () => import('@/views/SseLogView.vue') },
+        { path: 'remote', component: () => import('@/views/MobileMediaPlayerView.vue') },
       ],
     },
   ],
