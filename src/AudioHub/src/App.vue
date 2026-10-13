@@ -10,19 +10,17 @@ const store = usePlaybackStore()
 onMounted(async () => {
   const isDevelopment = import.meta.env.VITE_DEVELOPMENT ?? 'false'
 
-  if (isDevelopment === 'false') {
-    try {
-      const profile: SpotifyResponse<SpotifyUserProfile> = await api.auth.me()
+  try {
+    const profile: SpotifyResponse<SpotifyUserProfile> = await api.auth.me()
 
-      if (!profile || !profile.isSuccess) {
-        window.location.href = '/api/v1/auth/login'
-        return
-      }
-    } catch (error) {
-      console.error('Authentication check failed:', error)
+    if (!profile || !profile.isSuccess) {
       window.location.href = '/api/v1/auth/login'
       return
     }
+  } catch (error) {
+    console.error('Authentication check failed:', error)
+    window.location.href = '/api/v1/auth/login'
+    return
   }
 })
 </script>
