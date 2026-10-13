@@ -1,7 +1,9 @@
+// useServerEvents.ts
 import { onUnmounted, readonly } from 'vue'
 import { sseSingleton } from './sseSingleton'
 import type { MediaEvent, EventHandler, UseServerEventsOptions } from '@/types'
 import { MediaEventTypes } from '@/types'
+import { useAlert } from '@/composables/useAlert'
 
 export function useServerEvents(options: UseServerEventsOptions = {}) {
   const {
@@ -26,28 +28,57 @@ export function useServerEvents(options: UseServerEventsOptions = {}) {
     sseSingleton.connect(url, { withCredentials }, reconnectCfg)
   }
 
+  // Track listeners registered by this specific composable instance for automatic cleanup on unmount
+  const registeredHandlers: Array<{ eventName: string; handler: EventHandler }> = []
+  const registeredGlobalHandlers = new Set<EventHandler>()
+
   const on = (eventName: string, handler: EventHandler) => {
     if (!MediaEventTypes.includes(eventName)) {
-      alert(`Event type "${eventName}" is not a recognized MediaEvent type.`)
+      useAlert(`Event type "${eventName}" is not a recognized MediaEvent type.`)
       return
     }
 
     sseSingleton.on(eventName, handler)
+    registeredHandlers.push({ eventName, handler })
     return () => off(eventName, handler)
   }
 
   const off = (eventName: string, handler: EventHandler) => {
     if (!MediaEventTypes.includes(eventName)) {
-      alert(`Event type "${eventName}" is not a recognized MediaEvent type.`)
       return
     }
 
     sseSingleton.off(eventName, handler)
+    const index = registeredHandlers.findIndex(
+      (item) => item.eventName === eventName && item.handler === handler
+    )
+    if (index !== -1) {
+      registeredHandlers.splice(index, 1)
+    }
+  }
+
+  const onMessage = (handler: EventHandler) => {
+    sseSingleton.onMessage(handler)
+    registeredGlobalHandlers.add(handler)
+    return () => offMessage(handler)
+  }
+
+  const offMessage = (handler: EventHandler) => {
+    sseSingleton.offMessage(handler)
+    registeredGlobalHandlers.delete(handler)
   }
 
   onUnmounted(() => {
-    // Only remove this composable's handlers
-    // Do NOT disconnect the global SSE
+    // Only remove this composable instance's handlers without disconnecting global SSE
+    registeredHandlers.forEach(({ eventName, handler }) => {
+      sseSingleton.off(eventName, handler)
+    })
+    registeredHandlers.length = 0
+
+    registeredGlobalHandlers.forEach((handler) => {
+      sseSingleton.offMessage(handler)
+    })
+    registeredGlobalHandlers.clear()
   })
 
   return {
@@ -59,6 +90,8 @@ export function useServerEvents(options: UseServerEventsOptions = {}) {
 
     on,
     off,
+    onMessage,
+    offMessage,
 
     connect: () => sseSingleton.connect(url, { withCredentials }, reconnectCfg),
     disconnect: () => sseSingleton.disconnect(),

@@ -56,15 +56,15 @@ client: ## Run client on port 5173
 	cd ./src/AudioHub && npm  run dev
 
 dev: clean-container ## Run container in Development mode
-	$(COMPOSE) up --build --force-recreate
+	$(COMPOSE) -f ./docker-compose.dev.yml up --build --force-recreate
 	$(COMPOSE) rm -f
 
 debug: clean-container ## Start the container in debug mode
-	$(COMPOSE) up --build --force-recreate
+	$(COMPOSE) -f ./docker-compose.dev.yml up --build --force-recreate
 	$(COMPOSE) rm -f
 
 down: ## Stop and remove running container services
-	$(COMPOSE) down
+	$(COMPOSE)  down
 	$(COMPOSE) rm -f 
 
 restart: ## Restart the container services

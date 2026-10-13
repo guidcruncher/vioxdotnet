@@ -3,10 +3,11 @@ ARG APP_PROJECT=Viox.Server/Viox.Server.csproj
 
 # Stage 1: Build Node.js Vue TypeScript Frontend
 FROM node:20-alpine AS node-build
+ARG VITE_DEVELOPMENT=false
 ENV VITE_API_BASE_URL=
-ENV VITE_DEVELOPMENT=false
 WORKDIR /src/AudioHub
 
+RUN echo "**** Developmemt build: $VITE_DEVELOPMENT ****"
 # Copy package manifests and restore dependencies to leverage layer caching
 COPY src/AudioHub/package*.json ./
 RUN npm ci --ignore-scripts

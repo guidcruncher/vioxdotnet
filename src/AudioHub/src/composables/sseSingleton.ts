@@ -11,6 +11,7 @@ class SSESingleton {
 
   private eventSource: EventSource | null = null
   private listeners: ListenerMap = {}
+  private globalListeners: Set<EventHandler> = new Set()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   isConnected = ref(false)
@@ -33,6 +34,9 @@ class SSESingleton {
 
     try {
       this.eventSource = new EventSource(url, opts)
+
+      // Catch default/unnamed messages globally
+      this.eventSource.onmessage = this.handleCustomEvent
 
       this.eventSource.onopen = () => {
         this.isConnected.value = true
@@ -106,12 +110,23 @@ class SSESingleton {
     const payload = this.processPayload(event.data)
     if (!payload) return
 
-    if (payload.eventType) {
-      let data: MediaEvent | null = null
+    let data: MediaEvent | null = null
+    try {
+      data = JSON.parse(payload.message)
+    } catch {}
+
+    // Fire global listeners for every received event
+    this.globalListeners.forEach((handler) => {
       try {
-        data = JSON.parse(payload.message)
-        this.emit(payload.eventType, data as MediaEvent)
-      } catch {}
+        handler(data ?? (payload as unknown as MediaEvent))
+      } catch (err) {
+        console.error('Error in global SSE listener:', err)
+      }
+    })
+
+    // Fire specific event type listeners if applicable
+    if (payload.eventType && data) {
+      this.emit(payload.eventType, data as MediaEvent)
     }
   }
 
@@ -134,6 +149,14 @@ class SSESingleton {
       delete this.listeners[eventName]
       this.eventSource?.removeEventListener(eventName, this.handleCustomEvent)
     }
+  }
+
+  onMessage(handler: EventHandler) {
+    this.globalListeners.add(handler)
+  }
+
+  offMessage(handler: EventHandler) {
+    this.globalListeners.delete(handler)
   }
 
   private emit(eventName: string, payload: MediaEvent) {

@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+       - VITE_DEVELOPMENT=false
     container_name: viox-net
     hostname: viox-net
     platform: linux/arm64
