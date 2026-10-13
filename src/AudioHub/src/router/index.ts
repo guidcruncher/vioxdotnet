@@ -27,7 +27,10 @@ export const router = createRouter({
     {
       path: '/',
       component: CleanLayout,
-      children: [{ path: 'clock', component: () => import('@/views/DigitalClockView.vue') }],
+      children: [
+        { path: 'clock', component: () => import('@/views/DigitalClockView.vue') },
+        { path: 'sse', component: () => import('@/views/SseLogView.vue') },
+      ],
     },
   ],
   scrollBehavior(to, from, savedPosition) {
