@@ -184,6 +184,8 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         }
         else
         {
+            _currentMedia.SetCurrentMedia(null);
+            state.Track = null;
             state.Playing = false;
             if (!string.IsNullOrEmpty(_lastState))
             {
