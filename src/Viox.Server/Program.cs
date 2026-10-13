@@ -21,10 +21,7 @@ public static class Program
 
         // Logging configuration
         builder.Logging.ClearProviders();
-        builder.Logging.AddConsole();
-        builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
-        builder.Logging.AddFilter("Microsoft.Extensions.Http", LogLevel.None);
-
+        builder.Logging.AddVioxLogger();
 
         // Configure Kestrel web server
         builder.WebHost.ConfigureKestrel((context, options) =>

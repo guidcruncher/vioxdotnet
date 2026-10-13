@@ -2,7 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { MediaEvent, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import type {
+  PlaybackState,
+  MediaEvent,
+  PlayRequest,
+  MediaMetaData,
+  QueueStatusResponse,
+} from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
 import {
   Volume2,
@@ -19,6 +25,25 @@ import {
 const sse = useServerEvents({
   autoReconnect: true,
   immediate: true,
+})
+
+const lastTrack = ref<string>('')
+
+sse.on('Status', async (payload: MediaEvent) => {
+  const data: PlaybackState = {
+    activeBackend: payload.backend,
+    track: payload.track,
+    position: payload.data.position,
+    playing: payload.data.playing,
+    isLive: payload.data.isLive,
+  }
+
+  if (data.track) {
+    if (data.track.rawUri != lastTrack.value) {
+      lastTrack.value = data.track.rawUri
+      await fetchStatus()
+    }
+  }
 })
 
 const apiClient = useApiClient()
@@ -188,8 +213,8 @@ function getRepeatModeLabel(): string {
   }
 }
 
-onMounted(() => {
-  fetchStatus()
+onMounted(async () => {
+  await fetchStatus()
 })
 </script>
 
