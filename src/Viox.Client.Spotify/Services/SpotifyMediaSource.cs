@@ -108,7 +108,7 @@ public class SpotifyMediaSource : IMediaSource
         switch (uri.Type)
         {
             case "album":
-                SpotifyResponse<SpotifyAlbum>? rAlbum = await _client.GetAlbumAsync(uri.Id, null, ct);
+                SpotifyResponse<SpotifyAlbum>? rAlbum = await _client.GetAlbumAsync(uri.Id, ct);
                 SpotifyAlbum? album = rAlbum?.Data;
                 if (album is null)
                 {
@@ -127,7 +127,7 @@ public class SpotifyMediaSource : IMediaSource
                 };
 
             case "track":
-                SpotifyResponse<SpotifyTrack>? rTrack = await _client.GetTrackAsync(uri.Id, null, ct);
+                SpotifyResponse<SpotifyTrack>? rTrack = await _client.GetTrackAsync(uri.Id, ct);
                 SpotifyTrack? track = rTrack?.Data;
                 if (track is null)
                 {
@@ -147,7 +147,7 @@ public class SpotifyMediaSource : IMediaSource
                 };
 
             case "show":
-                SpotifyResponse<SpotifyShow>? rShow = await _client.GetShowAsync(uri.Id, null, ct);
+                SpotifyResponse<SpotifyShow>? rShow = await _client.GetShowAsync(uri.Id, ct);
                 SpotifyShow? show = rShow?.Data;
                 if (show is null)
                 {
@@ -166,7 +166,7 @@ public class SpotifyMediaSource : IMediaSource
                 };
 
             case "episode":
-                SpotifyResponse<SpotifyEpisode>? rEpisode = await _client.GetEpisodeAsync(uri.Id, null, ct);
+                SpotifyResponse<SpotifyEpisode>? rEpisode = await _client.GetEpisodeAsync(uri.Id, ct);
                 SpotifyEpisode? episode = rEpisode?.Data;
                 if (episode is null)
                 {
@@ -186,7 +186,7 @@ public class SpotifyMediaSource : IMediaSource
                 };
 
             case "playlist":
-                SpotifyResponse<SpotifyPlaylist>? rPlaylist = await _client.GetPlaylistAsync(uri.Id, null, null, null, ct);
+                SpotifyResponse<SpotifyPlaylist>? rPlaylist = await _client.GetPlaylistAsync(uri.Id, null, null, ct);
                 SpotifyPlaylist? playlist = rPlaylist?.Data;
                 if (playlist is null)
                 {
@@ -209,7 +209,7 @@ public class SpotifyMediaSource : IMediaSource
 
     public async Task<PagedList<MediaMetaData>> Query(string query, int pageNumber, int limit, CancellationToken ct = default)
     {
-        SpotifyResponse<SpotifySearchResult> res = await _client.SearchAsync(query, ["album", "track", "playlist", "show"], null, limit, (pageNumber * limit), null, ct);
+        SpotifyResponse<SpotifySearchResult> res = await _client.SearchAsync(query, ["album", "track", "playlist", "show"], limit, (pageNumber * limit), null, ct);
 
         if (res is null || res.Data is null)
         {
@@ -246,7 +246,7 @@ public class SpotifyMediaSource : IMediaSource
         List<SpotifySavedAlbum> albums = await _helper.FetchAllAsync<SpotifySavedAlbum>(
             async (offset, limit, ct) =>
             {
-                SpotifyResponse<SpotifyPagedResult<SpotifySavedAlbum>> response = await _client.GetUsersSavedAlbumsAsync(limit, offset, "", ct);
+                SpotifyResponse<SpotifyPagedResult<SpotifySavedAlbum>> response = await _client.GetUsersSavedAlbumsAsync(limit, offset, ct);
                 return response.Data ?? throw new InvalidOperationException("Spotify API returned a null response payload for saved albums.");
             }, 20, cancellationToken);
 
@@ -255,7 +255,7 @@ public class SpotifyMediaSource : IMediaSource
         List<SpotifySavedTrack> tracks = await _helper.FetchAllAsync<SpotifySavedTrack>(
             async (offset, limit, ct) =>
             {
-                SpotifyResponse<SpotifyPagedResult<SpotifySavedTrack>> response = await _client.GetUsersSavedTracksAsync("", limit, offset, ct);
+                SpotifyResponse<SpotifyPagedResult<SpotifySavedTrack>> response = await _client.GetUsersSavedTracksAsync(limit, offset, ct);
                 return response.Data ?? throw new InvalidOperationException("Spotify API returned a null response payload for saved tracks.");
             }, 20, cancellationToken);
 
@@ -363,7 +363,7 @@ public class SpotifyMediaSource : IMediaSource
             async (offset, limit, ct) =>
             {
                 SpotifyResponse<SpotifyPagedResult<SpotifyTrack>> response = await _client.GetAlbumTracksAsync(
-                    id, null, limit, offset, ct);
+                    id, limit, offset, ct);
                 return response.Data ?? throw new InvalidOperationException("Spotify API returned a null response payload for tracks.");
             }, 20, cancellationToken);
 
@@ -398,7 +398,7 @@ public class SpotifyMediaSource : IMediaSource
             async (offset, limit, ct) =>
             {
                 SpotifyResponse<SpotifyPagedResult<SpotifyEpisode>> response = await _client.GetShowEpisodesAsync(
-                    id, null, limit, offset, ct);
+                    id, limit, offset, ct);
 
                 return response.Data ?? throw new InvalidOperationException("Spotify API returned a null response payload for episodes.");
             }, 20, cancellationToken);
@@ -434,7 +434,7 @@ public class SpotifyMediaSource : IMediaSource
             async (offset, limit, ct) =>
             {
                 SpotifyResponse<SpotifyPagedResult<SpotifyPlaylistItem>> response = await _client.GetPlaylistItemsAsync(
-                    playlistId, null, null, limit, offset, null, ct);
+                    playlistId, null, limit, offset, null, ct);
 
                 return response.Data ?? throw new InvalidOperationException("Spotify API returned a null response payload for playlist Items.");
             }, 20, cancellationToken);

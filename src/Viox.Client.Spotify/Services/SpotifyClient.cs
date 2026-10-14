@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 
 using Viox.Client.Spotify.Configuration;
 using Viox.Client.Spotify.Models;
+using Viox.Core.Services;
 
 namespace Viox.Client.Spotify.Services;
 
@@ -35,7 +36,7 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Configuration options specifying API settings such as credentials, base address, and timeouts.
     /// </summary>
     private readonly SpotifyOptions _options;
-
+    private readonly IClientOptionsStore _clientOptions;
     private readonly JsonSerializerOptions _json;
 
     /// <summary>
@@ -50,12 +51,14 @@ public sealed class SpotifyClient : ISpotifyClient
         HttpClient httpClient,
         ISpotifyAuthService authService,
         IOptions<SpotifyOptions> options,
+    IClientOptionsStore clientOptions,
         ILogger<SpotifyClient> logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _clientOptions = clientOptions ?? throw new ArgumentNullException(nameof(clientOptions));
 
         _json = new JsonSerializerOptions
         {
@@ -64,6 +67,12 @@ public sealed class SpotifyClient : ISpotifyClient
         };
 
         ConfigureHttpClient();
+    }
+
+    private async Task<string> GetDefaultCountry(CancellationToken cancellationToken)
+    {
+        var config = await _clientOptions.GetConfigurationAsync(cancellationToken);
+        return config.DefaultCountry;
     }
 
     /// <summary>
@@ -86,12 +95,12 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for a single album.
     /// </summary>
     /// <param name="id">The Spotify ID for the album.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing the album details.</returns>
-    public async Task<SpotifyResponse<SpotifyAlbum>> GetAlbumAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyAlbum>> GetAlbumAsync(string id, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
         var path = BuildPath($"albums/{Uri.EscapeDataString(id)}", queryParams);
@@ -102,12 +111,12 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for multiple albums identified by their Spotify IDs.
     /// </summary>
     /// <param name="ids">A list of the Spotify IDs for the albums.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a list of albums.</returns>
     [Obsolete("This endpoint is marked as deprecated by Spotify.")]
-    public async Task<SpotifyResponse<SpotifyAlbumList>> GetSeveralAlbumsAsync(IEnumerable<string> ids, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyAlbumList>> GetSeveralAlbumsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string> { $"ids={Uri.EscapeDataString(string.Join(',', ids))}" };
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
@@ -119,14 +128,14 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information about an album's tracks.
     /// </summary>
     /// <param name="id">The Spotify ID for the album.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged set of tracks.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyTrack>>> GetAlbumTracksAsync(string id, string? market = null, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyTrack>>> GetAlbumTracksAsync(string id, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
         if (offset.HasValue) queryParams.Add($"offset={offset.Value}");
@@ -166,13 +175,13 @@ public sealed class SpotifyClient : ISpotifyClient
     /// </summary>
     /// <param name="id">The Spotify ID for the artist.</param>
     /// <param name="includeGroups">A comma-separated list of keywords filtering the response (e.g., album, single, appears_on, compilation).</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged set of albums.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyAlbum>>> GetArtistAlbumsAsync(string id, string? includeGroups = null, string? market = null, int? limit = 5, int? offset = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyAlbum>>> GetArtistAlbumsAsync(string id, string? includeGroups = null, int? limit = 5, int? offset = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(includeGroups)) queryParams.Add($"include_groups={Uri.EscapeDataString(includeGroups)}");
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
@@ -187,13 +196,13 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information about an artist's top tracks by country.
     /// </summary>
     /// <param name="id">The Spotify ID for the artist.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a list of top tracks.</returns>
     [Obsolete("This endpoint is marked as deprecated by Spotify.")]
-    public async Task<SpotifyResponse<SpotifyTrackList>> GetArtistTopTracksAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyTrackList>> GetArtistTopTracksAsync(string id, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
         var path = BuildPath($"artists/{Uri.EscapeDataString(id)}/top-tracks", queryParams);
@@ -217,11 +226,11 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for a single show identified by its unique Spotify ID.
     /// </summary>
     /// <param name="id">The Spotify ID for the show.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing show information.</returns>
-    public async Task<SpotifyResponse<SpotifyShow>> GetShowAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyShow>> GetShowAsync(string id, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
@@ -233,13 +242,13 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information about a show's episodes.
     /// </summary>
     /// <param name="id">The Spotify ID for the show.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged set of episodes.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyEpisode>>> GetShowEpisodesAsync(string id, string? market = null, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyEpisode>>> GetShowEpisodesAsync(string id, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
@@ -253,11 +262,11 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for a single episode identified by its unique Spotify ID.
     /// </summary>
     /// <param name="id">The Spotify ID for the episode.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing episode information.</returns>
-    public async Task<SpotifyResponse<SpotifyEpisode>> GetEpisodeAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyEpisode>> GetEpisodeAsync(string id, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
@@ -269,11 +278,11 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for a single audiobook.
     /// </summary>
     /// <param name="id">The Spotify ID for the audiobook.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing audiobook details.</returns>
-    public async Task<SpotifyResponse<SpotifyAudiobook>> GetAudiobookAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyAudiobook>> GetAudiobookAsync(string id, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
@@ -285,14 +294,14 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information about an audiobook's chapters.
     /// </summary>
     /// <param name="id">The Spotify ID for the audiobook.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged set of audiobook chapters.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyChapter>>> GetAudiobookChaptersAsync(string id, string? market = null, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyChapter>>> GetAudiobookChaptersAsync(string id, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
         if (offset.HasValue) queryParams.Add($"offset={offset.Value}");
@@ -322,12 +331,12 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for a single audiobook chapter.
     /// </summary>
     /// <param name="id">The Spotify ID for the chapter.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing chapter details.</returns>
-    public async Task<SpotifyResponse<SpotifyChapter>> GetChapterAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyChapter>> GetChapterAsync(string id, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
         var path = BuildPath($"chapters/{Uri.EscapeDataString(id)}", queryParams);
@@ -338,12 +347,12 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get Spotify catalog information for a single track identified by its unique Spotify ID.
     /// </summary>
     /// <param name="id">The Spotify ID for the track.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing track details.</returns>
-    public async Task<SpotifyResponse<SpotifyTrack>> GetTrackAsync(string id, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyTrack>> GetTrackAsync(string id, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
 
         var path = BuildPath($"tracks/{Uri.EscapeDataString(id)}", queryParams);
@@ -355,14 +364,15 @@ public sealed class SpotifyClient : ISpotifyClient
     /// </summary>
     /// <param name="query">Your search query keyword.</param>
     /// <param name="types">A list of item types to search across (e.g., album, artist, playlist, track, show, episode, audiobook).</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="includeExternal">If given, response will include any relevant external content.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing the consolidated search result.</returns>
-    public async Task<SpotifyResponse<SpotifySearchResult>> SearchAsync(string query, IEnumerable<string> types, string? market = null, int? limit = null, int? offset = null, string? includeExternal = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifySearchResult>> SearchAsync(string query, IEnumerable<string> types, int? limit = null, int? offset = null, string? includeExternal = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
+
         var queryParams = new List<string>
         {
             $"q={Uri.EscapeDataString(query)}",
@@ -392,13 +402,13 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get a playlist owned by a Spotify user.
     /// </summary>
     /// <param name="playlistId">The Spotify ID of the playlist.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="fields">Filters for the fields to return.</param>
     /// <param name="additionalTypes">A comma-separated list of item types (track or episode).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing the playlist details.</returns>
-    public async Task<SpotifyResponse<SpotifyPlaylist>> GetPlaylistAsync(string playlistId, string? market = null, string? fields = null, string? additionalTypes = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPlaylist>> GetPlaylistAsync(string playlistId, string? fields = null, string? additionalTypes = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (!string.IsNullOrWhiteSpace(fields)) queryParams.Add($"fields={Uri.EscapeDataString(fields)}");
@@ -425,16 +435,16 @@ public sealed class SpotifyClient : ISpotifyClient
     /// Get full details of the items of a playlist owned by a Spotify user.
     /// </summary>
     /// <param name="playlistId">The Spotify ID of the playlist.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="fields">Filters for the fields to return.</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="additionalTypes">A comma-separated list of item types (track or episode).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged set of playlist items.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyPlaylistItem>>> GetPlaylistItemsAsync(string playlistId, string? market = null, string? fields = null, int? limit = null, int? offset = null, string? additionalTypes = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifyPlaylistItem>>> GetPlaylistItemsAsync(string playlistId, string? fields = null, int? limit = null, int? offset = null, string? additionalTypes = null, CancellationToken cancellationToken = default)
     {
         var queryParams = new List<string>();
+        var market = await GetDefaultCountry(cancellationToken);
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (!string.IsNullOrWhiteSpace(fields)) queryParams.Add($"fields={Uri.EscapeDataString(fields)}");
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
@@ -566,11 +576,11 @@ public sealed class SpotifyClient : ISpotifyClient
     /// </summary>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged list of saved albums.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifySavedAlbum>>> GetUsersSavedAlbumsAsync(int? limit = null, int? offset = null, string? market = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifySavedAlbum>>> GetUsersSavedAlbumsAsync(int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
         if (offset.HasValue) queryParams.Add($"offset={offset.Value}");
@@ -583,13 +593,13 @@ public sealed class SpotifyClient : ISpotifyClient
     /// <summary>
     /// Get a list of the songs saved in the current Spotify user's library.
     /// </summary>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged list of saved tracks.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifySavedTrack>>> GetUsersSavedTracksAsync(string? market = null, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifySavedTrack>>> GetUsersSavedTracksAsync(int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
@@ -602,13 +612,13 @@ public sealed class SpotifyClient : ISpotifyClient
     /// <summary>
     /// Get a list of the episodes saved in the current Spotify user's library.
     /// </summary>
-    /// <param name="market">An ISO 3166-1 alpha-2 country code or an item like "from_token".</param>
     /// <param name="limit">The maximum number of items to return.</param>
     /// <param name="offset">The index of the first item to return.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A response wrapper containing a paged list of saved episodes.</returns>
-    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifySavedEpisode>>> GetUsersSavedEpisodesAsync(string? market = null, int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
+    public async Task<SpotifyResponse<SpotifyPagedResult<SpotifySavedEpisode>>> GetUsersSavedEpisodesAsync(int? limit = null, int? offset = null, CancellationToken cancellationToken = default)
     {
+        var market = await GetDefaultCountry(cancellationToken);
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(market)) queryParams.Add($"market={Uri.EscapeDataString(market)}");
         if (limit.HasValue) queryParams.Add($"limit={limit.Value}");
