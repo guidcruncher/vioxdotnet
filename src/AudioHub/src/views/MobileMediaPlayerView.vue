@@ -148,33 +148,6 @@ onMounted(async () => {
     <div
       class="relative z-10 w-full sm:max-w-[400px] h-full sm:h-[840px] bg-slate-900 sm:rounded-[48px] sm:border-[8px] sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden"
     >
-      <!-- Mobile Status Bar -->
-      <div
-        class="pt-3 px-6 flex justify-between items-center text-xs font-medium text-slate-400 select-none z-30"
-      >
-        <span>{{ currentTimeClock }}</span>
-        <div
-          class="absolute left-1/2 -translate-x-1/2 top-2.5 w-28 h-5 bg-slate-950 rounded-full hidden sm:block"
-        ></div>
-        <div class="flex items-center space-x-1.5">
-          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19h3.3c1.32.61 2.82 1 4.35 1 4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"
-            />
-          </svg>
-          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M12 3C6.95 3 3.15 4.85 0 7.23L12 22 24 7.23C20.85 4.85 17.05 3 12 3zm0 3.7c3.92 0 7.24 1.35 10.02 3.49L12 20.3 1.98 10.19C4.76 8.05 8.08 6.7 12 6.7z"
-            />
-          </svg>
-          <svg class="w-5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M16 4h-2V2h-4v2H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H8V6h8v14z"
-            />
-          </svg>
-        </div>
-      </div>
-
       <!-- Top Header Component -->
       <MobilePlayerHeader
         playlist-title=""
