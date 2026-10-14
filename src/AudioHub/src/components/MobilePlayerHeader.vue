@@ -3,10 +3,12 @@ import { withDefaults } from 'vue'
 
 const props = withDefaults(
   defineProps<{
+    playlistTitle?: string
     playlistCount?: number
     isMinimized?: boolean
   }>(),
   {
+    playlistTitle: '',
     playlistCount: 0,
     isMinimized: false,
   }
@@ -23,24 +25,23 @@ function handleToggleMinimize() {
   if (props.isMinimized) {
     emit('maximize')
     emit('update:isMinimized', false)
-    console.log('Maximize action triggered')
   } else {
     emit('minimize')
     emit('update:isMinimized', true)
-    console.log('Minimize action triggered')
   }
 }
 </script>
 
 <template>
-  <header class="flex items-center justify-between px-6 pt-6 pb-2 text-zinc-400">
+  <header class="px-6 py-4 flex items-center justify-between z-20 text-slate-300">
     <!-- Minimize / Maximize Button -->
     <button
       @click="handleToggleMinimize"
-      class="p-2 rounded-full hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+      class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700/80 flex items-center justify-center transition-colors"
       :aria-label="isMinimized ? 'Maximize player' : 'Minimize player'"
+      :title="isMinimized ? 'Maximize' : 'Minimize'"
     >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <!-- Chevron Up (Maximize) when minimized -->
         <path
           v-if="isMinimized"
@@ -62,18 +63,20 @@ function handleToggleMinimize() {
 
     <!-- Playlist Info Center -->
     <div class="text-center">
-      <span class="text-xs uppercase tracking-widest font-semibold text-zinc-500">
+      <p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
         Playing from Playlist
-      </span>
+      </p>
+      <h2 class="text-xs font-bold text-slate-200 truncate max-w-[160px]">{{ playlistTitle }}</h2>
     </div>
 
-    <!-- Toggle Queue Button with Badge -->
+    <!-- Toggle Queue Button with Pulse Badge -->
     <button
       @click="$emit('toggle-queue')"
-      class="p-2 rounded-full hover:bg-zinc-800 hover:text-zinc-100 transition-colors relative"
+      class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700/80 flex items-center justify-center transition-colors relative"
       aria-label="Toggle queue"
+      title="Queue"
     >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -83,7 +86,7 @@ function handleToggleMinimize() {
       </svg>
       <span
         v-if="playlistCount > 0"
-        class="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"
+        class="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full animate-pulse"
       ></span>
     </button>
   </header>
