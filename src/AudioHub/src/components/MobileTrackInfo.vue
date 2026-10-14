@@ -18,19 +18,20 @@ function handleToggleLike() {
 </script>
 
 <template>
-  <div class="px-8 py-2 flex items-center justify-between">
-    <div class="space-y-1 overflow-hidden pr-4">
-      <h1 class="text-xl font-bold text-zinc-100 truncate">{{ track.title }}</h1>
-      <p class="text-sm font-medium text-zinc-400 truncate">{{ track.artist }}</p>
+  <div class="w-full mt-6 flex items-center justify-between">
+    <div class="flex-1 pr-4 truncate">
+      <h1 class="text-xl font-bold text-white truncate tracking-tight">{{ track.title }}</h1>
+      <p class="text-sm font-medium text-slate-400 truncate mt-0.5">{{ track.artist }}</p>
     </div>
     <button
       @click="handleToggleLike"
-      class="p-2 rounded-full hover:bg-zinc-800/80 transition-colors text-zinc-400"
-      :class="{ 'text-rose-500': isLiked }"
+      class="w-11 h-11 rounded-full bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 flex items-center justify-center text-slate-300 transition-all active:scale-95"
+      :class="{ 'text-purple-400 bg-purple-950/40 border-purple-500/40': isLiked }"
       aria-label="Like track"
+      title="Like"
     >
       <svg
-        class="w-6 h-6"
+        class="w-5 h-5"
         :fill="isLiked ? 'currentColor' : 'none'"
         stroke="currentColor"
         viewBox="0 0 24 24"

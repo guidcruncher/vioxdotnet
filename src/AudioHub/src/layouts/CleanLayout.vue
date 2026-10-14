@@ -14,7 +14,7 @@ const route = useRoute()
       class="flex-1 overflow-y-auto overscroll-y-contain p-3 sm:p-4 md:p-6 lg:p-8 bg-slate-950 min-w-0 focus:outline-none"
       tabindex="-1"
     >
-      <div class="max-w-7xl mx-auto w-full h-full">
+      <div>
         <!-- Router View Wrapper -->
         <router-view v-slot="{ Component }">
           <component :is="Component" :key="$route.fullPath" />

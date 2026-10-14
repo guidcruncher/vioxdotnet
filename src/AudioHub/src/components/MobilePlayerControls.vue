@@ -4,53 +4,66 @@ import { SkipBack, Play, Pause, SkipForward, Shuffle, Repeat } from '@lucide/vue
 
 defineProps<{
   isShuffle: boolean
+  isRepeat: boolean
 }>()
 
 defineEmits<{
   (e: 'toggle-shuffle'): void
+  (e: 'toggle-repeat'): void
 }>()
 
 const store = usePlaybackStore()
 </script>
 
 <template>
-  <div class="px-8 py-2 flex items-center justify-between text-zinc-400">
+  <div class="w-full flex items-center justify-between mt-4 px-2 text-slate-400">
     <!-- Shuffle -->
     <button
       @click="$emit('toggle-shuffle')"
-      class="p-2 rounded-full hover:bg-zinc-800 transition-colors focus:outline-none"
-      :class="{ 'text-indigo-400': isShuffle }"
-      aria-label="Toggle shuffle"
+      class="w-10 h-10 rounded-full flex items-center justify-center hover:text-white transition-colors"
+      :class="{ 'text-purple-400': isShuffle }"
+      title="Shuffle"
     >
       <Shuffle class="w-5 h-5" />
     </button>
 
-    <!-- Previous -->
+    <!-- Previous Track -->
     <button
       @click="store.previous"
-      class="p-3 rounded-full hover:bg-zinc-800 text-zinc-200 hover:text-white transition-colors focus:outline-none"
-      aria-label="Previous track"
+      class="w-12 h-12 rounded-full bg-slate-800/80 hover:bg-slate-700/80 flex items-center justify-center text-white transition-all active:scale-95 shadow-lg"
+      title="Previous"
     >
-      <SkipBack class="w-6 h-6" />
+      <SkipBack class="w-5 h-5" />
     </button>
 
-    <!-- Play / Pause -->
+    <!-- Play / Pause Button -->
     <button
       @click="store.togglePlayPause"
-      class="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/40 transition-transform active:scale-95 focus:outline-none"
+      class="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 flex items-center justify-center text-white glow-shadow-sm transition-all transform hover:scale-105 active:scale-95"
+      title="Play / Pause"
       :aria-label="store.state.playing ? 'Pause' : 'Play'"
     >
       <Play v-if="!store.state.playing" class="w-7 h-7 translate-x-0.5 fill-current" />
       <Pause v-else class="w-7 h-7 fill-current" />
     </button>
 
-    <!-- Next -->
+    <!-- Next Track -->
     <button
       @click="store.next"
-      class="p-3 rounded-full hover:bg-zinc-800 text-zinc-200 hover:text-white transition-colors focus:outline-none"
-      aria-label="Next track"
+      class="w-12 h-12 rounded-full bg-slate-800/80 hover:bg-slate-700/80 flex items-center justify-center text-white transition-all active:scale-95 shadow-lg"
+      title="Next"
     >
-      <SkipForward class="w-6 h-6" />
+      <SkipForward class="w-5 h-5" />
+    </button>
+
+    <!-- Repeat -->
+    <button
+      @click="$emit('toggle-repeat')"
+      class="w-10 h-10 rounded-full flex items-center justify-center hover:text-white transition-colors"
+      :class="{ 'text-purple-400': isRepeat }"
+      title="Repeat"
+    >
+      <Repeat class="w-5 h-5" />
     </button>
   </div>
 </template>

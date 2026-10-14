@@ -36,7 +36,6 @@ async function handleSeek(e: Event) {
   const newPosition = (val / 100) * duration
 
   try {
-    // If store has seek method: store.seek(newPosition)
     await api.media.seek({ position: `${newPosition}` })
   } catch (error) {
     console.error('Failed to seek track position:', error)
@@ -45,33 +44,71 @@ async function handleSeek(e: Event) {
 </script>
 
 <template>
-  <div class="px-8 py-4 space-y-2">
-    <div class="relative group flex items-center">
+  <div class="w-full space-y-2 mt-2">
+    <div class="relative flex items-center">
       <input
         type="range"
         min="0"
         max="100"
+        step="0.1"
         :value="progressPercent"
         @input="handleSeek"
-        class="absolute inset-0 w-full opacity-0 cursor-pointer z-10 h-2"
+        class="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
         aria-label="Seek track position"
       />
-      <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-        <div
-          class="bg-indigo-500 h-full rounded-full transition-all duration-100 relative"
-          :style="{ width: `${progressPercent}%` }"
-        >
-          <div
-            class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-          ></div>
-        </div>
-      </div>
     </div>
-
-    <div class="flex justify-between text-xs font-medium text-zinc-500 font-mono">
+    <div class="flex justify-between text-xs font-semibold text-slate-400">
       <span>{{ convertSeconds(store.state.position ?? 0) }}</span>
-      <span v-if="store.state.isLive" class="text-indigo-400 uppercase tracking-wider">Live</span>
+      <span v-if="store.state.isLive" class="text-purple-400 uppercase tracking-wider">Live</span>
       <span v-else>{{ convertSeconds(store.state.track?.duration ?? 0) }}</span>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Custom range slider styling matching the mockup */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.15);
+  height: 6px;
+  border-radius: 9999px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -3px;
+  background-color: #a78bfa;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.8);
+  transition: transform 0.1s ease;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+}
+
+/* Firefox compatibility tracks/thumbs */
+input[type='range']::-moz-range-track {
+  background: rgba(255, 255, 255, 0.15);
+  height: 6px;
+  border-radius: 9999px;
+}
+input[type='range']::-moz-range-thumb {
+  background-color: #a78bfa;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.8);
+  transition: transform 0.1s ease;
+}
+input[type='range']::-moz-range-thumb:hover {
+  transform: scale(1.3);
+}
+</style>

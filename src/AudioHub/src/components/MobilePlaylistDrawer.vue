@@ -2,19 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApiClient } from '@/composables/useApiClient'
 import { PlaybackRepeatMode } from '@/types'
-import type { MediaEvent, PlayRequest, MediaMetaData, QueueStatusResponse } from '@/types'
+import type { MediaMetaData, QueueStatusResponse } from '@/types'
 import { useServerEvents } from '@/composables/useServerEvents'
-import {
-  Volume2,
-  Repeat,
-  SkipForward,
-  SkipBack,
-  Shuffle,
-  RotateCcw,
-  RotateCw,
-  Play,
-  Trash,
-} from '@lucide/vue'
+import { Volume2, Repeat, SkipForward, SkipBack, Shuffle, RotateCcw, Trash } from '@lucide/vue'
 
 const sse = useServerEvents({
   autoReconnect: true,
@@ -194,8 +184,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-    <div class="max-w-7xl mx-auto space-y-6">
+  <div
+    class="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans selection:bg-purple-500 selection:text-white"
+  >
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-900/20 rounded-full blur-3xl"></div>
+      <div
+        class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-900/20 rounded-full blur-3xl"
+      ></div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto space-y-6">
       <!-- Top Bar / Header -->
       <header
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5"
@@ -204,7 +203,7 @@ onMounted(() => {
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Playback Queue</h1>
           <p class="text-xs md:text-sm text-slate-400 mt-1">
             {{ queue.length }} track{{ queue.length === 1 ? '' : 's' }} in queue
-            <span class="mx-1">--</span>
+            <span class="mx-1">&bull;</span>
             Total runtime: {{ formatDuration(totalDuration) }}
           </p>
         </div>
@@ -257,11 +256,11 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Now Playing Card Sidebar -->
         <section
-          class="lg:col-span-5 xl:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl"
+          class="lg:col-span-5 xl:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl"
         >
           <div>
             <div class="flex items-center justify-between mb-4">
-              <span class="text-xs font-semibold tracking-wider uppercase text-indigo-400"
+              <span class="text-xs font-semibold tracking-wider uppercase text-purple-400"
                 >Now Playing</span
               >
               <span v-if="currentItem" class="text-xs text-slate-500 font-mono"
@@ -269,39 +268,45 @@ onMounted(() => {
               >
             </div>
 
-            <!-- Artwork -->
-            <div
-              class="relative aspect-square rounded-xl overflow-hidden bg-slate-800 mb-6 shadow-inner flex items-center justify-center border border-slate-700/50"
-            >
-              <img
-                v-if="currentItem?.imageUrl"
-                :src="currentItem.imageUrl"
-                :alt="currentItem.title"
-                class="w-full h-full object-cover"
-              />
-              <div v-else class="text-slate-600 flex flex-col items-center">
-                <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"
-                  />
-                </svg>
-                <span class="text-xs">No Track</span>
+            <!-- Artwork with Glowing Backlight -->
+            <div class="relative group w-full aspect-square mx-auto mb-6">
+              <div
+                class="absolute inset-0 bg-gradient-to-tr from-purple-600 to-indigo-500 rounded-3xl blur-2xl opacity-60"
+              ></div>
+
+              <div
+                class="relative w-full h-full rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 border border-slate-700/50 glow-shadow flex items-center justify-center p-6 text-center"
+              >
+                <img
+                  v-if="currentItem?.imageUrl"
+                  :src="currentItem.imageUrl"
+                  :alt="currentItem.title"
+                  class="absolute inset-0 w-full h-full object-cover opacity-80"
+                />
+                <div v-else class="text-slate-600 flex flex-col items-center">
+                  <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.5"
+                      d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"
+                    />
+                  </svg>
+                  <span class="text-xs">No Track</span>
+                </div>
               </div>
             </div>
 
             <!-- Metadata -->
             <div class="space-y-1 text-center sm:text-left">
               <h2
-                class="text-xl font-bold text-white truncate"
+                class="text-xl font-bold text-white truncate tracking-tight"
                 :title="currentItem?.title || 'Nothing Playing'"
               >
                 {{ currentItem?.title || 'Nothing Playing' }}
               </h2>
               <p
-                class="text-slate-400 text-sm truncate"
+                class="text-slate-400 text-sm font-medium truncate mt-0.5"
                 :title="currentItem?.artist || 'Unknown Artist'"
               >
                 {{ currentItem?.artist || 'Select a track to start playback' }}
@@ -323,7 +328,7 @@ onMounted(() => {
                 class="p-2.5 rounded-full transition-colors"
                 :class="
                   isShuffleEnabled
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
+                    ? 'bg-purple-950/40 text-purple-400 border border-purple-500/40'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 "
                 :title="isShuffleEnabled ? 'Disable Shuffle' : 'Enable Shuffle'"
@@ -336,10 +341,10 @@ onMounted(() => {
                 type="button"
                 @click="handlePrevious"
                 :disabled="isActionPending || queue.length === 0"
-                class="p-3 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30"
+                class="w-12 h-12 rounded-full bg-slate-800/80 hover:bg-slate-700/80 flex items-center justify-center text-white transition-all active:scale-95 shadow-lg disabled:opacity-30"
                 title="Previous Track"
               >
-                <SkipBack class="w-6 h-6" />
+                <SkipBack class="w-5 h-5" />
               </button>
 
               <!-- Next Button -->
@@ -347,10 +352,10 @@ onMounted(() => {
                 type="button"
                 @click="handleNext"
                 :disabled="isActionPending || queue.length === 0"
-                class="p-3 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30"
+                class="w-12 h-12 rounded-full bg-slate-800/80 hover:bg-slate-700/80 flex items-center justify-center text-white transition-all active:scale-95 shadow-lg disabled:opacity-30"
                 title="Next Track"
               >
-                <SkipForward class="w-6 h-6" />
+                <SkipForward class="w-5 h-5" />
               </button>
 
               <!-- Repeat Mode Button -->
@@ -361,7 +366,7 @@ onMounted(() => {
                 class="p-2.5 rounded-full transition-colors relative"
                 :class="
                   repeatMode !== PlaybackRepeatMode.Off
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
+                    ? 'bg-purple-950/40 text-purple-400 border border-purple-500/40'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 "
                 :title="getRepeatModeLabel()"
@@ -369,7 +374,7 @@ onMounted(() => {
                 <Repeat class="w-5 h-5" />
                 <span
                   v-if="repeatMode === PlaybackRepeatMode.Track"
-                  class="absolute -top-1 -right-1 bg-indigo-500 text-slate-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center"
+                  class="absolute -top-1 -right-1 bg-purple-500 text-slate-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center"
                 >
                   1
                 </span>
@@ -380,16 +385,16 @@ onMounted(() => {
 
         <!-- Queue Items List -->
         <section
-          class="lg:col-span-7 xl:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col"
+          class="lg:col-span-7 xl:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl flex flex-col"
         >
           <div class="flex items-center justify-between mb-4 px-2">
-            <h2 class="text-lg font-semibold text-white">Queue List</h2>
+            <h2 class="text-lg font-bold text-white">Queue List</h2>
             <span class="text-xs text-slate-400">Click a track to skip to it</span>
           </div>
 
           <div v-if="isLoading && queue.length === 0" class="py-20 text-center text-slate-500">
             <svg
-              class="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-500"
+              class="w-8 h-8 animate-spin mx-auto mb-2 text-purple-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -416,11 +421,11 @@ onMounted(() => {
               v-for="(item, idx) in queue"
               :key="idx"
               @click="handleSkipTo(idx)"
-              class="group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
+              class="group flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer"
               :class="[
                 idx === currentIndex
-                  ? 'bg-indigo-950/40 border-indigo-600/50 text-white'
-                  : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50',
+                  ? 'bg-purple-600/20 border-purple-500/30 text-white'
+                  : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60',
               ]"
             >
               <!-- Track Info -->
@@ -429,7 +434,7 @@ onMounted(() => {
                 <div class="w-6 text-center text-xs font-mono text-slate-500 shrink-0">
                   <span
                     v-if="idx === currentIndex"
-                    class="inline-block text-indigo-400 animate-pulse"
+                    class="inline-block text-purple-400 animate-pulse"
                   >
                     <Volume2 class="w-4 h-4" />
                   </span>
@@ -438,7 +443,7 @@ onMounted(() => {
 
                 <!-- Thumbnail -->
                 <div
-                  class="w-11 h-11 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-slate-700/50"
+                  class="w-11 h-11 rounded-xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700/50 relative"
                 >
                   <img
                     v-if="item.imageUrl"
@@ -456,25 +461,31 @@ onMounted(() => {
                       />
                     </svg>
                   </div>
+                  <div
+                    v-if="idx === currentIndex"
+                    class="absolute inset-0 bg-purple-950/60 flex items-center justify-center"
+                  >
+                    <div class="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
+                  </div>
                 </div>
 
                 <!-- Text Details -->
                 <div class="min-w-0">
                   <p
-                    class="text-sm font-medium truncate"
-                    :class="idx === currentIndex ? 'text-indigo-300' : 'text-slate-100'"
+                    class="text-sm font-semibold truncate"
+                    :class="idx === currentIndex ? 'text-purple-400' : 'text-slate-200'"
                   >
                     {{ item.title }}
                   </p>
                   <p class="text-xs text-slate-400 truncate">
-                    {{ item.artist }} <span v-if="item.album">-- {{ item.album }}</span>
+                    {{ item.artist }} <span v-if="item.album">&bull; {{ item.album }}</span>
                   </p>
                 </div>
               </div>
 
               <!-- Action & Duration -->
               <div class="flex items-center gap-3 shrink-0">
-                <span class="text-xs text-slate-500 font-mono hidden sm:inline-block">
+                <span class="text-xs text-slate-400 font-medium hidden sm:inline-block">
                   {{ formatDuration(item.duration) }}
                 </span>
 
@@ -504,20 +515,26 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.glow-shadow {
+  box-shadow:
+    0 20px 40px -10px rgba(139, 92, 246, 0.35),
+    0 0 20px rgba(139, 92, 246, 0.15);
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(15, 23, 42, 0.6);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgba(139, 92, 246, 0.5);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(139, 92, 246, 0.8);
 }
 </style>
