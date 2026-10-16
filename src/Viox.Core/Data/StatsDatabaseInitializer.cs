@@ -1,11 +1,12 @@
 namespace Viox.Core.Data;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 
 using Viox.Core.Configuration;
 
-public class StatsDatabaseInitializer
+public class StatsDatabaseInitializer : IHostedService
 {
     private readonly DataOptions _options;
 
@@ -14,7 +15,7 @@ public class StatsDatabaseInitializer
         _options = options.Value;
     }
 
-    public void Initialize()
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         using var connection = new SqliteConnection(_options.StatsConnectionString);
         connection.Open();
@@ -31,4 +32,7 @@ public class StatsDatabaseInitializer
         ";
         command.ExecuteNonQuery();
     }
+
+public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
 }

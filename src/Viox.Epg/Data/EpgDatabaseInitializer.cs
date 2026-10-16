@@ -1,11 +1,12 @@
 namespace Viox.Epg.Data;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 
 using Viox.Epg.Configuration;
 
-public class EpgDatabaseInitializer
+public class EpgDatabaseInitializer : IHostedService
 {
     private readonly EpgOptions _options;
 
@@ -14,7 +15,7 @@ public class EpgDatabaseInitializer
         _options = options.Value;
     }
 
-    public void Initialize()
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         using var connection = new SqliteConnection(_options.SqliteConnectionString);
         connection.Open();
@@ -54,4 +55,7 @@ public class EpgDatabaseInitializer
         ";
         command.ExecuteNonQuery();
     }
+
+public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
 }

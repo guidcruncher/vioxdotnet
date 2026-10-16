@@ -14,7 +14,7 @@ public static class EpgServiceCollectionExtensions
     {
         services.Configure<EpgOptions>(configuration.GetSection(EpgOptions.SectionName));
 
-        services.AddTransient<EpgDatabaseInitializer>();
+	services.AddHostedService<EpgDatabaseInitializer>();
         services.AddHttpClient<EpgDownloader>();
         services.AddTransient<XmltvParser>();
         services.AddTransient<EpgImportService>();
