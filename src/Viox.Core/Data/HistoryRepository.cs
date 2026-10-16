@@ -36,7 +36,7 @@ public class HistoryRepository
         value.DurationSeconds = durationSeconds;
 
         command.Parameters.AddWithValue("@Uri", value.Uri);
-        command.Parameters.AddWithValue("@Ketadata", value.Metadata);
+        command.Parameters.AddWithValue("@Metadata", value.Metadata);
         command.Parameters.AddWithValue("@CreatedTimestamp", value.CreatedTimestamp);
         command.Parameters.AddWithValue("@DurationSeconds", value.DurationSeconds);
 
