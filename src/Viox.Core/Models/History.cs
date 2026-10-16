@@ -1,4 +1,5 @@
 using System.Text.Json;
+
 using Viox.Core.Entities;
 
 namespace Viox.Core.Models;
@@ -9,12 +10,14 @@ public sealed class History
     public string Uri { get; set; } = string.Empty;
     public MediaMetaData Metadata { get; set; } = new();
     public long CreatedTimestamp { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    public long DurationSeconds { get; set; } = 0;
 
     public static History Map(HistoryItem item)
     {
         History res = new()
         {
             Id = item.Id,
+            DurationSeconds = item.DurationSeconds,
             Uri = item.Uri,
             Metadata = JsonSerializer.Deserialize<MediaMetaData>(item.Metadata) ?? new MediaMetaData(),
             CreatedTimestamp = item.CreatedTimestamp

@@ -449,7 +449,8 @@ public static class VioxCoreServiceCollectionExtension
     {
         services.Configure<DataOptions>(configuration.GetSection(DataOptions.SectionName));
 
-        services.AddTransient<DatabaseInitializer>();
+        services.AddTransient<SystemDatabaseInitializer>();
+        services.AddTransient<StatsDatabaseInitializer>();
 
         return services;
     }

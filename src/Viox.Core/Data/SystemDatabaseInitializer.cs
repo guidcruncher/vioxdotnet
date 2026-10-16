@@ -5,27 +5,25 @@ using Microsoft.Extensions.Options;
 
 using Viox.Core.Configuration;
 
-public class DatabaseInitializer
+public class SystemDatabaseInitializer
 {
     private readonly DataOptions _options;
 
-    public DatabaseInitializer(IOptions<DataOptions> options)
+    public SystemDatabaseInitializer(IOptions<DataOptions> options)
     {
         _options = options.Value;
     }
 
     public void Initialize()
     {
-        using var connection = new SqliteConnection(_options.SqliteConnectionString);
+        using var connection = new SqliteConnection(_options.SystemConnectionString);
         connection.Open();
 
         var command = connection.CreateCommand();
         command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS History(
+            CREATE TABLE IF NOT EXISTS Version(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Uri TEXT NOT NULL,
-                Metadata TEXT,
-                CreatedTimestamp INTEGER NOT NULL
+                Version TEXT NOT NULL
             );
         ";
         command.ExecuteNonQuery();
