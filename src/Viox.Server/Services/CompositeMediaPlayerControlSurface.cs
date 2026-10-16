@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Viox.Core.Data;
 using Viox.Core.Events;
 using Viox.Core.Models;
 using Viox.Core.Services;
@@ -33,11 +34,15 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
     private readonly IMediaEventService _eventService;
     private readonly IPlaybackQueueService _queueService;
     private readonly EpgQueryService _epgService;
+    private readonly HistoryRepository _historyRepository;
 
     private string? _lastActivePlayerName;
     private string _lastState = string.Empty;
+    private long _trackHandle = 0;
+    private long _startedAt = 0;
 
     public CompositeMediaPlayerControlSurface(
+    HistoryRepository historyRepository,
         AudioCacheManager cacheManager,
         IEnumerable<IMediaPlayerAdapter> adapters,
         ICurrentMediaService currentMedia,
@@ -48,6 +53,7 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
         EpgQueryService epgService,
         ILogger<CompositeMediaPlayerControlSurface> logger)
     {
+        _historyRepository = historyRepository ?? throw new ArgumentNullException(nameof(historyRepository));
         _epgService = epgService ?? throw new ArgumentNullException(nameof(epgService));
         _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
         _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
@@ -132,6 +138,13 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
             }
         }
 
+        if (_trackHandle > 0)
+        {
+            await _historyRepository.UpdateDuration(_trackHandle, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _startedAt, cancellationToken);
+        }
+
+        _startedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        _trackHandle = await _historyRepository.Add(metaData, 0, cancellationToken);
         // await _eventService.PublishMediaActionAsync("play", metaData, cancellationToken);
         _lastActivePlayerName = targetAdapter.Name;
     }
@@ -173,6 +186,10 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
                     }
                 }
 
+                if (_trackHandle > 0)
+                {
+                    await _historyRepository.UpdateDuration(_trackHandle, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _startedAt, cancellationToken);
+                }
             }
 
             string currentState = JsonSerializer.Serialize(state, options);
@@ -192,6 +209,14 @@ public sealed class CompositeMediaPlayerControlSurface : IMediaPlayerControlSurf
                 await _eventService.PublishPlaybackStatusAsync(state, cancellationToken);
                 _lastState = string.Empty;
             }
+
+            if (_trackHandle > 0)
+            {
+                await _historyRepository.UpdateDuration(_trackHandle, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _startedAt, cancellationToken);
+                _trackHandle = 0;
+                _startedAt = 0;
+            }
+
         }
 
         return state;

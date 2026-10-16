@@ -5,12 +5,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Viox.Epg.Configuration;
-using Viox.Epg.Data;
 using Viox.Epg.Models;
 
 public class EpgImportService
 {
-    private readonly EpgDatabaseInitializer _dbInitializer;
     private readonly EpgDownloader _downloader;
     private readonly XmltvParser _parser;
     private readonly EpgOptions _options;
@@ -19,13 +17,11 @@ public class EpgImportService
     private const string LastSuccessfulImportKey = "LastSuccessfulImportUtc";
 
     public EpgImportService(
-        EpgDatabaseInitializer dbInitializer,
         EpgDownloader downloader,
         XmltvParser parser,
         IOptions<EpgOptions> options,
         ILogger<EpgImportService> logger)
     {
-        _dbInitializer = dbInitializer;
         _downloader = downloader;
         _parser = parser;
         _options = options.Value;
@@ -34,8 +30,6 @@ public class EpgImportService
 
     public async Task<bool> HasRunTodayAsync(CancellationToken cancellationToken = default)
     {
-        _dbInitializer.Initialize();
-
         using var connection = new SqliteConnection(_options.SqliteConnectionString);
         await connection.OpenAsync(cancellationToken);
 
@@ -54,8 +48,6 @@ public class EpgImportService
 
     public async Task ImportAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Initializing EPG database...");
-        _dbInitializer.Initialize();
 
         _logger.LogInformation("Downloading EPG data from {SourceUrl}...", _options.SourceUrl);
         await using var stream = await _downloader.DownloadAndDecompressAsync(cancellationToken);

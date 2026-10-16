@@ -46,6 +46,7 @@ declare module 'vue' {
     PlaylistView: typeof import('./views/PlaylistView.vue')['default']
     PodcastView: typeof import('./views/PodcastView.vue')['default']
     PodverseView: typeof import('./views/PodverseView.vue')['default']
+    PreampVolume: typeof import('./components/PreampVolume.vue')['default']
     PreviousPageButton: typeof import('./components/PreviousPageButton.vue')['default']
     RadioView: typeof import('./views/RadioView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

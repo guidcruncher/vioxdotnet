@@ -12,3 +12,7 @@ export interface GetVolumeResponse {
   volumePercent: number
   muted?: boolean
 }
+
+export interface PreampVolumeState {
+  volume: number
+}

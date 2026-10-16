@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Viox.Core.Configuration;
+using Viox.Core.Data;
 using Viox.Core.Events;
 using Viox.Core.Playlists;
 using Viox.Core.Plugins;
@@ -30,6 +31,7 @@ public static class VioxCoreServiceCollectionExtension
         ArgumentNullException.ThrowIfNull(configuration);
 
         services.AddMemoryCache();
+        services.AddData(configuration);
         services.AddServerEventPublisher(configuration);
         services.AddUserAgentProvider(configuration);
         services.AddVioxPlaylists(configuration);
@@ -440,6 +442,18 @@ public static class VioxCoreServiceCollectionExtension
             configuration.GetSection(ServerEventOptions.SectionName));
         services.AddSingleton<IServerEventPublisher, ServerEventPublisher>();
         services.AddSingleton<IMediaEventService, MediaEventService>();
+        return services;
+    }
+
+    public static IServiceCollection AddData(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<DataOptions>(configuration.GetSection(DataOptions.SectionName));
+
+        services.AddHostedService<SystemDatabaseInitializer>();
+        services.AddHostedService<StatsDatabaseInitializer>();
+
+        services.AddTransient<HistoryRepository>();
+
         return services;
     }
 
