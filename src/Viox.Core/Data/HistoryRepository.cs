@@ -49,4 +49,26 @@ public class HistoryRepository
         return insertedId;
     }
 
+    public async Task<long> UpdateDuration(long id, long durationSeconds, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Updating duration for ID {id}", id);
+        using var connection = new SqliteConnection(_options.StatsConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+            UPDATE History
+               SET DurationSeconds = @DurationSeconds
+            WHERE Id = @Id
+        ";
+
+        command.Parameters.AddWithValue("@Id", id);
+        command.Parameters.AddWithValue("@DurationSeconds", durationSeconds);
+
+        await command.ExecuteNonQueryAsync();
+
+        _logger.LogInformation("Successfully updated duration for ID {id}", id);
+        return id;
+    }
+
 }
