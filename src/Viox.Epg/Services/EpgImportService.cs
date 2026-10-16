@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Viox.Epg.Configuration;
-using Viox.Epg.Data;
 using Viox.Epg.Models;
 
 public class EpgImportService

@@ -1,7 +1,7 @@
 namespace Viox.Epg.Data;
 
-using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Viox.Epg.Configuration;
@@ -56,6 +56,6 @@ public class EpgDatabaseInitializer : IHostedService
         command.ExecuteNonQuery();
     }
 
-public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 }

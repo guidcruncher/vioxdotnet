@@ -1,7 +1,7 @@
 namespace Viox.Core.Data;
 
-using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Viox.Core.Configuration;
@@ -33,6 +33,6 @@ public class StatsDatabaseInitializer : IHostedService
         command.ExecuteNonQuery();
     }
 
-public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 }
