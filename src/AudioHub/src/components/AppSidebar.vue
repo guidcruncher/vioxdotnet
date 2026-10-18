@@ -15,7 +15,6 @@ const menuItems = ref<Sources | null>(null)
 const STORAGE_KEY = 'sidebar_collapsed'
 const isCollapsed = ref(false)
 const isMobile = ref(false)
-const isMobileOpen = ref(false)
 
 function checkMobile() {
   isMobile.value = window.innerWidth < 768
@@ -36,6 +35,9 @@ onMounted(async () => {
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved !== null) {
     isCollapsed.value = JSON.parse(saved)
+  } else {
+    // Mobile starts collapsed
+    isCollapsed.value = isMobile.value
   }
 })
 
@@ -44,12 +46,8 @@ onUnmounted(() => {
 })
 
 function toggleSidebar() {
-  if (isMobile.value) {
-    isMobileOpen.value = !isMobileOpen.value
-  } else {
-    isCollapsed.value = !isCollapsed.value
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(isCollapsed.value))
-  }
+  isCollapsed.value = !isCollapsed.value
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(isCollapsed.value))
 }
 
 function getUrl(source: string, item: Record<string, string>) {
@@ -65,28 +63,15 @@ function getIcon(source: string, item: Record<string, string>) {
 </script>
 
 <template>
-  <!-- Mobile overlay -->
-  <div
-    v-if="isMobile && isMobileOpen"
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-    @click="isMobileOpen = false"
-  ></div>
-
-  <!-- Sidebar -->
   <aside
-    class="fixed md:relative inset-y-0 left-0 bg-slate-900/90 backdrop-blur-md border-r border-slate-800
-           flex flex-col overflow-hidden transition-transform duration-300 ease-in-out z-50"
-    :class="{
-      'translate-x-0 w-64': isMobile && isMobileOpen,
-      '-translate-x-full w-64': isMobile && !isMobileOpen,
-      'w-64': !isMobile && !isCollapsed,
-      'w-16': !isMobile && isCollapsed
-    }"
+    class="bg-slate-900/90 backdrop-blur-md border-r border-slate-800
+           flex flex-col overflow-hidden transition-all duration-200 ease-in-out"
+    :class="isCollapsed ? 'w-16' : 'w-64'"
   >
     <!-- Header -->
     <div class="flex items-center justify-between p-4">
       <span
-        v-if="!isCollapsed && !isMobile || isMobileOpen"
+        v-if="!isCollapsed"
         class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
       >
         Navigation
@@ -98,7 +83,7 @@ function getIcon(source: string, item: Record<string, string>) {
       >
         <ArrowLeftFromLine
           class="w-5 h-5 transition-transform duration-300"
-          :class="{ 'rotate-180': isCollapsed && !isMobile }"
+          :class="{ 'rotate-180': isCollapsed }"
         />
       </button>
     </div>
@@ -109,18 +94,13 @@ function getIcon(source: string, item: Record<string, string>) {
       <router-link
         to="/"
         class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800/60 transition text-slate-300"
-        :class="{ 'justify-center': isCollapsed && !isMobile }"
+        :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
           <Home class="w-4 h-4 text-emerald-400" />
         </div>
 
-        <span
-          v-if="!isCollapsed || isMobileOpen"
-          class="ml-3 truncate transition-opacity duration-200"
-        >
-          Now Playing
-        </span>
+        <span v-if="!isCollapsed" class="ml-3 truncate">Now Playing</span>
       </router-link>
 
       <!-- Dynamic items -->
@@ -129,7 +109,7 @@ function getIcon(source: string, item: Record<string, string>) {
         :key="key"
         :to="getUrl(key, item)"
         class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800/60 transition text-slate-300"
-        :class="{ 'justify-center': isCollapsed && !isMobile }"
+        :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
           <img
@@ -138,57 +118,52 @@ function getIcon(source: string, item: Record<string, string>) {
           />
         </div>
 
-        <span
-          v-if="!isCollapsed || isMobileOpen"
-          class="ml-3 truncate transition-opacity duration-200"
-        >
-          {{ item.title }}
-        </span>
+        <span v-if="!isCollapsed" class="ml-3 truncate">{{ item.title }}</span>
       </router-link>
 
       <!-- Static items -->
       <router-link
         to="/playlists"
         class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800/60 transition text-slate-300"
-        :class="{ 'justify-center': isCollapsed && !isMobile }"
+        :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
           <ListMusic class="w-4 h-4 text-emerald-400" />
         </div>
-        <span v-if="!isCollapsed || isMobileOpen" class="ml-3 truncate">Playlists</span>
+        <span v-if="!isCollapsed" class="ml-3 truncate">Playlists</span>
       </router-link>
 
       <router-link
         to="/equalizer"
         class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800/60 transition text-slate-300"
-        :class="{ 'justify-center': isCollapsed && !isMobile }"
+        :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
           <AudioLines class="w-4 h-4 text-emerald-400" />
         </div>
-        <span v-if="!isCollapsed || isMobileOpen" class="ml-3 truncate">Equalizer</span>
+        <span v-if="!isCollapsed" class="ml-3 truncate">Equalizer</span>
       </router-link>
 
       <router-link
         to="/clock"
         class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800/60 transition text-slate-300"
-        :class="{ 'justify-center': isCollapsed && !isMobile }"
+        :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
           <Clock class="w-4 h-4 text-emerald-400" />
         </div>
-        <span v-if="!isCollapsed || isMobileOpen" class="ml-3 truncate">Clock</span>
+        <span v-if="!isCollapsed" class="ml-3 truncate">Clock</span>
       </router-link>
 
       <router-link
         to="/config"
         class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800/60 transition text-slate-300"
-        :class="{ 'justify-center': isCollapsed && !isMobile }"
+        :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
           <Settings class="w-4 h-4 text-emerald-400" />
         </div>
-        <span v-if="!isCollapsed || isMobileOpen" class="ml-3 truncate">Configuration</span>
+        <span v-if="!isCollapsed" class="ml-3 truncate">Configuration</span>
       </router-link>
     </nav>
   </aside>
