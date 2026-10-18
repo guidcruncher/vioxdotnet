@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close-sidebar'): void
+  (e: 'update:isMobileOpen', value: boolean): void
 }>()
 
 const STORAGE_KEY = 'sidebar_collapsed'
@@ -56,7 +57,7 @@ onUnmounted(() => {
 
 const toggleSidebar = () => {
   if (isMobile.value) {
-    emit('close-sidebar')
+    emit('update:isMobileOpen', !props.isMobileOpen)
   } else {
     isCollapsed.value = !isCollapsed.value
     try {
@@ -64,6 +65,21 @@ const toggleSidebar = () => {
     } catch (error) {
       console.error('Failed to save sidebar state to localStorage:', error)
     }
+  }
+}
+
+const handleItemClick = (event: MouseEvent) => {
+  if (isMobile.value) {
+    if (!props.isMobileOpen) {
+      // Text is not visible (collapsed): expand sidebar and prevent navigation
+      event.preventDefault()
+      emit('update:isMobileOpen', true)
+    } else {
+      // Text is visible: close mobile sidebar and navigate to target
+      emit('close-sidebar')
+    }
+  } else {
+    closeMobileMenu()
   }
 }
 
@@ -146,7 +162,7 @@ const closeMobileMenu = () => {
       <nav class="space-y-1">
         <router-link
           to="/"
-          @click="closeMobileMenu"
+          @click="handleItemClick"
           active-class="bg-slate-800 text-white font-medium"
           class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
@@ -163,7 +179,7 @@ const closeMobileMenu = () => {
             v-for="(item, key) in menuItems"
             :key="key"
             :to="getUrl(key, item)"
-            @click="closeMobileMenu"
+            @click="handleItemClick"
             active-class="bg-slate-800 text-white font-medium"
             class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
             :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
@@ -183,7 +199,7 @@ const closeMobileMenu = () => {
       <nav class="space-y-1">
         <router-link
           to="/playlists"
-          @click="closeMobileMenu"
+          @click="handleItemClick"
           active-class="bg-slate-800 text-white font-medium"
           class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
@@ -195,7 +211,7 @@ const closeMobileMenu = () => {
 
         <router-link
           to="/equalizer"
-          @click="closeMobileMenu"
+          @click="handleItemClick"
           active-class="bg-slate-800 text-white font-medium"
           class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
@@ -207,7 +223,7 @@ const closeMobileMenu = () => {
 
         <router-link
           to="/clock"
-          @click="closeMobileMenu"
+          @click="handleItemClick"
           active-class="bg-slate-800 text-white font-medium"
           class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
@@ -219,7 +235,7 @@ const closeMobileMenu = () => {
 
         <router-link
           to="/config"
-          @click="closeMobileMenu"
+          @click="handleItemClick"
           active-class="bg-slate-800 text-white font-medium"
           class="w-full text-left px-3 py-2.5 sm:py-2 rounded-lg hover:bg-slate-800/60 transition flex items-center space-x-3 text-sm text-slate-300"
           :class="{ 'justify-center space-x-0 px-0': !isMobileOpen && (isCollapsed || isMobile) }"
