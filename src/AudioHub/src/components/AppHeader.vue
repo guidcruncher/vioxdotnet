@@ -31,16 +31,6 @@ function handleToggleSidebar() {
   >
     <!-- Brand / Logo Section with Mobile Menu Toggle -->
     <div class="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
-      <!-- Mobile Sidebar Toggle Button -->
-      <button
-        @click="handleToggleSidebar"
-        type="button"
-        class="md:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-        aria-label="Toggle navigation drawer"
-      >
-        <TextAlignJustify class="w-5 h-5" />
-      </button>
-
       <div class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-indigo-600 flex items-center justify-center">
         <img
           src="/icon-sm.svg"
