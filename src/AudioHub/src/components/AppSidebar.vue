@@ -64,8 +64,7 @@ function getIcon(source: string, item: Record<string, string>) {
 
 <template>
   <aside
-    class="bg-slate-900/90 backdrop-blur-md border-r border-slate-800
-           flex flex-col overflow-hidden transition-all duration-200 ease-in-out"
+    class="bg-slate-900/90 backdrop-blur-md border-r border-slate-800 flex flex-col overflow-hidden transition-all duration-200 ease-in-out"
     :class="isCollapsed ? 'w-16' : 'w-64'"
   >
     <!-- Header -->
@@ -112,10 +111,7 @@ function getIcon(source: string, item: Record<string, string>) {
         :class="{ 'justify-center': isCollapsed }"
       >
         <div class="w-6 flex justify-center">
-          <img
-            :src="getIcon(key, item)"
-            class="w-4 h-4 object-contain flex-shrink-0"
-          />
+          <img :src="getIcon(key, item)" class="w-4 h-4 object-contain flex-shrink-0" />
         </div>
 
         <span v-if="!isCollapsed" class="ml-3 truncate">{{ item.title }}</span>
