@@ -1,6 +1,8 @@
 import { ref, type Ref } from 'vue'
 import { useAlert } from '@/composables/useAlert'
 
+const { showError } = useAlert()
+
 export interface TransportOptions extends RequestInit {
   params?: Record<string, any>
 }
@@ -59,7 +61,9 @@ export function useApiTransport(baseUrl: string = '', debug: boolean = true) {
       const errorMessage = errorData.detail || errorData.title || response.statusText
       console.error(`${targetUrl}\n ${errorMessage || `HTTP Error: ${response.status}`}`)
       if (debug) {
-        useAlert(`${targetUrl}\n ${errorMessage || `HTTP Error: ${response.status}`}`)
+        showError({
+          errorMessage: `${targetUrl}\n ${errorMessage || `HTTP Error: ${response.status}`}`,
+        })
       }
       throw new Error(errorMessage || `HTTP Error: ${response.status}`)
     }

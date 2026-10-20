@@ -5,6 +5,8 @@ import type { MediaEvent, EventHandler, UseServerEventsOptions } from '@/types'
 import { MediaEventTypes } from '@/types'
 import { useAlert } from '@/composables/useAlert'
 
+const { showError } = useAlert()
+
 export function useServerEvents(options: UseServerEventsOptions = {}) {
   const {
     autoReconnect = true,
@@ -34,7 +36,7 @@ export function useServerEvents(options: UseServerEventsOptions = {}) {
 
   const on = (eventName: string, handler: EventHandler) => {
     if (!MediaEventTypes.includes(eventName)) {
-      useAlert(`Event type "${eventName}" is not a recognized MediaEvent type.`)
+      showError({ errorMessage: `Event type "${eventName}" is not a recognized MediaEvent type.` })
       return
     }
 
