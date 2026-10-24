@@ -92,6 +92,10 @@ export const usePlaybackStore = defineStore('playback', () => {
     }
   }
 
+  async function stop() {
+    await api.media.stop()
+  }
+
   async function next() {
     await api.media.next()
   }
@@ -110,6 +114,7 @@ export const usePlaybackStore = defineStore('playback', () => {
     sse,
     syncState,
     togglePlayPause,
+    stop,
     next,
     previous,
     playUri,

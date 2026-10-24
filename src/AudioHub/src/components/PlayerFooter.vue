@@ -11,6 +11,7 @@ import {
   Shuffle,
   RotateCcw,
   RotateCw,
+  Square,
   Play,
   Trash,
   Pause,
@@ -130,6 +131,14 @@ onMounted(async () => {
         >
           <Play v-if="!store.state.playing" id="playIcon" class="w-5 h-5 fill-current" />
           <Pause v-else id="pauseIcon" class="w-5 h-5 fill-current" />
+        </button>
+
+ <button
+          @click="store.stop"
+          class="bg-white text-slate-900 p-2.5 sm:p-3 rounded-full hover:scale-105 active:scale-95 transition shadow-lg  shadow-white/10 flex items-center justify-center focus:outline-none"
+          title="Stop"
+        >
+          <Square id="stopIcon" class="w-5 h-5 fill-current" />
         </button>
 
         <button
