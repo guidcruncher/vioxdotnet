@@ -5,6 +5,7 @@ import { useApiClient } from '@/composables/useApiClient'
 import { useRouter, useRoute } from 'vue-router'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import type { SpotifyResponse, SpotifyUserProfile } from '@/types'
+import { useAlert } from '@/composables/useAlert'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,20 +13,7 @@ const route = useRoute()
 const { isSmallerThan } = useBreakpoint()
 const api = useApiClient()
 const store = usePlaybackStore()
-
-// watch(
-//   () => isSmallerThan('xs'),
-//   (isMobileSize) => {
-//     const isMobileRoute = route.path === '/remote'
-//
-//     if (isMobileSize && !isMobileRoute) {
-//       router.push('/remote')
-//     } else if (!isMobileSize && isMobileRoute) {
-//      router.push('/')
-//     }
-//   },
-//   { immediate: true }
-// )
+const { state, handleRetry, closeError } = useAlert()
 
 onMounted(async () => {
   const isDevelopment = import.meta.env.VITE_DEVELOPMENT ?? 'false'
@@ -46,5 +34,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <router-view />
+  <div id="app">
+    <RouterView />
+
+    <ErrorDialog
+      :is-open="state.isOpen"
+      :title="state.title"
+      :error-message="state.errorMessage"
+      :error-details="state.errorDetails"
+      :show-retry="state.showRetry"
+      :retry-text="state.retryText"
+      @retry="handleRetry"
+      @close="closeError"
+    />
+  </div>
 </template>

@@ -25,6 +25,7 @@ declare module 'vue' {
     DigitalClockView: typeof import('./views/DigitalClockView.vue')['default']
     EqualizerControl: typeof import('./components/EqualizerControl.vue')['default']
     EqualizerView: typeof import('./views/EqualizerView.vue')['default']
+    ErrorDialog: typeof import('./components/ErrorDialog.vue')['default']
     FavouritesList: typeof import('./components/FavouritesList.vue')['default']
     FilePlaylistView: typeof import('./views/FilePlaylistView.vue')['default']
     LibraryView: typeof import('./views/LibraryView.vue')['default']

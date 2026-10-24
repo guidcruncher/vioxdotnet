@@ -15,7 +15,11 @@ public class MemoryCacheServiceTests
     public MemoryCacheServiceTests()
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
-        var options = Options.Create(new CacheOptions { DefaultAbsoluteExpiration = TimeSpan.FromMinutes(30) });
+        var options = Options.Create(new CacheOptions
+        {
+            DefaultAbsoluteExpirationHours = 0,
+            DefaultSlidingExpirationMinutes = null
+        });
         _cacheService = new MemoryCacheService<string>(_memoryCache, options, NullLogger<MemoryCacheService<string>>.Instance);
     }
 
@@ -142,5 +146,32 @@ public class MemoryCacheServiceTests
 
         Assert.Equal(1, callCount);
         Assert.Equal(result1, result2);
+    }
+
+    [Fact]
+    public async Task GetOrCreateAsync_ConcurrentCallsRunFactoryOnlyOnce()
+    {
+        int callCount = 0;
+        TaskCompletionSource factoryStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFactory = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async ValueTask<string> Factory(CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref callCount);
+            factoryStarted.SetResult();
+            await releaseFactory.Task.WaitAsync(cancellationToken);
+            return "shared-value";
+        }
+
+        Task<string?>[] requests = Enumerable.Range(0, 8)
+            .Select(_ => _cacheService.GetOrCreateAsync("concurrent-key", Factory).AsTask())
+            .ToArray();
+
+        await factoryStarted.Task;
+        releaseFactory.SetResult();
+        string?[] results = await Task.WhenAll(requests);
+
+        Assert.Equal(1, callCount);
+        Assert.All(results, result => Assert.Equal("shared-value", result));
     }
 }

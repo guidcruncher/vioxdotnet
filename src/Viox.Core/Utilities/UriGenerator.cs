@@ -11,11 +11,8 @@ public class UriGenerator : IUriGenerator
 
     public UriGenerator()
     {
-        _key = Convert.FromBase64String("ajhYL3FQMnZLOUw0bU42ejdXMXRSN3lVM29QNXNBOGRGMGdIMmpLNGxNNk49");
-        if (_key.Length != 32)
-        {
-            throw new ArgumentException("Key must be 256 bits (32 bytes).");
-        }
+        byte[] keyMaterial = Convert.FromBase64String("ajhYL3FQMnZLOUw0bU42ejdXMXRSN3lVM29QNXNBOGRGMGdIMmpLNGxNNk49");
+        _key = SHA256.HashData(keyMaterial);
     }
 
     public string Create(string plainText)
