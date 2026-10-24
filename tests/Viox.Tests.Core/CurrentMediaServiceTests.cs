@@ -63,7 +63,6 @@ public class CurrentMediaServiceTests
         {
             eventFired = true;
             eventMedia = args.CurrentMedia;
-            return Task.CompletedTask;
         };
 
         service.SetCurrentMedia(media);
@@ -119,7 +118,6 @@ public class CurrentMediaServiceTests
             {
                 clearEventFired = true;
             }
-            return Task.CompletedTask;
         };
 
         service.ClearCurrentMedia();

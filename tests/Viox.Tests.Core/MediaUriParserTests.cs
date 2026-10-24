@@ -51,10 +51,9 @@ public class MediaUriParserTests
     }
 
     [Theory]
-    [InlineData("unknown-source:track:123")]
     [InlineData("spotify:invalid-type:123")]
     [InlineData("spotify:track:123:secondary:extra")]
-    public void ParseMediaUri_WithInvalidSourceOrType_ReturnsNull(string uri)
+    public void ParseMediaUri_WithInvalidTypeOrSegmentCount_ReturnsNull(string uri)
     {
         var result = uri.ParseMediaUri();
 
