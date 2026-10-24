@@ -131,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, watch } from 'vue'
 import { X, AlertTriangle, ChevronDown } from '@lucide/vue'
 
 interface Props {
@@ -160,6 +160,7 @@ const emit = defineEmits<{
 }>()
 
 const showDetails = ref<boolean>(false)
+let previousBodyOverflow: string | null = null
 
 // Properly format errorDetails for output inside <pre>
 const formattedErrorDetails = computed(() => {
@@ -182,17 +183,27 @@ const handleRetry = (): void => {
   emit('retry')
 }
 
-// Prevent background scrolling when dialog is open
+const restoreBodyOverflow = (): void => {
+  if (typeof document !== 'undefined' && previousBodyOverflow !== null) {
+    document.body.style.overflow = previousBodyOverflow
+    previousBodyOverflow = null
+  }
+}
+
 watch(
   () => props.isOpen,
   (newValue: boolean) => {
     if (typeof document !== 'undefined') {
       if (newValue) {
+        previousBodyOverflow = document.body.style.overflow
         document.body.style.overflow = 'hidden'
       } else {
-        document.body.style.overflow = ''
+        restoreBodyOverflow()
       }
     }
-  }
+  },
+  { immediate: true }
 )
+
+onBeforeUnmount(restoreBodyOverflow)
 </script>
