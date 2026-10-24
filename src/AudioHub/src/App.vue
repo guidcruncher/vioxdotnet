@@ -38,7 +38,7 @@ onMounted(async () => {
     <RouterView />
 
     <ErrorDialog
-      v-model:isOpen="state.isOpen"
+      :is-open="state.isOpen"
       :title="state.title"
       :error-message="state.errorMessage"
       :error-details="state.errorDetails"
