@@ -59,6 +59,13 @@ public class CompactStringCipher
     /// <returns>The original decrypted plaintext string.</returns>
     public string Decrypt(string cipherText)
     {
+        ArgumentNullException.ThrowIfNull(cipherText);
+
+        if (cipherText.Length == 0)
+        {
+            return string.Empty;
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(cipherText);
 
         byte[] payload = DecodeBase62(cipherText);

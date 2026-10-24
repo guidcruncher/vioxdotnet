@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
+using Viox.Client.Files.Configuration;
+using Viox.Client.Files.Services;
 using Viox.Core.Models;
+using Viox.Core.Playlists;
 using Viox.Core.Services;
 using Viox.Core.Utilities;
 
@@ -93,6 +96,8 @@ public class CoreUnitTests
 
             FileScanner scanner = new(
                 NullLogger<FileScanner>.Instance,
+                new TestPlaylistIndexService(),
+                new TestFavoritesService(),
                 Options.Create(new MediaScannerOptions
                 {
                     DefaultDirectoryPath = tempDirectory,
@@ -108,9 +113,9 @@ public class CoreUnitTests
             Assert.Single(results);
             Assert.Equal("track.mp3", results[0].Title);
             Assert.Equal(allowedMp3, results[0].Url);
-            Assert.NotNull(results[0].Uri);
-            Assert.Equal("file", results[0].Uri!.Source);
-            Assert.Equal("track", results[0].Uri.Type);
+            MediaUri uri = Assert.IsType<MediaUri>(results[0].Uri);
+            Assert.Equal("file", uri.Source);
+            Assert.Equal("track", uri.Type);
         }
         finally
         {
@@ -128,6 +133,8 @@ public class CoreUnitTests
 
         FileScanner scanner = new(
             NullLogger<FileScanner>.Instance,
+            new TestPlaylistIndexService(),
+            new TestFavoritesService(),
             Options.Create(new MediaScannerOptions
             {
                 DefaultDirectoryPath = missingDirectory,
@@ -141,5 +148,28 @@ public class CoreUnitTests
         IReadOnlyList<MediaMetaData> results = await scanner.ScanDirectoryAsync();
 
         Assert.Empty(results);
+    }
+
+    private sealed class TestPlaylistIndexService : IPlaylistIndexService
+    {
+        public Task RebuildIndexAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void IndexPlaylist(MediaMetaDataPlaylist playlist) { }
+        public void RemovePlaylist(string playlistId) { }
+        public IReadOnlyList<MediaMetaDataPlaylist> SearchByPlaylistTitle(string titleQuery) => [];
+        public IReadOnlyList<MediaMetaDataPlaylist> SearchByItemTitle(string itemTitleQuery) => [];
+        public IReadOnlyList<MediaMetaDataPlaylist> GetPlaylistsContainingUri(string rawUri) => [];
+        public bool ContainsUri(string rawUri) => false;
+    }
+
+    private sealed class TestFavoritesService : IFavoritesService
+    {
+        public bool Exists(string rawUri) => false;
+        public IReadOnlyCollection<MediaMetaData> GetAllFavorites() => [];
+        public Task<bool> AddFavoriteAsync(MediaMetaData item, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> RemoveFavoriteAsync(string rawUri, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task ClearFavoritesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public MediaMetaData? GetByRawUri(string rawUri) => null;
+        public IReadOnlyCollection<MediaMetaData> SearchFavorites(string query) => [];
+        public IList<MediaMetaData> SetFavoriteStates(IEnumerable<MediaMetaData> items) => items.ToList();
     }
 }

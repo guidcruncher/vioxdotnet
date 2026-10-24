@@ -26,7 +26,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Viox.Core\Viox.Core.csproj" />
+    <ProjectReference Include="..\..\src\Viox.Client.Files\Viox.Client.Files.csproj" />
+    <ProjectReference Include="..\..\src\Viox.Client.Podverse\Viox.Client.Podverse.csproj" />
     <ProjectReference Include="..\..\src\Viox.Client.Spotify\Viox.Client.Spotify.csproj" />
+    <ProjectReference Include="..\..\src\Viox.Epg\Viox.Epg.csproj" />
   </ItemGroup>
 
 </Project>

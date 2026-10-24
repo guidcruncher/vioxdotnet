@@ -48,17 +48,22 @@ public class XmltvParser
         };
 
         using var subReader = reader.ReadSubtree();
-        while (await subReader.ReadAsync())
+        bool advanceReader = true;
+        while (!advanceReader || await subReader.ReadAsync())
         {
+            advanceReader = true;
+
             if (subReader.NodeType == XmlNodeType.Element)
             {
                 if (subReader.Name == "display-name")
                 {
                     channel.DisplayName = await subReader.ReadElementContentAsStringAsync();
+                    advanceReader = false;
                 }
                 else if (subReader.Name == "url")
                 {
                     channel.Url = await subReader.ReadElementContentAsStringAsync();
+                    advanceReader = false;
                 }
                 else if (subReader.Name == "icon")
                 {
@@ -83,23 +88,30 @@ public class XmltvParser
         };
 
         using var subReader = reader.ReadSubtree();
-        while (await subReader.ReadAsync())
+        bool advanceReader = true;
+        while (!advanceReader || await subReader.ReadAsync())
         {
+            advanceReader = true;
+
             if (subReader.NodeType == XmlNodeType.Element)
             {
                 switch (subReader.Name)
                 {
                     case "title":
                         programme.Title = await subReader.ReadElementContentAsStringAsync();
+                        advanceReader = false;
                         break;
                     case "sub-title":
                         programme.SubTitle = await subReader.ReadElementContentAsStringAsync();
+                        advanceReader = false;
                         break;
                     case "desc":
                         programme.Description = await subReader.ReadElementContentAsStringAsync();
+                        advanceReader = false;
                         break;
                     case "episode-num":
                         programme.EpisodeNum = await subReader.ReadElementContentAsStringAsync();
+                        advanceReader = false;
                         break;
                     case "icon":
                         programme.IconUrl ??= subReader.GetAttribute("src");
@@ -110,6 +122,7 @@ public class XmltvParser
                         {
                             programme.Categories.Add(category);
                         }
+                        advanceReader = false;
                         break;
                 }
             }
@@ -118,4 +131,3 @@ public class XmltvParser
         return programme;
     }
 }
-
