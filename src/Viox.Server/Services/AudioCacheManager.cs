@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Viox.Server.Configuration;
+using Viox.Client.Mpd.Services;
 
 public class AudioCacheManager
 {
@@ -21,8 +22,10 @@ public class AudioCacheManager
     private readonly ILogger<AudioCacheManager> _logger;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _downloadLocks = new();
     private readonly string _cacheDirectory;
+    private readonly IMpdClient _mpdClient;
 
     public AudioCacheManager(
+	IMpdClient mpdClient,
         IHttpClientFactory httpClientFactory,
         IOptions<StreamingOptions> streamingOptions,
         ILogger<AudioCacheManager> logger)
@@ -31,6 +34,7 @@ public class AudioCacheManager
         _streamingOptions = streamingOptions ?? throw new ArgumentNullException(nameof(streamingOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _cacheDirectory = "/music/cache";
+	_mpdClient = mpdClient ?? throw new ArgumentNullException(nameof(mpdClient));
         Directory.CreateDirectory(_cacheDirectory);
     }
 
@@ -87,6 +91,8 @@ public class AudioCacheManager
             {
                 File.SetCreationTimeUtc(filePath, created.Value.UtcDateTime);
             }
+
+            await _mpdClient.SendCommandAsync("update", cancellationToken);
 
             _logger.LogInformation("Successfully cached audio file locally: {FilePath}", filePath);
             return filePath;
