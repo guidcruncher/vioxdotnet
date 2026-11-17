@@ -9,6 +9,7 @@ services:
     hostname: viox-net
     platform: linux/arm64
     network_mode: host
+    restart: unless-stopped
     ports:
       - "1704:1704/tcp"  # Snapclient stream
       - "1705:1705/tcp"  # JSON-RPC API
